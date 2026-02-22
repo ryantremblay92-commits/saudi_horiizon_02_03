@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { ShoppingCart, Eye, CheckCircle2, Circle, Star, ArrowRight, Package, Truck, FileText, Heart } from 'lucide-react';
+import { ShoppingCart, Eye, CheckCircle2, Circle, Star, ArrowRight, Package, Truck, FileText, Heart, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/api/products';
 import { useComparison } from '@/contexts/ComparisonContext';
@@ -173,12 +173,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </CardContent>
 
         {/* Footer Actions */}
-        <div className="p-5 pt-0 mt-auto">
+        <div className="p-5 pt-0 mt-auto flex gap-3">
           <Button
-            className="w-full border border-white/10 hover:bg-white/5 text-white bg-transparent group-hover:border-gold/30 transition-all font-display tracking-wide uppercase text-xs font-bold h-10"
+            className="flex-1 border border-white/10 hover:bg-white/5 text-white bg-transparent group-hover:border-gold/30 transition-all font-display tracking-wide uppercase text-xs font-bold h-10"
             onClick={() => router.push(`/products/${product._id}`)}
           >
-            View Details <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+            Details <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-10 h-10 p-0 border border-white/10 hover:border-gold/30 hover:bg-gold/10 text-gold transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickInquiry(product);
+            }}
+            title="Quick Inquiry"
+          >
+            <MessageCircle className="w-4 h-4" />
           </Button>
         </div>
       </Card>

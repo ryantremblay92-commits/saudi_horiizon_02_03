@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, Package, Mail, MapPin, Clock, ShoppingBag, ArrowRight, ShieldCheck, Zap, Box } from 'lucide-react';
+import { CheckCircle, Package, Mail, MapPin, Clock, ShoppingBag, ArrowRight, ShieldCheck, Zap, Box, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -19,11 +19,11 @@ export default function CheckoutSuccessPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-navy text-white py-24 relative overflow-hidden">
+        <div className="min-h-screen bg-navy text-white py-24 relative overflow-hidden flex flex-col items-center">
             {/* Ambient Effects */}
             <FloatingParticles />
 
-            <div className="max-w-3xl mx-auto px-6 relative z-10">
+            <div className="w-full max-w-4xl px-6 relative z-10">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}

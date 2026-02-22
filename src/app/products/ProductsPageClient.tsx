@@ -18,6 +18,7 @@ import { ProductTableRow } from '@/components/ProductTableRow';
 import { FilterSidebar, FilterState } from '@/components/FilterSidebar';
 import { QuickInquiryDialog } from '@/components/QuickInquiryDialog';
 import { ShimmerGrid } from '@/components/ui/shimmer';
+import { RightSidebar } from '@/components/products/RightSidebar';
 import { addToCart } from '@/api/cart';
 import { toast } from 'sonner';
 // Product Discovery System imports
@@ -429,15 +430,23 @@ export default function ProductsPageClient() {
                     </div>
                 </motion.div>
 
-                <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
-                    {/* Desktop Sidebar */}
+                <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 relative">
+                    {/* Desktop Sidebar (Left) */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="hidden lg:block lg:w-72 flex-shrink-0"
+                        className="hidden lg:block lg:w-72 flex-shrink-0 border-r border-white/5 pr-12 relative"
                     >
                         <div className="sticky top-32">
                             <FilterSidebar filters={filters} onFilterChange={setFilters} />
+                        </div>
+
+                        {/* Technical Footer Marker for Left Sidebar */}
+                        <div className="absolute bottom-0 left-0 right-12 pt-8 border-t border-white/5 opacity-20 hidden lg:block">
+                            <div className="flex justify-between items-center font-mono text-[8px] tracking-[0.3em] text-white">
+                                <span>SEC: 01-FLTR</span>
+                                <span>VER: 2.0.4</span>
+                            </div>
                         </div>
                     </motion.div>
 
@@ -464,7 +473,7 @@ export default function ProductsPageClient() {
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         {/* Active Filters Summary */}
                         {hasActiveFilters && (
                             <div className="mb-10 flex flex-wrap gap-3 items-center py-4 border-b border-white/5">
@@ -555,7 +564,7 @@ export default function ProductsPageClient() {
                                     viewMode === 'grid' ? (
                                         <div
                                             ref={gridRef}
-                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8"
+                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-8"
                                         >
                                             {paginatedProducts.map((product, index) => (
                                                 <div key={product._id} className="product-card-animated">
@@ -658,14 +667,31 @@ export default function ProductsPageClient() {
                             </>
                         )}
                     </div>
-                </div>
 
-                {/* Overvlay effects */}
-                <ComparisonBar products={products} onCompare={() => setComparisonModalOpen(true)} />
-                <ComparisonModal products={products.filter(p => comparisonProducts.includes(p._id))} isOpen={comparisonModalOpen} onClose={() => setComparisonModalOpen(false)} />
-                <ConfiguratorModal isOpen={configuratorOpen} onClose={() => setConfiguratorOpen(false)} onEquipmentSelect={setSelectedEquipment} selectedEquipment={selectedEquipment} equipmentData={equipmentDatabase} />
-                <QuickInquiryDialog open={inquiryDialog.open} onOpenChange={(open) => setInquiryDialog({ ...inquiryDialog, open })} productName={inquiryDialog.productName} productId={inquiryDialog.productId} />
+                    {/* Right Sidebar - Support & Utilities */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="hidden xl:block xl:w-80 flex-shrink-0 border-l border-white/5 pl-12 relative"
+                    >
+                        <RightSidebar />
+
+                        {/* Technical Footer Marker for Right Sidebar */}
+                        <div className="absolute bottom-0 right-0 left-12 pt-8 border-t border-white/5 opacity-20 hidden xl:block">
+                            <div className="flex justify-between items-center font-mono text-[8px] tracking-[0.3em] text-white">
+                                <span>SEC: 02-ENGR</span>
+                                <span>STA: ACTIVE</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
             </div>
+
+            {/* Overvlay effects */}
+            <ComparisonBar products={products} onCompare={() => setComparisonModalOpen(true)} />
+            <ComparisonModal products={products.filter(p => comparisonProducts.includes(p._id))} isOpen={comparisonModalOpen} onClose={() => setComparisonModalOpen(false)} />
+            <ConfiguratorModal isOpen={configuratorOpen} onClose={() => setConfiguratorOpen(false)} onEquipmentSelect={setSelectedEquipment} selectedEquipment={selectedEquipment} equipmentData={equipmentDatabase} />
+            <QuickInquiryDialog open={inquiryDialog.open} onOpenChange={(open) => setInquiryDialog({ ...inquiryDialog, open })} productName={inquiryDialog.productName} productId={inquiryDialog.productId} />
 
             {/* Bottom Fade */}
             <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-navy to-transparent pointer-events-none" />

@@ -51,7 +51,7 @@ export function FeaturesGridSection() {
     return (
         <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
             <div className="container-premium">
-                <div className="bg-white/5 rounded-[2.5rem] border border-white/5 p-12 md:p-20 lg:p-24 relative overflow-hidden">
+                <div className="bg-white/5 rounded-[2.5rem] border border-white/5 p-12 md:p-20 lg:p-24 relative overflow-hidden mx-auto w-full">
                     {/* Background Accents */}
                     <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gold/5 to-transparent pointer-events-none" />
 

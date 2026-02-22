@@ -39,9 +39,9 @@ export const QuickInquiryDialog: React.FC<QuickInquiryDialogProps> = ({
 
     // Send via WhatsApp
     const message = encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\nMessage: ${formData.message}`
+      `Name: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\n\nProduct: ${productName}\n\nMessage: ${formData.message}`
     );
-    window.open(`https://wa.me/971501234567?text=${message}`, '_blank');
+    window.open(`https://wa.me/966570196677?text=${message}`, '_blank');
 
     toast.success('Inquiry Sent: Your inquiry has been sent via WhatsApp');
 
@@ -98,7 +98,7 @@ export const QuickInquiryDialog: React.FC<QuickInquiryDialogProps> = ({
             <Label htmlFor="phone" className="text-slate-300">Phone</Label>
             <Input
               id="phone"
-              placeholder="+971 50 123 4567"
+              placeholder="+966 5X XXX XXXX"
               value={formData.phone}
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value })

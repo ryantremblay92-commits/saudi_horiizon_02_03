@@ -50,11 +50,7 @@ export function StatsSection() {
             className="py-20 md:py-28 lg:py-32 relative overflow-hidden"
         >
             <div className="container-premium">
-                {/* 
-                    CONGESTION FIX: Increased padding from p-8 to p-16/p-24. 
-                    Added rounded-3xl and premium border.
-                */}
-                <div className="bg-white/5 rounded-[2.5rem] border border-white/5 p-12 md:p-20 lg:p-24 relative overflow-hidden">
+                <div className="bg-white/5 rounded-[2.5rem] border border-white/5 p-12 md:p-20 lg:p-24 relative overflow-hidden mx-auto w-full">
                     {/* Background Texture */}
                     <div className="absolute inset-0 gradient-accent-glow opacity-20" />
                     <div
