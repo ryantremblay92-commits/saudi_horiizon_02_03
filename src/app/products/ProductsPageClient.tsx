@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Grid3x3, List, Loader2, SlidersHorizontal, Settings, Search, X, ChevronLeft, ChevronRight, Package, Quote, Zap, Battery, Cpu, Gauge, Wrench } from 'lucide-react';
+import { Grid3x3, List, Loader2, SlidersHorizontal, Settings, Search, X, ChevronLeft, ChevronRight, Package, Quote, Zap, Battery, Cpu, Gauge, Wrench, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +29,20 @@ import equipmentDatabase from '../../../equipment-database.json';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Mapping between category IDs and actual product category names
+const categoryIdToName: Record<string, string> = {
+    'engine': 'Engine Parts',
+    'hydraulics': 'Hydraulic Parts',
+    'electrical': 'Electrical (ELC) Parts',
+    'transmission': 'Transmission Parts',
+    'undercarriage': 'Undercarriage Parts',
+    'attachments': 'Attachments',
+    'cooling': 'Cooling System Parts',
+    'spare': 'Spare Parts',
+};
+
+import { FloatingParticles, AnimatedConnector } from "@/components/effects/SceneEffects";
+
 export default function ProductsPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -51,6 +65,8 @@ export default function ProductsPageClient() {
     });
     const [isLoading, setIsLoading] = useState(true);
     const gridRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isInView = useInView(containerRef, { once: true });
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -104,9 +120,11 @@ export default function ProductsPageClient() {
     useEffect(() => {
         const category = searchParams.get('category');
         if (category) {
+            // Map category ID to actual product category name
+            const mappedCategory = categoryIdToName[category] || category;
             setFilters(prev => ({
                 ...prev,
-                categories: [category],
+                categories: [mappedCategory],
             }));
         }
     }, [searchParams]);
@@ -269,104 +287,68 @@ export default function ProductsPageClient() {
     const hasActiveFilters = filters.brands.length > 0 || filters.categories.length > 0 || filters.search;
 
     return (
-        <div className="min-h-screen bg-navy text-white py-8 relative">
-            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5 pointer-events-none" />
-            <div className="max-w-7xl mx-auto px-4 relative z-10">
+        <div className="text-white pb-24 relative overflow-hidden" ref={containerRef}>
+            {/* Ambient Background */}
+            <FloatingParticles />
+
+            <div className="container-premium relative z-10">
                 {/* Breadcrumb */}
-                <Breadcrumb className="mb-6">
-                    <BreadcrumbList className="text-slate-400">
-                        <BreadcrumbItem>
-                            <BreadcrumbLink onClick={() => router.push('/')} className="hover:text-gold transition-colors">Home</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="text-slate-600" />
-                        <BreadcrumbItem>
-                            <BreadcrumbPage className="text-gold font-medium">Spare Parts</BreadcrumbPage>
-                        </BreadcrumbItem>
-                        {filters.categories.length > 0 && (
-                            <>
-                                <BreadcrumbSeparator className="text-slate-600" />
-                                <BreadcrumbItem>
-                                    <BreadcrumbPage className="text-gold font-medium">{filters.categories[0]}</BreadcrumbPage>
-                                </BreadcrumbItem>
-                            </>
-                        )}
-                    </BreadcrumbList>
-                </Breadcrumb>
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink onClick={() => router.push('/')} className="hover:text-gold cursor-pointer transition-colors text-slate-400 uppercase text-[10px] tracking-[0.2em] font-bold">HOME</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="text-slate-600" />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage className="text-gold uppercase text-[10px] tracking-[0.2em] font-bold underline underline-offset-4 decoration-gold/30">PARTS CATALOG</BreadcrumbPage>
+                            </BreadcrumbItem>
+                            {filters.categories.length > 0 && (
+                                <>
+                                    <BreadcrumbSeparator className="text-slate-600" />
+                                    <BreadcrumbItem>
+                                        <BreadcrumbPage className="text-white/60 uppercase text-[10px] tracking-[0.2em] font-bold">{filters.categories[0]}</BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                </>
+                            )}
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </motion.div>
 
-                {/* Quick Category Links - Common in E-commerce */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
-                        <h2 className="text-lg font-semibold text-white">Shop by Category</h2>
-                        <Button
-                            variant="link"
-                            className="text-gold ml-auto"
-                            onClick={() => router.push('/categories')}
-                        >
-                            View All Categories
-                        </Button>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                        {[
-                            { name: 'Engine', icon: Zap, color: 'from-orange-500/20 to-red-500/20 border-orange-500/30' },
-                            { name: 'Hydraulics', icon: Battery, color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30' },
-                            { name: 'Electrical', icon: Cpu, color: 'from-yellow-500/20 to-amber-500/20 border-yellow-500/30' },
-                            { name: 'Transmission', icon: Gauge, color: 'from-purple-500/20 to-pink-500/20 border-purple-500/30' },
-                            { name: 'Undercarriage', icon: Wrench, color: 'from-green-500/20 to-emerald-500/20 border-green-500/30' },
-                            { name: 'Attachments', icon: Package, color: 'from-slate-500/20 to-zinc-500/20 border-slate-500/30' },
-                        ].map((cat) => (
-                            <button
-                                key={cat.name}
-                                onClick={() => setFilters(prev => ({ ...prev, categories: [cat.name] }))}
-                                className={`p-4 rounded-xl bg-gradient-to-br ${cat.color} border hover:border-gold/50 transition-all duration-300 group text-left`}
-                            >
-                                <cat.icon className="w-6 h-6 text-gold mb-2 group-hover:scale-110 transition-transform" />
-                                <span className="text-sm font-medium text-white">{cat.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                {/* Page Header */}
+                <div className="mb-12 flex flex-col lg:flex-row gap-8 items-start justify-between">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="max-w-xl"
+                    >
+                        <span className="micro-label mb-4 block">OEM CERTIFIED</span>
+                        <h1 className="text-5xl font-black mb-4 tracking-tighter" style={{ fontFamily: 'var(--font-display)' }}>
+                            Industrial <span className="text-gradient-gold">Parts catalog.</span>
+                        </h1>
+                        <p className="text-white/40 text-sm font-bold uppercase tracking-[0.2em]">
+                            Displaying <span className="text-gold">{processedProducts.length}</span> high-performance components
+                        </p>
+                    </motion.div>
 
-                {/* Bulk Quote Banner */}
-                <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-gold/10 via-yellow-500/10 to-gold/10 border border-gold/20">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-gold/20">
-                                <Quote className="w-5 h-5 text-gold" />
-                            </div>
-                            <div>
-                                <h3 className="text-white font-semibold">Need a Bulk Quote?</h3>
-                                <p className="text-sm text-slate-400">Get special pricing for large orders, fleet purchases, or recurring orders</p>
-                            </div>
-                        </div>
-                        <Button
-                            variant="outline"
-                            className="border-gold text-gold hover:bg-gold hover:text-navy whitespace-nowrap"
-                            onClick={() => router.push('/bulk-quote')}
-                        >
-                            Request Bulk Quote
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Page Header with Search */}
-                <div className="mb-8 space-y-4">
-                    <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl lg:text-4xl font-bold text-white font-display tracking-tight">Spare Parts</h1>
-                            <p className="text-slate-400 text-sm lg:text-base mt-1">
-                                Showing <span className="text-gold font-bold">{processedProducts.length}</span> of {products.length} products
-                            </p>
-                        </div>
-
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="w-full lg:w-auto space-y-4"
+                    >
                         {/* Search Bar */}
-                        <div className="relative w-full lg:w-96">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <div className="relative w-full lg:w-[400px]">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gold/50" />
                             <Input
                                 type="text"
-                                placeholder="Search parts by name or SKU..."
+                                placeholder="Search by Part Name, Number, or OEM SKU..."
                                 value={searchInput}
                                 onChange={handleSearchChange}
-                                className="pl-10 pr-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-gold/50 focus:ring-gold/20"
+                                className="pl-12 pr-12 bg-white/5 border-white/10 text-white h-16 rounded-2xl focus:border-gold/50 focus:ring-0 placeholder:text-white/10 transition-all text-lg font-medium"
                             />
                             {searchInput && (
                                 <button
@@ -374,119 +356,191 @@ export default function ProductsPageClient() {
                                         setSearchInput('');
                                         setFilters(prev => ({ ...prev, search: '' }));
                                     }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-colors"
                                 >
-                                    <X className="w-4 h-4" />
+                                    <X className="w-5 h-5 text-white/40" />
                                 </button>
                             )}
                         </div>
+                    </motion.div>
+                </div>
+
+                {/* Quick Category Links */}
+                <div className="mb-16">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="h-px flex-1 bg-white/5" />
+                        <h2 className="text-xs font-black text-white/40 uppercase tracking-[0.5em] whitespace-nowrap">Shop by Specialized Category</h2>
+                        <div className="h-px flex-1 bg-white/5" />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                        {[
+                            { name: 'Engine Parts', icon: Zap, color: 'text-orange-500' },
+                            { name: 'Hydraulic Parts', icon: Battery, color: 'text-cyan-500' },
+                            { name: 'Electrical (ELC) Parts', icon: Cpu, color: 'text-amber-500' },
+                            { name: 'Transmission Parts', icon: Gauge, color: 'text-purple-500' },
+                            { name: 'Undercarriage Parts', icon: Wrench, color: 'text-emerald-500' },
+                            { name: 'Attachments', icon: Package, color: 'text-slate-400' },
+                        ].map((cat, idx) => (
+                            <motion.button
+                                key={cat.name}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={() => setFilters(prev => ({ ...prev, categories: [cat.name] }))}
+                                className={`card-premium group p-6 rounded-3xl border-white/5 bg-navy/40 backdrop-blur-md text-center hover:border-gold/30 transition-all duration-500 relative overflow-hidden`}
+                            >
+                                <div className="absolute -inset-1 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <cat.icon className={`w-8 h-8 mx-auto mb-4 ${cat.color} group-hover:scale-110 transition-transform duration-500`} />
+                                <span className="text-[10px] font-black text-white/40 group-hover:text-white uppercase tracking-[0.2em] transition-colors">{cat.name}</span>
+                            </motion.button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Mobile Filter Button */}
-                <div className="lg:hidden mb-4">
-                    <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" className="w-full">
-                                <SlidersHorizontal className="w-4 h-4 mr-2" />
-                                Filters
-                                {(filters.brands.length > 0 || filters.categories.length > 0) && (
-                                    <span className="ml-2 bg-yellow-500 text-gray-900 text-xs px-2 py-0.5 rounded-full">
-                                        {filters.brands.length + filters.categories.length}
-                                    </span>
-                                )}
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="w-80 bg-gray-800 text-white overflow-y-auto">
-                            <div className="mt-6">
-                                <FilterSidebar onFilterChange={setFilters} />
+                {/* Bulk Quote Banner */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    className="mb-16 p-8 lg:p-12 rounded-[3rem] bg-gradient-to-br from-gold/20 via-navy-light/50 to-navy-dark border border-gold/10 relative overflow-hidden group"
+                >
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                        <Quote className="w-64 h-64 text-gold" />
+                    </div>
+                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
+                        <div className="flex gap-8 items-start text-center lg:text-left">
+                            <div className="p-4 rounded-[1.5rem] bg-gold/10 border border-gold/20 shadow-[0_0_20px_rgba(197,160,89,0.1)] hidden md:block">
+                                <Quote className="w-8 h-8 text-gold" />
                             </div>
-                        </SheetContent>
-                    </Sheet>
-                </div>
+                            <div>
+                                <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Need a Bulk Corporate Quote?</h3>
+                                <p className="text-lg text-white/50 max-w-2xl leading-relaxed">
+                                    Unlock priority wholesale pricing for fleet-wide maintenance and large-scale industrial projects.
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            size="lg"
+                            className="btn-primary px-12 h-16 text-lg font-bold shadow-[0_10px_30px_rgba(197,160,89,0.3)]"
+                            onClick={() => router.push('/bulk-quote')}
+                        >
+                            Request High-Volume Pricing
+                            <ArrowRight className="ml-2 w-5 h-5" />
+                        </Button>
+                    </div>
+                </motion.div>
 
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Desktop Sidebar - Hidden on Mobile */}
-                    <div className="hidden lg:block lg:w-64 flex-shrink-0">
-                        <FilterSidebar onFilterChange={setFilters} />
+                <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
+                    {/* Desktop Sidebar */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="hidden lg:block lg:w-72 flex-shrink-0"
+                    >
+                        <div className="sticky top-32">
+                            <FilterSidebar filters={filters} onFilterChange={setFilters} />
+                        </div>
+                    </motion.div>
+
+                    {/* Mobile Filter Button */}
+                    <div className="lg:hidden">
+                        <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+                            <SheetTrigger asChild>
+                                <Button className="w-full h-14 rounded-2xl bg-white/5 border border-white/10 text-white font-bold tracking-widest uppercase text-xs">
+                                    <SlidersHorizontal className="w-4 h-4 mr-3 text-gold" />
+                                    Advanced Filters
+                                    {(filters.brands.length > 0 || filters.categories.length > 0) && (
+                                        <span className="ml-3 bg-gold text-navy text-[10px] font-black px-2 py-0.5 rounded-full">
+                                            {filters.brands.length + filters.categories.length}
+                                        </span>
+                                    )}
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[85vw] bg-navy border-white/5 text-white overflow-y-auto">
+                                <div className="mt-10">
+                                    <FilterSidebar filters={filters} onFilterChange={setFilters} />
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
 
                     {/* Main Content */}
                     <div className="flex-1">
                         {/* Active Filters Summary */}
                         {hasActiveFilters && (
-                            <div className="mb-6 flex flex-wrap gap-2 items-center">
-                                <span className="text-sm text-slate-400">Active filters:</span>
+                            <div className="mb-10 flex flex-wrap gap-3 items-center py-4 border-b border-white/5">
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Filtered by:</span>
                                 {filters.search && (
-                                    <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                                        Search: "{filters.search}"
-                                        <button onClick={() => {
-                                            setSearchInput('');
-                                            setFilters(prev => ({ ...prev, search: '' }));
-                                        }} className="hover:text-white">
-                                            <X className="w-3 h-3" />
+                                    <motion.span initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 border border-white/10 text-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-3">
+                                        Search: {filters.search}
+                                        <button onClick={() => { setSearchInput(''); setFilters(prev => ({ ...prev, search: '' })); }} className="hover:text-white transition-colors">
+                                            <X className="w-3.5 h-3.5" />
                                         </button>
-                                    </span>
+                                    </motion.span>
                                 )}
                                 {filters.brands.map(brand => (
-                                    <span key={brand} className="bg-yellow-500/20 text-yellow-500 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                                    <motion.span key={brand} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 border border-white/10 text-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-3">
                                         {brand}
-                                        <button onClick={() => removeFilter('brand', brand)} className="hover:text-white">
-                                            <X className="w-3 h-3" />
+                                        <button onClick={() => removeFilter('brand', brand)} className="hover:text-white transition-colors">
+                                            <X className="w-3.5 h-3.5" />
                                         </button>
-                                    </span>
+                                    </motion.span>
                                 ))}
                                 {filters.categories.map(cat => (
-                                    <span key={cat} className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                                    <motion.span key={cat} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 border border-white/10 text-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-3">
                                         {cat}
-                                        <button onClick={() => removeFilter('category', cat)} className="hover:text-white">
-                                            <X className="w-3 h-3" />
+                                        <button onClick={() => removeFilter('category', cat)} className="hover:text-white transition-colors">
+                                            <X className="w-3.5 h-3.5" />
                                         </button>
-                                    </span>
+                                    </motion.span>
                                 ))}
                                 <button
                                     onClick={handleClearFilters}
-                                    className="text-sm text-red-400 hover:text-red-300 ml-2 underline"
+                                    className="text-[10px] font-black text-red-400 hover:text-red-300 ml-auto uppercase tracking-widest underline underline-offset-4"
                                 >
-                                    Clear all
+                                    Reset all
                                 </button>
                             </div>
                         )}
 
                         {/* Controls */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-                            <div className="flex gap-2 flex-wrap">
-                                <ToggleGroup type="single" value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'list')}>
-                                    <ToggleGroupItem value="grid" aria-label="Grid view" className="px-3">
-                                        <Grid3x3 className="w-4 h-4" />
-                                    </ToggleGroupItem>
-                                    <ToggleGroupItem value="list" aria-label="List view" className="px-3">
-                                        <List className="w-4 h-4" />
-                                    </ToggleGroupItem>
-                                </ToggleGroup>
+                        <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between mb-10">
+                            <div className="flex gap-4">
+                                <div className="bg-white/5 border border-white/5 p-1 rounded-xl flex gap-1">
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-gold text-navy shadow-[0_0_15px_rgba(197,160,89,0.3)]' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        <Grid3x3 className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-gold text-navy shadow-[0_0_15px_rgba(197,160,89,0.3)]' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        <List className="w-5 h-5" />
+                                    </button>
+                                </div>
 
-                                {/* Configure Equipment Button */}
                                 <Button
                                     onClick={() => setConfiguratorOpen(true)}
-                                    variant="outline"
-                                    className="glass border-gold/30 text-gold hover:bg-gold/10 hover:border-gold transition-all"
+                                    className="h-[52px] px-6 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-gold/30 transition-all group font-bold"
                                 >
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Configure Equipment
+                                    <Settings className="w-5 h-5 mr-3 group-hover:rotate-90 transition-transform duration-500" />
+                                    Part Configurator
                                 </Button>
                             </div>
 
-                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="w-full sm:w-64">
                                 <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="w-full sm:w-48 glass border-white/10 text-white focus:ring-gold/50">
-                                        <SelectValue placeholder="Sort by" />
+                                    <SelectTrigger className="h-[52px] bg-white/5 border border-white/10 rounded-xl text-white font-bold focus:ring-0 focus:border-gold/50">
+                                        <span className="text-white/40 mr-2 text-[10px] uppercase tracking-widest">Sort:</span>
+                                        <SelectValue placeholder="System Default" />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-navy/95 backdrop-blur-xl border-white/10 text-white">
-                                        <SelectItem value="relevance" className="focus:bg-white/10 focus:text-gold">Relevance</SelectItem>
-                                        <SelectItem value="price-low" className="focus:bg-white/10 focus:text-gold">Price: Low to High</SelectItem>
-                                        <SelectItem value="price-high" className="focus:bg-white/10 focus:text-gold">Price: High to Low</SelectItem>
-                                        <SelectItem value="newest" className="focus:bg-white/10 focus:text-gold">Newest</SelectItem>
-                                        <SelectItem value="rating" className="focus:bg-white/10 focus:text-gold">Top Rated</SelectItem>
+                                    <SelectContent className="bg-navy border-white/10 text-white">
+                                        <SelectItem value="relevance">RELEVANCE</SelectItem>
+                                        <SelectItem value="price-low">PRICE: LOW TO HIGH</SelectItem>
+                                        <SelectItem value="price-high">PRICE: HIGH TO LOW</SelectItem>
+                                        <SelectItem value="newest">LATEST ARRIVALS</SelectItem>
+                                        <SelectItem value="rating">HIGHEST RATING</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -497,12 +551,11 @@ export default function ProductsPageClient() {
                             <ShimmerGrid count={6} />
                         ) : (
                             <>
-                                {/* Products Grid/List */}
                                 {paginatedProducts.length > 0 ? (
                                     viewMode === 'grid' ? (
                                         <div
                                             ref={gridRef}
-                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8"
                                         >
                                             {paginatedProducts.map((product, index) => (
                                                 <div key={product._id} className="product-card-animated">
@@ -517,10 +570,9 @@ export default function ProductsPageClient() {
                                         </div>
                                     ) : (
                                         <motion.div
-                                            className="space-y-4"
+                                            className="space-y-6"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            transition={{ duration: 0.3 }}
                                         >
                                             {paginatedProducts.map((product) => (
                                                 <ProductTableRow
@@ -534,67 +586,59 @@ export default function ProductsPageClient() {
                                     )
                                 ) : (
                                     <motion.div
-                                        className="text-center py-16"
+                                        className="text-center py-32 rounded-[3rem] bg-white/5 border border-dashed border-white/10"
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5 }}
                                     >
-                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4">
-                                            <Package className="w-8 h-8 text-slate-400" />
+                                        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-navy border border-white/5 mb-8 shadow-2xl relative">
+                                            <Package className="w-10 h-10 text-white/20" />
+                                            <div className="absolute inset-0 bg-gold/5 blur-2xl rounded-full" />
                                         </div>
-                                        <p className="text-lg text-gray-300 mb-2">No products found matching your filters</p>
-                                        <p className="text-sm text-slate-500 mb-6">Try adjusting your search or filter criteria</p>
+                                        <h3 className="text-2xl font-black text-white mb-4 tracking-tight">Part Synchronization Failed</h3>
+                                        <p className="text-white/40 max-w-sm mx-auto mb-10 leading-relaxed uppercase text-xs tracking-widest font-bold">
+                                            No components found matching your technical specifications. Try broadening your parameters.
+                                        </p>
                                         <Button
-                                            variant="outline"
-                                            className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                                            className="btn-primary h-14 px-10 rounded-xl"
                                             onClick={handleClearFilters}
                                         >
-                                            Clear Filters
+                                            Clear Technical Filters
                                         </Button>
                                     </motion.div>
                                 )}
 
                                 {/* Pagination */}
                                 {totalPages > 1 && (
-                                    <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                        <p className="text-sm text-slate-400">
-                                            Showing {((currentPage - 1) * productsPerPage) + 1} to {Math.min(currentPage * productsPerPage, processedProducts.length)} of {processedProducts.length} products
-                                        </p>
+                                    <div className="mt-20 py-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
+                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">
+                                            SYSTEM LOG: PAGE {currentPage} OF {totalPages} | RECORDS: {processedProducts.length}
+                                        </span>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-3">
                                             <Button
                                                 variant="outline"
-                                                size="icon"
                                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                                 disabled={currentPage === 1}
-                                                className="border-white/10 hover:border-gold/30"
+                                                className="h-12 w-12 rounded-xl p-0 bg-white/5 border-white/10 text-white hover:bg-gold hover:text-navy disabled:opacity-20"
                                             >
-                                                <ChevronLeft className="w-4 h-4" />
+                                                <ChevronLeft className="w-5 h-5" />
                                             </Button>
 
-                                            {/* Page Numbers */}
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-2">
                                                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                                     let pageNum: number;
-                                                    if (totalPages <= 5) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage <= 3) {
-                                                        pageNum = i + 1;
-                                                    } else if (currentPage >= totalPages - 2) {
-                                                        pageNum = totalPages - 4 + i;
-                                                    } else {
-                                                        pageNum = currentPage - 2 + i;
-                                                    }
+                                                    if (totalPages <= 5) pageNum = i + 1;
+                                                    else if (currentPage <= 3) pageNum = i + 1;
+                                                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                                                    else pageNum = currentPage - 2 + i;
 
                                                     return (
                                                         <Button
                                                             key={pageNum}
-                                                            variant={currentPage === pageNum ? 'default' : 'ghost'}
-                                                            size="icon"
                                                             onClick={() => setCurrentPage(pageNum)}
-                                                            className={currentPage === pageNum ? 'bg-gold text-navy hover:bg-gold/90' : 'border-white/10 hover:border-gold/30'}
+                                                            className={`h-12 min-w-[48px] rounded-xl font-black text-xs transition-all ${currentPage === pageNum ? 'bg-gold text-navy shadow-[0_0_20px_rgba(197,160,89,0.3)]' : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'}`}
                                                         >
-                                                            {pageNum}
+                                                            {pageNum.toString().padStart(2, '0')}
                                                         </Button>
                                                     );
                                                 })}
@@ -602,12 +646,11 @@ export default function ProductsPageClient() {
 
                                             <Button
                                                 variant="outline"
-                                                size="icon"
                                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                                 disabled={currentPage === totalPages}
-                                                className="border-white/10 hover:border-gold/30"
+                                                className="h-12 w-12 rounded-xl p-0 bg-white/5 border-white/10 text-white hover:bg-gold hover:text-navy disabled:opacity-20"
                                             >
-                                                <ChevronRight className="w-4 h-4" />
+                                                <ChevronRight className="w-5 h-5" />
                                             </Button>
                                         </div>
                                     </div>
@@ -617,38 +660,16 @@ export default function ProductsPageClient() {
                     </div>
                 </div>
 
-                {/* Quick Inquiry Dialog */}
-                <QuickInquiryDialog
-                    open={inquiryDialog.open}
-                    onOpenChange={(open) =>
-                        setInquiryDialog({ ...inquiryDialog, open })
-                    }
-                    productName={inquiryDialog.productName}
-                    productId={inquiryDialog.productId}
-                />
-
-                {/* Equipment Configurator Modal */}
-                <ConfiguratorModal
-                    isOpen={configuratorOpen}
-                    onClose={() => setConfiguratorOpen(false)}
-                    onEquipmentSelect={setSelectedEquipment}
-                    selectedEquipment={selectedEquipment}
-                    equipmentData={equipmentDatabase}
-                />
-
-                {/* Comparison Bar - Shows when products are selected */}
-                <ComparisonBar
-                    products={products}
-                    onCompare={() => setComparisonModalOpen(true)}
-                />
-
-                {/* Comparison Modal */}
-                <ComparisonModal
-                    products={products.filter(p => comparisonProducts.includes(p._id))}
-                    isOpen={comparisonModalOpen}
-                    onClose={() => setComparisonModalOpen(false)}
-                />
+                {/* Overvlay effects */}
+                <ComparisonBar products={products} onCompare={() => setComparisonModalOpen(true)} />
+                <ComparisonModal products={products.filter(p => comparisonProducts.includes(p._id))} isOpen={comparisonModalOpen} onClose={() => setComparisonModalOpen(false)} />
+                <ConfiguratorModal isOpen={configuratorOpen} onClose={() => setConfiguratorOpen(false)} onEquipmentSelect={setSelectedEquipment} selectedEquipment={selectedEquipment} equipmentData={equipmentDatabase} />
+                <QuickInquiryDialog open={inquiryDialog.open} onOpenChange={(open) => setInquiryDialog({ ...inquiryDialog, open })} productName={inquiryDialog.productName} productId={inquiryDialog.productId} />
             </div>
+
+            {/* Bottom Fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-navy to-transparent pointer-events-none" />
         </div>
     );
 }
+

@@ -2,6 +2,7 @@
 
 import { Header } from "./Header"
 import { SkipLink } from "./SkipLink"
+import { Footer } from "./Footer"
 import { WhatsAppButton } from "./WhatsAppButton"
 import { CookieConsent } from "./CookieConsent"
 import { ReactNode } from "react"
@@ -14,23 +15,23 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
-  const isAdmin = pathname?.startsWith('/admin')
-
-  if (isAdmin) {
-    return <>{children}</>
-  }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex flex-col relative">
+    <div className="min-h-screen bg-navy flex flex-col relative">
       <SkipLink />
       <Header />
-      <main id="main-content" className="flex-1 pt-16" tabIndex={-1}>
+      {/* Spacer to push content below fixed header */}
+      <div className="h-20 w-full shrink-0" aria-hidden="true" />
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         <div className="w-full">
           {children}
         </div>
       </main>
 
+      {/* Global Footer */}
+      <Footer />
+
       {/* Floating WhatsApp Button - visible on all pages */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-[60]">
         <WhatsAppButton
           message="Hello! I'm interested in heavy equipment spare parts."
           phoneNumber="966570196677"

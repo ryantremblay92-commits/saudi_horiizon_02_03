@@ -1,28 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db/mongodb';
-import Product from '@/lib/db/models/Product';
+import fs from 'fs';
+import path from 'path';
+
+// Get products from JSON file
+function getProductsFromJSON(): any[] {
+    try {
+        const productsPath = path.join(process.cwd(), 'products.json');
+        const data = fs.readFileSync(productsPath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading products.json:', error);
+        return [];
+    }
+}
 
 export async function GET(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        await connectDB();
+        const { id } = await params;
 
-        const { id } = await context.params;
-        const currentProduct = await Product.findById(id);
+        // Get all products from JSON
+        const products = getProductsFromJSON();
+
+        // Find the current product
+        const currentProduct = products.find(p => p._id === id || p.sku === id);
 
         if (!currentProduct) {
             return NextResponse.json(
-                { error: 'Current product not found' },
+                { error: 'Product not found' },
                 { status: 404 }
             );
         }
 
-        const similarProducts = await Product.find({
-            category: currentProduct.category,
-            _id: { $ne: id }, // Exclude the current product
-        }).limit(4); // Limit to 4 similar products
+        // Find similar products (same category, excluding current product)
+        const similarProducts = products
+            .filter(p => p._id !== id && p.category === currentProduct.category)
+            .slice(0, 4);
 
         return NextResponse.json(similarProducts);
     } catch (error: unknown) {

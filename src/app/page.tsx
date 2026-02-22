@@ -10,29 +10,42 @@ import { TestimonialsSection } from "@/components/home/premium/TestimonialsSecti
 import { HomeCTASection } from "@/components/home/premium/HomeCTASection";
 import { FeaturedArticlesSection } from "@/components/home/premium/FeaturedArticlesSection";
 import { FAQSection } from "@/components/home/premium/FAQSection";
-import { CTAFooterSection } from "@/components/home/premium/CTAFooterSection";
+import { StatsSection } from "@/components/home/premium/StatsSection";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+
+import { AnimatedConnector, FloatingParticles } from "@/components/effects/SceneEffects";
 
 export default function Home() {
     return (
-        <main className="flex min-h-screen flex-col bg-navy">
+        <div className="flex min-h-screen flex-col bg-navy relative">
+            {/* Ambient Background Particles */}
+            <FloatingParticles />
+
             <HeroSection />
+            <AnimatedConnector />
             <BrandStripSection />
-
-            <div className="section-divider" />
+            <AnimatedConnector />
+            <StatsSection />
+            <AnimatedConnector />
             <FeaturesGridSection />
+            <AnimatedConnector />
             <CategoriesSection />
+            <AnimatedConnector />
             <ProductsSection />
+            <AnimatedConnector />
             <SplitStorySection />
-
-            <div className="section-divider" />
+            <AnimatedConnector />
             <TestimonialsSection />
-
-            <div className="section-divider" />
+            <AnimatedConnector />
             <HomeCTASection />
+            <AnimatedConnector />
             <FeaturedArticlesSection />
+            <AnimatedConnector />
             <FAQSection />
 
-            <CTAFooterSection />
-        </main>
+            {/* Bottom Fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy to-transparent pointer-events-none" />
+        </div>
     );
 }

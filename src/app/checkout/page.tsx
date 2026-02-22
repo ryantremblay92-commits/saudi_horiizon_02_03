@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Check, CreditCard, Truck, MapPin, FileText, Shield, Lock, ShoppingCart } from 'lucide-react';
+import { ChevronRight, Check, CreditCard, Truck, MapPin, FileText, Shield, Lock, ShoppingCart, ArrowRight, Box, ShieldCheck, Clock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { getCart, clearCart, CartItem } from '@/api/cart';
 import { toast } from 'sonner';
+import { FloatingParticles, AnimatedConnector } from "@/components/effects/SceneEffects";
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'review';
 
@@ -29,10 +30,10 @@ interface ShippingAddress {
 }
 
 const steps: { id: CheckoutStep; title: string; icon: React.ReactNode }[] = [
-    { id: 'information', title: 'Information', icon: <MapPin className="w-5 h-5" /> },
-    { id: 'shipping', title: 'Shipping', icon: <Truck className="w-5 h-5" /> },
-    { id: 'payment', title: 'Payment', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'review', title: 'Review', icon: <FileText className="w-5 h-5" /> },
+    { id: 'information', title: 'LOGISTICS INFO', icon: <MapPin className="w-5 h-5" /> },
+    { id: 'shipping', title: 'DISPATCH MODE', icon: <Truck className="w-5 h-5" /> },
+    { id: 'payment', title: 'AUTHORIZATION', icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'review', title: 'FINAL REVIEW', icon: <FileText className="w-5 h-5" /> },
 ];
 
 export default function CheckoutPage() {
@@ -40,6 +41,7 @@ export default function CheckoutPage() {
     const [currentStep, setCurrentStep] = useState<CheckoutStep>('information');
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
         firstName: '',
@@ -55,25 +57,27 @@ export default function CheckoutPage() {
 
     const [shippingMethod, setShippingMethod] = useState('standard');
     const [paymentMethod, setPaymentMethod] = useState('card');
-
-    // Promo code state
     const [promoCode, setPromoCode] = useState('');
     const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
     const [discount, setDiscount] = useState(0);
 
-    React.useEffect(() => {
+    const [orderId, setOrderId] = useState('');
+
+    useEffect(() => {
+        setMounted(true);
+        setOrderId(Math.random().toString(36).substr(2, 9).toUpperCase());
         const items = getCart();
-        if (items.length === 0) {
+        if (items.length === 0 && mounted) {
             router.push('/products');
             return;
         }
         setCartItems(items);
-    }, [router]);
+    }, [router, mounted]);
 
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shipping = shippingMethod === 'express' ? 15 : shippingMethod === 'overnight' ? 25 : 0;
     const discountAmount = subtotal * discount;
-    const tax = (subtotal - discountAmount) * 0.1;
+    const tax = (subtotal - discountAmount) * 0.15;
     const total = subtotal - discountAmount + shipping + tax;
 
     const stepIndex = steps.findIndex(s => s.id === currentStep);
@@ -93,53 +97,67 @@ export default function CheckoutPage() {
     };
 
     const handleApplyPromo = () => {
-        // Mock promo code validation
-        if (promoCode.toUpperCase() === 'SAVE10') {
+        if (promoCode.toUpperCase() === 'INDUSTRIAL10') {
             setDiscount(0.1);
-            setAppliedPromo('SAVE10');
-            toast.success('Promo code applied! 10% off');
-        } else if (promoCode.toUpperCase() === 'SAVE20') {
-            setDiscount(0.2);
-            setAppliedPromo('SAVE20');
-            toast.success('Promo code applied! 20% off');
+            setAppliedPromo('INDUSTRIAL10');
+            toast.success('PROMO AUTHORIZED', { description: '10% discount applied to your order' });
         } else {
-            toast.error('Invalid promo code');
+            toast.error('INVALID CODE', { description: 'The promo code entered is not recognized by the system' });
         }
     };
 
     const handlePlaceOrder = async () => {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        toast.loading('AUTHORIZING TRANSACTION...', { id: 'checkout' });
+
+        await new Promise(resolve => setTimeout(resolve, 2500));
 
         clearCart();
-        toast.success('Order placed successfully!');
+        toast.success('PROCUREMENT COMPLETE', {
+            id: 'checkout',
+            description: 'Your order has been logged in our central system'
+        });
         router.push('/checkout/success');
+        setLoading(false);
     };
 
+    if (!mounted) return null;
+
     const renderStepIndicator = () => (
-        <div className="flex items-center justify-center mb-8 flex-wrap gap-2">
+        <div className="flex items-center justify-center mb-16 flex-wrap gap-4 overflow-x-auto py-4">
             {steps.map((step, index) => (
                 <React.Fragment key={step.id}>
                     <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className={`flex items-center gap-2 ${index <= stepIndex ? 'text-gold' : 'text-slate-500'
-                            }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`flex items-center gap-3 shrink-0 ${index <= stepIndex ? 'text-gold' : 'text-white/20'}`}
                     >
                         <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${index < stepIndex
-                                ? 'bg-gold text-navy'
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 relative ${index < stepIndex
+                                ? 'bg-gold text-navy shadow-[0_0_20px_rgba(197,160,89,0.4)]'
                                 : index === stepIndex
-                                    ? 'bg-gold/20 text-gold border-2 border-gold'
-                                    : 'bg-white/5 text-slate-500 border border-white/10'
+                                    ? 'bg-gold/10 text-gold border-2 border-gold/50 shadow-[0_0_30px_rgba(197,160,89,0.2)]'
+                                    : 'bg-white/5 text-white/20 border border-white/10'
                                 }`}
                         >
-                            {index < stepIndex ? <Check className="w-5 h-5" /> : step.icon}
+                            {index < stepIndex ? <Check className="w-6 h-6 stroke-[3px]" /> : step.icon}
+                            {index === stepIndex && (
+                                <motion.div
+                                    layoutId="active-step-glow"
+                                    className="absolute -inset-2 bg-gold/10 rounded-[1.5rem] blur-xl"
+                                />
+                            )}
                         </div>
-                        <span className="hidden sm:inline text-sm font-medium">{step.title}</span>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Step 0{index + 1}</span>
+                            <span className={`text-xs font-black uppercase tracking-[0.1em] ${index === stepIndex ? 'text-white' : ''}`}>
+                                {step.title}
+                            </span>
+                        </div>
                     </motion.div>
                     {index < steps.length - 1 && (
-                        <ChevronRight className="w-5 h-5 mx-2 text-slate-600" />
+                        <div className={`w-12 h-[2px] rounded-full mx-2 ${index < stepIndex ? 'bg-gold' : 'bg-white/5'}`} />
                     )}
                 </React.Fragment>
             ))}
@@ -151,130 +169,88 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
         >
-            <Card className="glass border-white/5">
-                <CardHeader>
-                    <CardTitle className="text-white font-display">Contact Information</CardTitle>
-                    <CardDescription className="text-slate-400">We'll use this to send your order confirmation</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <h3 className="text-xl font-black text-white flex items-center gap-3" style={{ fontFamily: 'var(--font-display)' }}>
+                        <div className="w-1.5 h-6 bg-gold rounded-full" />
+                        Procurement Officer
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="firstName" className="text-slate-300">First Name</Label>
+                            <Label htmlFor="firstName" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">First Name</Label>
                             <Input
                                 id="firstName"
                                 value={shippingAddress.firstName}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, firstName: e.target.value })}
-                                placeholder="John"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
+                                placeholder="e.g. Abdullah"
+                                className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lastName" className="text-slate-300">Last Name</Label>
+                            <Label htmlFor="lastName" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Last Name</Label>
                             <Input
                                 id="lastName"
                                 value={shippingAddress.lastName}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, lastName: e.target.value })}
-                                placeholder="Doe"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
+                                placeholder="e.g. Al-Fahad"
+                                className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
                             />
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-slate-300">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={shippingAddress.email}
-                                onChange={(e) => setShippingAddress({ ...shippingAddress, email: e.target.value })}
-                                placeholder="john@example.com"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone" className="text-slate-300">Phone</Label>
-                            <Input
-                                id="phone"
-                                type="tel"
-                                value={shippingAddress.phone}
-                                onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
-                                placeholder="+965 12345678"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <Separator className="my-6 bg-white/10" />
-
-                    <CardTitle className="text-lg text-white">Shipping Address</CardTitle>
-
                     <div className="space-y-2">
-                        <Label htmlFor="address" className="text-slate-300">Address</Label>
+                        <Label htmlFor="email" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Corporate Email</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            value={shippingAddress.email}
+                            onChange={(e) => setShippingAddress({ ...shippingAddress, email: e.target.value })}
+                            placeholder="officer@corporate-domain.com"
+                            className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <h3 className="text-xl font-black text-white flex items-center gap-3" style={{ fontFamily: 'var(--font-display)' }}>
+                        <div className="w-1.5 h-6 bg-gold rounded-full" />
+                        Logistics Destination
+                    </h3>
+                    <div className="space-y-2">
+                        <Label htmlFor="address" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Facility Address</Label>
                         <Input
                             id="address"
                             value={shippingAddress.address}
                             onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
-                            placeholder="123 Street Name, Block 4"
-                            className="bg-white/5 border-white/10 text-white"
-                            required
+                            placeholder="Unit/Block Number, Street Name"
+                            className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
                         />
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="city" className="text-slate-300">City</Label>
+                            <Label htmlFor="city" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">City/Area</Label>
                             <Input
                                 id="city"
                                 value={shippingAddress.city}
                                 onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                                 placeholder="Kuwait City"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
+                                className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="state" className="text-slate-300">Area</Label>
+                            <Label htmlFor="phone" className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Contact Phone</Label>
                             <Input
-                                id="state"
-                                value={shippingAddress.state}
-                                onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
-                                placeholder="Salmiya"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
+                                id="phone"
+                                value={shippingAddress.phone}
+                                onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                                placeholder="+965 XXXX XXXX"
+                                className="bg-white/5 border-white/10 text-white h-14 rounded-xl focus:border-gold/50 focus:ring-0 transition-all"
                             />
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="zipCode" className="text-slate-300">Block</Label>
-                            <Input
-                                id="zipCode"
-                                value={shippingAddress.zipCode}
-                                onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
-                                placeholder="4"
-                                className="bg-white/5 border-white/10 text-white"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="country" className="text-slate-300">Country</Label>
-                            <Input
-                                id="country"
-                                value={shippingAddress.country}
-                                onChange={(e) => setShippingAddress({ ...shippingAddress, country: e.target.value })}
-                                className="bg-white/5 border-white/10 text-white"
-                                disabled
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </motion.div>
     );
 
@@ -283,54 +259,37 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
         >
-            <Card className="glass border-white/5">
-                <CardHeader>
-                    <CardTitle className="text-white font-display">Shipping Method</CardTitle>
-                    <CardDescription className="text-slate-400">Select your preferred shipping option</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <RadioGroup value={shippingMethod} onValueChange={setShippingMethod}>
-                        <div className="space-y-4">
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${shippingMethod === 'standard' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="standard" id="standard" />
-                                    <div>
-                                        <Label htmlFor="standard" className="font-semibold text-white">Standard Shipping</Label>
-                                        <p className="text-sm text-slate-400">5-7 business days</p>
-                                    </div>
-                                </div>
-                                <span className="text-gold font-bold">FREE</span>
-                            </div>
-
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${shippingMethod === 'express' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="express" id="express" />
-                                    <div>
-                                        <Label htmlFor="express" className="font-semibold text-white">Express Shipping</Label>
-                                        <p className="text-sm text-slate-400">2-3 business days</p>
-                                    </div>
-                                </div>
-                                <span className="text-white font-bold">KWD 15.00</span>
-                            </div>
-
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${shippingMethod === 'overnight' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="overnight" id="overnight" />
-                                    <div>
-                                        <Label htmlFor="overnight" className="font-semibold text-white">Overnight Shipping</Label>
-                                        <p className="text-sm text-slate-400">Next business day</p>
-                                    </div>
-                                </div>
-                                <span className="text-white font-bold">KWD 25.00</span>
-                            </div>
+            <h3 className="text-xl font-black text-white flex items-center gap-3 mb-8" style={{ fontFamily: 'var(--font-display)' }}>
+                <div className="w-1.5 h-6 bg-gold rounded-full" />
+                Select Dispatch Logistics
+            </h3>
+            <RadioGroup value={shippingMethod} onValueChange={setShippingMethod} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                    { id: 'standard', title: 'Standard Freight', time: '5-7 working days', price: 0, icon: Box },
+                    { id: 'express', title: 'Express Cargo', time: '2-3 working days', price: 15, icon: Truck },
+                    { id: 'overnight', title: 'Critical Overnight', time: 'Next Morning', price: 25, icon: Zap },
+                ].map((method) => (
+                    <div
+                        key={method.id}
+                        onClick={() => setShippingMethod(method.id)}
+                        className={`card-premium p-8 rounded-[2rem] border-2 cursor-pointer transition-all duration-500 relative group flex flex-col items-center text-center ${shippingMethod === method.id ? 'border-gold bg-gold/10' : 'border-white/5 hover:border-gold/30'}`}
+                    >
+                        <div className={`p-4 rounded-2xl mb-4 transition-colors ${shippingMethod === method.id ? 'bg-gold text-navy' : 'bg-white/5 text-white/20'}`}>
+                            <method.icon className="w-8 h-8" />
                         </div>
-                    </RadioGroup>
-                </CardContent>
-            </Card>
+                        <h4 className="text-lg font-black text-white mb-2">{method.title}</h4>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-6">{method.time}</p>
+                        <div className="mt-auto">
+                            <span className={`text-xl font-black ${method.price === 0 ? 'text-emerald-500' : 'text-gold'}`}>
+                                {method.price === 0 ? 'PROTOCOL COMP' : `KWD ${method.price.toFixed(2)}`}
+                            </span>
+                        </div>
+                        <RadioGroupItem value={method.id} id={method.id} className="sr-only" />
+                    </div>
+                ))}
+            </RadioGroup>
         </motion.div>
     );
 
@@ -339,67 +298,47 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
         >
-            <Card className="glass border-white/5">
-                <CardHeader>
-                    <CardTitle className="text-white font-display">Payment Method</CardTitle>
-                    <CardDescription className="text-slate-400">Select your preferred payment option</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <div className="space-y-4">
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'card' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="card" id="card" />
-                                    <div>
-                                        <Label htmlFor="card" className="font-semibold text-white">Credit/Debit Card</Label>
-                                        <p className="text-sm text-slate-400">Visa, Mastercard, KNET</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded text-slate-300">VISA</span>
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded text-slate-300">MC</span>
-                                    <span className="text-xs bg-white/10 px-2 py-1 rounded text-slate-300">KNET</span>
-                                </div>
-                            </div>
-
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'knet' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="knet" id="knet" />
-                                    <div>
-                                        <Label htmlFor="knet" className="font-semibold text-white">KNET</Label>
-                                        <p className="text-sm text-slate-400">Pay with KNET debit cards</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={`flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-gold bg-gold/5' : 'border-white/10 hover:border-gold/30'
-                                }`}>
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="cod" id="cod" />
-                                    <div>
-                                        <Label htmlFor="cod" className="font-semibold text-white">Cash on Delivery</Label>
-                                        <p className="text-sm text-slate-400">Pay when you receive</p>
-                                    </div>
-                                </div>
-                                <span className="text-sm text-slate-400">+KWD 2.00</span>
-                            </div>
+            <h3 className="text-xl font-black text-white flex items-center gap-3 mb-8" style={{ fontFamily: 'var(--font-display)' }}>
+                <div className="w-1.5 h-6 bg-gold rounded-full" />
+                Transaction Authorization
+            </h3>
+            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
+                {[
+                    { id: 'card', title: 'Corporate Credit/Debit', desc: 'Secure processing via VISA/MasterCard/KNET', icon: CreditCard },
+                    { id: 'knet', title: 'KNET Gateway', desc: 'Direct bank transfer authorization', icon: ShieldCheck },
+                ].map((method) => (
+                    <div
+                        key={method.id}
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`card-premium p-6 rounded-2xl border-2 cursor-pointer transition-all duration-500 flex items-center gap-6 ${paymentMethod === method.id ? 'border-gold bg-gold/10' : 'border-white/5 hover:border-gold/30'}`}
+                    >
+                        <div className={`p-4 rounded-xl ${paymentMethod === method.id ? 'bg-gold text-navy' : 'bg-white/5 text-white/20'}`}>
+                            <method.icon className="w-6 h-6" />
                         </div>
-                    </RadioGroup>
-
-                    <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
-                        <div className="flex items-center gap-2 text-sm">
-                            <Shield className="w-4 h-4 text-gold" />
-                            <span className="font-medium text-white">Secure Payment</span>
+                        <div className="flex-1">
+                            <h4 className="font-black text-white mb-1 uppercase tracking-wider">{method.title}</h4>
+                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{method.desc}</p>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">
-                            Your payment information is encrypted and secure. We never store your full card details.
-                        </p>
+                        <RadioGroupItem value={method.id} id={method.id} className="sr-only" />
+                        {paymentMethod === method.id && <Check className="w-6 h-6 text-gold" />}
                     </div>
-                </CardContent>
-            </Card>
+                ))}
+            </RadioGroup>
+
+            {/* Security Box */}
+            <div className="mt-10 p-8 rounded-3xl bg-white/5 border border-white/5 flex items-center gap-8">
+                <div className="p-4 rounded-2xl bg-gold/10 border border-gold/20">
+                    <Lock className="w-8 h-8 text-gold" />
+                </div>
+                <div>
+                    <h4 className="text-sm font-black text-white mb-1 uppercase tracking-widest text-gradient-gold">Encrypted Authorization</h4>
+                    <p className="text-[10px] leading-relaxed text-white/30 uppercase tracking-[0.15em] font-bold">
+                        Phase-3 SSL encryption active. Your corporate payment credentials are never stored in our local technical databases.
+                    </p>
+                </div>
+            </div>
         </motion.div>
     );
 
@@ -408,254 +347,200 @@ export default function CheckoutPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
         >
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-2 gap-12">
                 <div className="space-y-6">
-                    <Card className="glass border-white/5">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <MapPin className="w-5 h-5 text-gold" />
-                                Shipping Address
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-slate-300">
-                                {shippingAddress.firstName} {shippingAddress.lastName}<br />
-                                {shippingAddress.address}<br />
-                                {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zipCode}<br />
-                                {shippingAddress.country}<br />
-                                {shippingAddress.email}<br />
-                                {shippingAddress.phone}
-                            </p>
-                            <Button variant="link" size="sm" onClick={() => setCurrentStep('information')} className="mt-2 p-0 text-gold hover:text-white">
-                                Edit
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="card-premium p-8 rounded-[2rem] border-white/5 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 text-gold/5 group-hover:text-gold/10 transition-colors">
+                            <MapPin className="w-24 h-24" />
+                        </div>
+                        <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.4em] mb-6">Logistics Destination</h4>
+                        <div className="space-y-2">
+                            <p className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>{shippingAddress.firstName} {shippingAddress.lastName}</p>
+                            <p className="text-sm text-white/60 font-medium">{shippingAddress.address}</p>
+                            <p className="text-sm text-white/60 font-medium">{shippingAddress.city}, {shippingAddress.country}</p>
+                            <p className="text-sm text-white/60 font-medium pt-4">{shippingAddress.email}</p>
+                        </div>
+                        <Button variant="link" size="sm" onClick={() => setCurrentStep('information')} className="mt-6 p-0 text-gold hover:text-white uppercase text-[10px] font-black tracking-widest">Modify Details</Button>
+                    </div>
 
-                    <Card className="glass border-white/5">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <Truck className="w-5 h-5 text-gold" />
-                                Shipping Method
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-slate-300 capitalize">
-                                {shippingMethod === 'standard' && 'Standard Shipping (5-7 days)'}
-                                {shippingMethod === 'express' && 'Express Shipping (2-3 days)'}
-                                {shippingMethod === 'overnight' && 'Overnight Shipping'}
-                            </p>
-                            <Button variant="link" size="sm" onClick={() => setCurrentStep('shipping')} className="mt-2 p-0 text-gold hover:text-white">
-                                Edit
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="card-premium p-8 rounded-[2rem] border-white/5 flex items-center justify-between">
+                        <div>
+                            <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.4em] mb-2">Dispatch Protocol</h4>
+                            <p className="text-lg font-black text-white capitalize">{shippingMethod} Logistics</p>
+                        </div>
+                        <Truck className="w-10 h-10 text-white/10" />
+                    </div>
 
-                    <Card className="glass border-white/5">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <CreditCard className="w-5 h-5 text-gold" />
-                                Payment Method
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-slate-300 capitalize">
-                                {paymentMethod === 'card' && 'Credit/Debit Card'}
-                                {paymentMethod === 'knet' && 'KNET'}
-                                {paymentMethod === 'cod' && 'Cash on Delivery'}
-                            </p>
-                            <Button variant="link" size="sm" onClick={() => setCurrentStep('payment')} className="mt-2 p-0 text-gold hover:text-white">
-                                Edit
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="card-premium p-8 rounded-[2rem] border-white/5 flex items-center justify-between">
+                        <div>
+                            <h4 className="text-[10px] font-black text-gold uppercase tracking-[0.4em] mb-2">Payment Method</h4>
+                            <p className="text-lg font-black text-white capitalize">{paymentMethod === 'card' ? 'Corporate Card' : 'KNET Gateway'}</p>
+                        </div>
+                        <CreditCard className="w-10 h-10 text-white/10" />
+                    </div>
                 </div>
 
-                {/* Order Summary */}
                 <div>
-                    <Card className="glass border-white/5 sticky top-8">
-                        <CardHeader>
-                            <CardTitle className="text-white font-display">Order Summary</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {/* Cart Items */}
-                            <div className="space-y-3 max-h-64 overflow-y-auto">
-                                {cartItems.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-white/5 rounded overflow-hidden">
-                                                <img src={item.image || '/placeholder-image.png'} alt={item.name} className="w-full h-full object-cover" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-white line-clamp-1">{item.name}</p>
-                                                <p className="text-xs text-slate-400">Qty: {item.quantity}</p>
-                                            </div>
+                    <div className="card-premium p-8 md:p-10 rounded-[2.5rem] bg-navy/60 border-gold/10">
+                        <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4" style={{ fontFamily: 'var(--font-display)' }}>
+                            <div className="w-2 h-8 bg-gold rounded-full" />
+                            Pre-Procurement Review
+                        </h3>
+
+                        <div className="space-y-6 max-h-60 overflow-y-auto pr-4 mb-8 custom-scrollbar">
+                            {cartItems.map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 bg-navy border border-white/10 rounded-lg overflow-hidden shrink-0">
+                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                         </div>
-                                        <span className="text-white font-medium">KWD {(item.price * item.quantity).toFixed(2)}</span>
+                                        <div>
+                                            <p className="text-xs font-black text-white uppercase tracking-wider line-clamp-1">{item.name}</p>
+                                            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-1">QTY: {item.quantity}</p>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
-
-                            <Separator className="bg-white/10" />
-
-                            {/* Promo Code */}
-                            <div className="space-y-2">
-                                <Label className="text-slate-300">Promo Code</Label>
-                                {appliedPromo ? (
-                                    <div className="flex items-center justify-between p-2 bg-emerald-500/10 border border-emerald-500/30 rounded">
-                                        <span className="text-emerald-400 text-sm">{appliedPromo} applied</span>
-                                        <button
-                                            onClick={() => { setAppliedPromo(null); setDiscount(0); setPromoCode(''); }}
-                                            className="text-emerald-400 hover:text-white text-sm"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            placeholder="Enter code"
-                                            className="bg-white/5 border-white/10 text-white"
-                                        />
-                                        <Button
-                                            variant="outline"
-                                            onClick={handleApplyPromo}
-                                            className="border-gold text-gold hover:bg-gold hover:text-navy"
-                                        >
-                                            Apply
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <Separator className="bg-white/10" />
-
-                            {/* Totals */}
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-slate-400">Subtotal</span>
-                                    <span className="text-white">KWD {subtotal.toFixed(2)}</span>
+                                    <span className="text-sm font-black text-gold">KWD {(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
-                                {discount > 0 && (
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400">Discount</span>
-                                        <span className="text-emerald-400">-KWD {discountAmount.toFixed(2)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between">
-                                    <span className="text-slate-400">Shipping</span>
-                                    <span className="text-white">{shipping === 0 ? 'FREE' : `KWD ${shipping.toFixed(2)}`}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-400">Tax (10%)</span>
-                                    <span className="text-white">KWD {tax.toFixed(2)}</span>
-                                </div>
+                            ))}
+                        </div>
+
+                        <Separator className="bg-white/5 mb-8" />
+
+                        <div className="space-y-4 text-xs font-black uppercase tracking-widest mb-10">
+                            <div className="flex justify-between items-center">
+                                <span className="text-white/40">Subtotal</span>
+                                <span className="text-white">KWD {subtotal.toFixed(2)}</span>
                             </div>
-
-                            <Separator className="bg-white/10" />
-
-                            <div className="flex justify-between text-lg font-bold">
-                                <span className="text-white">Total</span>
-                                <span className="text-gold">KWD {total.toFixed(2)}</span>
+                            <div className="flex justify-between items-center">
+                                <span className="text-white/40">Logistics Fee</span>
+                                <span className="text-white">KWD {shipping.toFixed(2)}</span>
                             </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-white/40">VAT (15%)</span>
+                                <span className="text-white">KWD {tax.toFixed(2)}</span>
+                            </div>
+                            <div className="pt-6 border-t border-white/5 flex justify-between items-end">
+                                <span className="text-gold tracking-[0.4em] mb-1">TOTAL AUTHORIZED</span>
+                                <span className="text-4xl text-gradient-gold" style={{ fontFamily: 'var(--font-display)' }}>
+                                    KWD {total.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
 
-                            <Button
-                                className="w-full bg-gold hover:bg-yellow text-navy font-bold"
-                                size="lg"
-                                onClick={handlePlaceOrder}
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <span className="flex items-center gap-2">
-                                        <span className="animate-spin">⏳</span> Processing...
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        <Lock className="w-4 h-4" />
-                                        Place Order - KWD {total.toFixed(2)}
-                                    </span>
-                                )}
-                            </Button>
-
-                            <p className="text-xs text-center text-slate-500">
-                                By placing this order, you agree to our Terms of Service and Privacy Policy.
-                            </p>
-                        </CardContent>
-                    </Card>
+                        <Button
+                            className="w-full h-18 text-xl font-black uppercase tracking-[0.2em] rounded-2xl bg-gold text-navy shadow-[0_15px_40px_rgba(197,160,89,0.3)] group relative overflow-hidden"
+                            onClick={handlePlaceOrder}
+                            disabled={loading}
+                        >
+                            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:animate-shimmer" />
+                            {loading ? 'AUTHORIZING...' : 'PLACE PROCUREMENT ORDER'}
+                            {!loading && <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </motion.div>
     );
 
-    if (cartItems.length === 0) {
-        return (
-            <div className="min-h-screen bg-navy py-16">
-                <div className="max-w-6xl mx-auto px-4 text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gold/10 mb-6">
-                        <ShoppingCart className="w-10 h-10 text-gold" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Your cart is empty</h2>
-                    <p className="text-slate-400 mb-6">Add some products to your cart to checkout</p>
-                    <Button
-                        className="bg-gold hover:bg-yellow text-navy font-bold"
-                        onClick={() => router.push('/products')}
-                    >
-                        Browse Products
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-navy text-white py-8 relative">
-            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5 pointer-events-none" />
-            <div className="max-w-6xl mx-auto px-4 relative z-10">
-                <Breadcrumb className="mb-8">
-                    <BreadcrumbList className="text-slate-400">
-                        <BreadcrumbItem>
-                            <BreadcrumbLink onClick={() => router.push('/')} className="hover:text-gold transition-colors">Home</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="text-slate-600" />
-                        <BreadcrumbItem>
-                            <BreadcrumbLink onClick={() => router.push('/cart')} className="hover:text-gold transition-colors">Cart</BreadcrumbLink>
-                        </BreadcrumbItem>
-                        <BreadcrumbSeparator className="text-slate-600" />
-                        <BreadcrumbPage className="text-gold font-medium">Checkout</BreadcrumbPage>
-                    </BreadcrumbList>
-                </Breadcrumb>
+        <div className="text-white pb-24 relative overflow-hidden min-h-screen">
+            {/* Ambient Effects */}
+            <FloatingParticles />
 
-                <h1 className="text-3xl font-bold text-center mb-8 font-display text-white">Checkout</h1>
+            <div className="container-premium relative z-10 pt-8">
+                {/* Breadcrumb */}
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink onClick={() => router.push('/')} className="hover:text-gold cursor-pointer transition-colors text-slate-400 uppercase text-[10px] tracking-[0.2em] font-bold">HOME</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="text-slate-600" />
+                            <BreadcrumbItem>
+                                <BreadcrumbLink onClick={() => router.push('/cart')} className="hover:text-gold cursor-pointer transition-colors text-slate-400 uppercase text-[10px] tracking-[0.2em] font-bold">BASKET</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="text-slate-600" />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage className="text-gold uppercase text-[10px] tracking-[0.2em] font-bold underline underline-offset-4 decoration-gold/30">CHECKOUT PROTOCOL</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </motion.div>
+
+                <div className="mb-12">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="max-w-xl"
+                    >
+                        <span className="micro-label mb-4 block underline decoration-gold/50 underline-offset-8">PHASE 2 / AUTHORIZATION</span>
+                        <h1 className="text-5xl font-black mb-4 tracking-tighter" style={{ fontFamily: 'var(--font-display)' }}>
+                            Procurement <span className="text-gradient-gold">Authorization.</span>
+                        </h1>
+                        <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em]">
+                            Order ID: <span className="text-gold truncate max-w-[150px] inline-block align-bottom">{orderId || 'GENERATING...'}</span> | Security: <span className="text-emerald-500">LEVEL 4 ACTIVE</span>
+                        </p>
+                    </motion.div>
+                </div>
+
+                <AnimatedConnector />
 
                 {renderStepIndicator()}
 
-                <AnimatePresence mode="wait">
-                    {currentStep === 'information' && renderInformationStep()}
-                    {currentStep === 'shipping' && renderShippingStep()}
-                    {currentStep === 'payment' && renderPaymentStep()}
-                    {currentStep === 'review' && renderReviewStep()}
-                </AnimatePresence>
+                <div className="mt-12">
+                    <AnimatePresence mode="wait">
+                        {currentStep === 'information' && renderInformationStep()}
+                        {currentStep === 'shipping' && renderShippingStep()}
+                        {currentStep === 'payment' && renderPaymentStep()}
+                        {currentStep === 'review' && renderReviewStep()}
+                    </AnimatePresence>
+                </div>
 
-                {currentStep !== 'review' && (
-                    <div className="flex justify-between mt-8">
+                <div className="flex justify-between items-center mt-16 pt-8 border-t border-white/5">
+                    <Button
+                        variant="ghost"
+                        onClick={handlePrevStep}
+                        disabled={stepIndex === 0}
+                        className="text-[10px] font-black text-white/40 hover:text-white uppercase tracking-[0.3em] disabled:opacity-0 transition-all"
+                    >
+                        Return to Previous Phase
+                    </Button>
+
+                    {currentStep !== 'review' && (
                         <Button
-                            variant="outline"
-                            onClick={handlePrevStep}
-                            disabled={stepIndex === 0}
-                            className="border-white/10 text-slate-300 hover:text-white hover:border-gold/30"
+                            className="h-16 px-12 rounded-2xl bg-white/5 border border-white/10 text-white hover:border-gold/50 hover:bg-gold hover:text-navy font-black uppercase tracking-[0.2em] transition-all group"
+                            onClick={handleNextStep}
                         >
-                            Back
+                            Logistics Continuity
+                            <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>
-                        <Button className="bg-gold hover:bg-yellow text-navy font-bold" onClick={handleNextStep}>
-                            Continue
-                            <ChevronRight className="w-4 h-4 ml-2" />
-                        </Button>
+                    )}
+                </div>
+
+                {/* Footer Utility */}
+                <div className="mt-20 flex flex-col md:flex-row justify-between items-center gap-8 py-10 border-t border-white/5">
+                    <div className="flex items-center gap-8 text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">
+                        <span className="flex items-center gap-2"><Shield size={10} className="text-gold/40" /> 256-bit AES Encryption</span>
+                        <span className="flex items-center gap-2"><Check size={10} className="text-gold/40" /> ISO Certified Protocol</span>
+                        <span className="flex items-center gap-2"><Zap size={10} className="text-gold/40" /> Latency Optimized</span>
                     </div>
-                )}
+                    <div className="flex gap-4">
+                        <div className="w-10 h-6 bg-white/5 rounded-sm border border-white/10" />
+                        <div className="w-10 h-6 bg-white/5 rounded-sm border border-white/10" />
+                        <div className="w-10 h-6 bg-white/5 rounded-sm border border-white/10" />
+                    </div>
+                </div>
             </div>
+
+            {/* Bottom Fade */}
+            <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-navy to-transparent pointer-events-none" />
         </div>
     );
 }
+

@@ -1,8 +1,39 @@
 "use client";
 
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+function Counter({ value, suffix, inView }: { value: number; suffix: string; inView: boolean }) {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        if (!inView) return;
+
+        let start = 0;
+        const duration = 2000;
+        const increment = value / (duration / 16);
+
+        const timer = setInterval(() => {
+            start += increment;
+            if (start >= value) {
+                setCount(value);
+                clearInterval(timer);
+            } else {
+                setCount(Math.floor(start));
+            }
+        }, 16);
+
+        return () => clearInterval(timer);
+    }, [inView, value]);
+
+    return (
+        <span className="text-3xl md:text-4xl font-bold text-gradient-gold block mb-1">
+            {count}{suffix}
+        </span>
+    );
+}
 
 export function SplitStorySection() {
     const containerRef = useRef(null);
@@ -13,111 +44,110 @@ export function SplitStorySection() {
         offset: ["start end", "end start"]
     });
 
-    const y = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+    const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
 
     return (
-        <section ref={containerRef} className="relative min-h-[650px] flex pt-12">
-            {/* Left - Image with Parallax */}
-            <div className="w-1/2 relative overflow-hidden hidden lg:block">
-                <motion.div
-                    className="absolute inset-0"
-                    style={{ y }}
-                >
-                    <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{
-                            backgroundImage: "url('/images/home/excellence.png')",
-                        }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[var(--color-bg-primary)]" />
-                </motion.div>
+        <section ref={containerRef} className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
+            <div className="container-premium">
+                <div className="bg-white/5 rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col lg:flex-row relative">
 
-                {/* Gold Accent Line */}
-                <div className="absolute right-0 top-0 bottom-0 w-px bg-[var(--color-accent)]" />
-            </div>
-
-            {/* Right - Content */}
-            <div className="w-full lg:w-1/2 flex items-center bg-[var(--color-bg-primary)]">
-                <div className="container-premium pt-0 pb-16">
-                    <div className="max-w-xl ml-auto">
-                        {/* Micro Label */}
+                    {/* Left - Image with Parallax */}
+                    <div className="w-full lg:w-[42%] relative h-[400px] lg:h-auto overflow-hidden">
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                            className="micro-label mb-6"
+                            className="absolute inset-0"
+                            style={{ y }}
                         >
-                            OUR STORY
+                            <div
+                                className="absolute inset-x-0 -inset-y-20 bg-cover bg-center"
+                                style={{
+                                    backgroundImage: "url('/images/home/excellence.png')",
+                                }}
+                            />
                         </motion.div>
 
-                        {/* Headline */}
-                        <motion.h2
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className="heading-md mb-10"
-                        >
-                            Decades of <span className="text-gradient-gold">excellence</span> in heavy equipment
-                        </motion.h2>
+                        {/* Shaded Overlays */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent hidden lg:block" />
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent lg:hidden" />
 
-                        {/* Content */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.8, delay: 0.3 }}
-                            className="space-y-7"
-                        >
-                            <p className="text-body-lg text-white/70">
-                                Since 2009, Saudi Horizon has been the trusted name in heavy equipment
-                                parts across the Middle East. What started as a small warehouse in Riyadh
-                                has grown into a regional leader.
-                            </p>
-                            <p className="text-body-lg text-white/70">
-                                We understand that downtime costs thousands per hour. That's why we've
-                                built our entire operation around speed, reliability, and technical expertise.
-                            </p>
-                            <p className="text-body-lg text-white/70">
-                                Every team member—from our parts specialists to our logistics coordinators—
-                                is committed to one goal: keeping your equipment running.
-                            </p>
-                        </motion.div>
+                        {/* Gold Accent Line (Vertical Divider) */}
+                        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent hidden lg:block" />
+                    </div>
 
-                        {/* Stats Row */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.8, delay: 0.4 }}
-                            className="grid grid-cols-3 gap-8 mt-14 pt-10 border-t border-white/10"
-                        >
-                            <div>
-                                <div className="text-4xl font-bold text-gradient-gold mb-2">500+</div>
-                                <div className="text-sm text-white/50 font-medium">OEM Parts</div>
+                    {/* Right - Content */}
+                    <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-20 bg-gradient-to-br from-white/[0.02] to-transparent">
+                        <div className="max-w-xl">
+                            {/* Micro Label */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                                transition={{ duration: 0.6, delay: 0.1 }}
+                                className="flex items-center gap-3 mb-6"
+                            >
+                                <div className="w-8 h-px bg-gold/50" />
+                                <span className="micro-label">OUR MISSION & STORY</span>
+                            </motion.div>
+
+                            {/* Headline */}
+                            <motion.h2
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                                transition={{ duration: 0.8, delay: 0.2 }}
+                                className="heading-md mb-8"
+                            >
+                                Decades of <span className="text-gradient-gold">excellence</span> in heavy equipment
+                            </motion.h2>
+
+                            {/* Content */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                                transition={{ duration: 0.8, delay: 0.3 }}
+                                className="space-y-6 mb-12"
+                            >
+                                <p className="text-body-lg text-white/70 leading-relaxed">
+                                    Since 2009, Saudi Horizon has been the trusted name in heavy equipment
+                                    parts across the Middle East. What started as a small warehouse in Riyadh
+                                    has grown into a regional leader.
+                                </p>
+                                <p className="text-body-lg text-white/70 leading-relaxed">
+                                    We understand that downtime costs thousands per hour. That's why we've
+                                    built our entire operation around speed, reliability, and technical expertise.
+                                </p>
+                            </motion.div>
+
+                            {/* Stats Row */}
+                            <div className="grid grid-cols-3 gap-6 md:gap-10 py-10 border-y border-white/5 mb-10">
+                                <div className="text-center lg:text-left">
+                                    <Counter value={500} suffix="+" inView={isInView} />
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">OEM Parts</div>
+                                </div>
+                                <div className="text-center lg:text-left">
+                                    <Counter value={24} suffix="/7" inView={isInView} />
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Support</div>
+                                </div>
+                                <div className="text-center lg:text-left">
+                                    <Counter value={98} suffix="%" inView={isInView} />
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">On-Time</div>
+                                </div>
                             </div>
-                            <div>
-                                <div className="text-4xl font-bold text-gradient-gold mb-2">24/7</div>
-                                <div className="text-sm text-white/50 font-medium">Support</div>
-                            </div>
-                            <div>
-                                <div className="text-4xl font-bold text-gradient-gold mb-2">98%</div>
-                                <div className="text-sm text-white/50 font-medium">On-Time</div>
-                            </div>
-                        </motion.div>
 
-                        {/* CTA */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                            transition={{ duration: 0.8, delay: 0.5 }}
-                            className="mt-12"
-                        >
-                            <a href="/about" className="btn-primary inline-flex">
-                                Learn Our Story
-                                <ArrowRight className="w-4 h-4" />
-                            </a>
-                        </motion.div>
+                            {/* CTA */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                                transition={{ duration: 0.8, delay: 0.5 }}
+                            >
+                                <Link href="/about" className="btn-primary inline-flex">
+                                    Learn Our Story
+                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                </Link>
+                            </motion.div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
     );
 }
+
+

@@ -16,6 +16,7 @@ import { CompatibilityFilter, AvailabilityFilter, AvailabilityStatus } from './f
 import type { Equipment } from '@/lib/equipment';
 
 interface FilterSidebarProps {
+  filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   selectedEquipment?: Equipment | null;
   onEquipmentChange?: () => void;
@@ -32,6 +33,7 @@ export interface FilterState {
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
+  filters,
   onFilterChange,
   selectedEquipment,
   onEquipmentChange,
@@ -43,12 +45,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [productCounts, setProductCounts] = useState<{ brands: Record<string, number>, categories: Record<string, number> }>({ brands: {}, categories: {} });
 
-  const [filters, setFilters] = useState<FilterState>({
-    brands: [],
-    categories: [],
-    priceRange: [0, 5000],
-    search: '',
-  });
+
 
   useEffect(() => {
     const loadFilterOptions = async () => {
@@ -89,9 +86,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       ? [...filters.brands, brand]
       : filters.brands.filter((b) => b !== brand);
 
-    const newFilters = { ...filters, brands: newBrands };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ ...filters, brands: newBrands });
   };
 
   const handleCategoryChange = (category: string, checked: boolean) => {
@@ -99,27 +94,19 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       ? [...filters.categories, category]
       : filters.categories.filter((c) => c !== category);
 
-    const newFilters = { ...filters, categories: newCategories };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ ...filters, categories: newCategories });
   };
 
   const handlePriceChange = (value: number[]) => {
-    const newFilters = { ...filters, priceRange: [value[0], value[1]] as [number, number] };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ ...filters, priceRange: [value[0], value[1]] as [number, number] });
   };
 
   const handleSearchChange = (value: string) => {
-    const newFilters = { ...filters, search: value };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ ...filters, search: value });
   };
 
   const handleClearFilters = () => {
-    const newFilters: FilterState = { brands: [], categories: [], priceRange: [0, 5000], search: '' };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ brands: [], categories: [], priceRange: [0, 5000], search: '' });
   };
 
   return (

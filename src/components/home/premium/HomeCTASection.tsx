@@ -10,16 +10,16 @@ export function HomeCTASection() {
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
     return (
-        <section ref={containerRef} className="py-20 lg:py-28 relative overflow-hidden">
+        <section ref={containerRef} className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
             {/* Background Accents */}
             <div className="absolute top-0 left-0 w-full h-full bg-navy" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full opacity-20 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-full opacity-20 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
                 <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
             </div>
 
             <div className="container-premium relative z-10">
-                <div className="glass-premium rounded-3xl p-10 md:p-16 lg:p-20 border border-white/5 overflow-hidden relative">
+                <div className="glass-premium rounded-3xl p-8 md:p-12 lg:px-10 lg:py-16 border border-white/5 overflow-hidden relative">
                     {/* Animated Glow */}
                     <div className="absolute -top-24 -right-24 w-96 h-96 bg-gold/10 blur-[120px] rounded-full animate-pulse" />
 

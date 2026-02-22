@@ -3,15 +3,16 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Wrench, MapPin, Calendar, Truck, Phone, CheckCircle, Loader2 } from 'lucide-react';
+import { Wrench, MapPin, Calendar, Truck, Phone, CheckCircle, Loader2, Award, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { toast } from 'sonner';
+import { FloatingParticles } from "@/components/effects/SceneEffects";
 
 const serviceAreas = [
     { city: 'Riyadh', regions: ['Central', 'North', 'South', 'East', 'West'] },
@@ -67,15 +68,27 @@ export default function InstallationPage() {
     };
 
     return (
-        <div className="min-h-screen bg-navy text-white pt-32 pb-20">
-            <div className="container mx-auto px-4">
-                <Breadcrumb className="mb-10">
-                    <BreadcrumbList>
-                        <BreadcrumbItem><BreadcrumbLink onClick={() => router.push('/')}>Home</BreadcrumbLink></BreadcrumbItem>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbPage>Installation Services</BreadcrumbPage>
-                    </BreadcrumbList>
-                </Breadcrumb>
+        <div className="min-h-screen bg-navy text-white pb-24 relative overflow-hidden">
+            <FloatingParticles />
+
+            <div className="container-premium relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-12 pt-10"
+                >
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink onClick={() => router.push('/')} className="hover:text-gold cursor-pointer transition-colors text-slate-400 uppercase text-[10px] tracking-[0.2em] font-bold">HOME</BreadcrumbLink>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator className="text-slate-600" />
+                            <BreadcrumbItem>
+                                <BreadcrumbPage className="text-gold uppercase text-[10px] tracking-[0.2em] font-bold underline underline-offset-4 decoration-gold/30">INSTALLATION SERVICES</BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
+                </motion.div>
 
                 <motion.div className="mb-12 text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                     <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -145,21 +158,42 @@ export default function InstallationPage() {
                                     <Input id="preferredDate" type="date" value={formData.preferredDate} onChange={(e) => handleInputChange('preferredDate', e.target.value)} className="bg-white/5 border-white/10 text-white" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-white/80">City *</Label>
+                                    <Label className="text-white/80 uppercase text-[10px] font-black tracking-widest">City *</Label>
                                     <Select value={formData.city} onValueChange={(v) => { handleInputChange('city', v); handleInputChange('region', ''); }}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white"><SelectValue placeholder="Select region" /></SelectTrigger>
-                                        <SelectContent>
-                                            {serviceAreas.find(a => a.city === formData.city)?.regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 rounded-xl">
+                                            <SelectValue placeholder="Select City" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-navy border-white/10 text-white">
+                                            {serviceAreas.map(a => (
+                                                <SelectItem key={a.city} value={a.city}>{a.city}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-white/80 uppercase text-[10px] font-black tracking-widest">Region *</Label>
+                                    <Select
+                                        value={formData.region}
+                                        onValueChange={(v) => handleInputChange('region', v)}
+                                        disabled={!formData.city}
+                                    >
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white h-12 rounded-xl disabled:opacity-30">
+                                            <SelectValue placeholder={formData.city ? "Select Region" : "Select City First"} />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-navy border-white/10 text-white">
+                                            {formData.city && serviceAreas.find(a => a.city === formData.city)?.regions.map(r => (
+                                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="md:col-span-2 space-y-2">
-                                    <Label htmlFor="notes" className="text-white/80">Additional Notes</Label>
-                                    <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} className="bg-white/5 border-white/10 text-white" placeholder="Describe your installation requirements..." />
+                                    <Label htmlFor="notes" className="text-white/80 uppercase text-[10px] font-black tracking-widest">Additional Notes</Label>
+                                    <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} className="bg-white/5 border-white/10 text-white rounded-xl min-h-[120px] focus:border-gold/50 transition-all placeholder:text-white/10" placeholder="Describe your installation requirements..." />
                                 </div>
-                                <div className="md:col-span-2">
-                                    <Button type="submit" disabled={isSubmitting} className="w-full btn-primary py-3">
-                                        {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</> : 'Submit Installation Request'}
+                                <div className="md:col-span-2 pt-4">
+                                    <Button type="submit" disabled={isSubmitting} className="w-full btn-primary h-16 text-lg font-bold shadow-[0_10px_30px_rgba(197,160,89,0.3)]">
+                                        {isSubmitting ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing...</> : 'Submit Installation Request'}
                                     </Button>
                                 </div>
                             </form>

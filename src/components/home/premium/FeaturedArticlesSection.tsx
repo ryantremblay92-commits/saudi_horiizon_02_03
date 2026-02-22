@@ -41,7 +41,7 @@ export function FeaturedArticlesSection() {
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
     return (
-        <section ref={containerRef} className="py-20 lg:py-28 bg-navy relative overflow-hidden">
+        <section ref={containerRef} className="py-20 md:py-28 lg:py-32 relative overflow-hidden bg-navy">
             <div className="container-premium relative z-10">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-14 gap-6">
                     <motion.div

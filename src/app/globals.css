@@ -546,9 +546,21 @@ a:hover {
    ========================================= */
 .section-divider {
   width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(197, 160, 89, 0.2) 50%, transparent 100%);
+  height: 10px;
+  background: transparent;
   position: relative;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(197, 160, 89, 0.15) 50%, transparent 100%);
 }
 
 .section-divider::after {
@@ -562,4 +574,106 @@ a:hover {
   background: var(--color-gold);
   border-radius: 50%;
   box-shadow: 0 0 10px var(--color-gold);
+}
+
+/* =========================================
+   INDUSTRIAL PREMIUM UTILITIES
+   ========================================= */
+
+/* Data Display Typography */
+.text-data-label {
+  font-family: var(--font-display);
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.text-data-value {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-gold);
+}
+
+/* Industrial Border Effects */
+.border-industrial {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    inset 0 0 0 1px rgba(197, 160, 89, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.corner-detail {
+  position: relative;
+}
+
+.corner-detail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid var(--color-gold);
+  border-left: 2px solid var(--color-gold);
+  opacity: 0.5;
+}
+
+.corner-detail::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid var(--color-gold);
+  border-right: 2px solid var(--color-gold);
+  opacity: 0.5;
+}
+
+/* Enhanced Glow Utilities */
+.glow-gold-sm {
+  filter: drop-shadow(0 0 5px rgba(197, 160, 89, 0.3));
+}
+
+.glow-gold-md {
+  filter: drop-shadow(0 0 15px rgba(197, 160, 89, 0.5));
+}
+
+/* Industrial Pulse Animation */
+.animate-industrial-pulse {
+  animation: industrial-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes industrial-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* Custom Scrollbar for sidebars/modals */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-gold);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #D4B475;
 }

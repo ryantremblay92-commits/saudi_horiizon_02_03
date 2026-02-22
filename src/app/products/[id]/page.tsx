@@ -80,7 +80,7 @@ export default function ProductDetailPage() {
     if (!product) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <div className="text-center">
+                <div className="container-premium text-center">
                     <h1 className="text-2xl text-white mb-4">Product not found</h1>
                     <Button onClick={() => router.push('/products')}>
                         Back to Products
@@ -92,7 +92,7 @@ export default function ProductDetailPage() {
 
     return (
         <div className="min-h-screen bg-gray-900 text-white py-8">
-            <div className="max-w-7xl mx-auto px-4">
+            <div className="container-premium">
                 {/* Breadcrumb */}
                 <Breadcrumb className="mb-6">
                     <BreadcrumbList>

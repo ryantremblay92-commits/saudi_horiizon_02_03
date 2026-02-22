@@ -5,6 +5,8 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import { ArrowRight, Plus, Star } from "lucide-react";
 import Link from "next/link";
 import { getProducts, Product } from "@/api/products";
+import { addToCart } from "@/api/cart";
+import { toast } from "sonner";
 
 export function ProductsSection() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -37,8 +39,23 @@ export function ProductsSection() {
         );
     };
 
+    const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCart({
+            _id: product._id,
+            name: product.name,
+            price: product.price,
+            quantity: 1,
+            image: product.image,
+            sku: product.sku || `SKU-${product._id.slice(0, 5)}`,
+            type: 'product'
+        });
+        toast.success(`${product.name} added to cart!`);
+    };
+
     return (
-        <section className="py-10 lg:py-14 bg-[var(--color-bg-primary)] overflow-hidden relative">
+        <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden bg-navy">
             {/* Background Excellence Visual */}
             <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
                 <img
@@ -127,7 +144,11 @@ export function ProductsSection() {
                                                             )}
                                                         </div>
                                                         {/* Quick Add */}
-                                                        <button className="absolute bottom-4 right-4 w-11 h-11 bg-[var(--color-accent)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                                                        <button
+                                                            onClick={(e) => handleQuickAdd(e, product)}
+                                                            className="absolute bottom-4 right-4 z-20 w-11 h-11 bg-[var(--color-accent)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 hover:scale-110 active:scale-90"
+                                                            title="Add to Cart"
+                                                        >
                                                             <Plus className="w-5 h-5 text-[var(--color-bg-primary)]" />
                                                         </button>
                                                     </div>
