@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Cookie, Save, Eye, EyeOff, RefreshCw, BarChart3 } from 'lucide-react';
+import { Cookie, Save, RefreshCw, BarChart3, Download, Trash2, Shield, Eye, Database, Target } from 'lucide-react';
 
 interface CookieConsentSettings {
     enabled: boolean;
@@ -29,6 +27,8 @@ interface CookieStatistics {
 export default function AdminCookieConsentPage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [resetting, setResetting] = useState(false);
     const [settings, setSettings] = useState<CookieConsentSettings>({
         enabled: true,
         necessaryOnly: false,
@@ -44,7 +44,6 @@ export default function AdminCookieConsentPage() {
         acceptanceRate: 0
     });
 
-    // Load settings and statistics on mount
     useEffect(() => {
         loadData();
     }, []);
@@ -67,6 +66,7 @@ export default function AdminCookieConsentPage() {
             }
         } catch (error) {
             console.error('Error loading cookie consent data:', error);
+            toast.error('Failed to load cookie consent data');
         } finally {
             setLoading(false);
         }
@@ -77,201 +77,301 @@ export default function AdminCookieConsentPage() {
         try {
             const response = await fetch('/api/cookie-consent', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
             });
 
             if (response.ok) {
-                toast.success('Cookie consent settings saved successfully');
-                loadData(); // Reload to get updated statistics
+                toast.success('Cookie consent settings saved to database');
+                loadData();
             } else {
                 toast.error('Failed to save settings');
             }
         } catch (error) {
-            console.error('Error saving cookie consent settings:', error);
+            console.error('Error saving settings:', error);
             toast.error('Error saving settings');
         } finally {
             setSaving(false);
         }
     };
 
-    return (
-        <AdminLayout title="Cookie Consent" description="Configure cookie consent settings">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-gray-800 border-gray-700">
-                    <CardHeader>
-                        <CardTitle className="text-white flex items-center">
-                            <Cookie className="h-5 w-5 mr-2" />
-                            Cookie Settings
-                        </CardTitle>
-                        <CardDescription className="text-gray-400">
-                            Configure which cookies are used on your site
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-white font-medium">Enable Cookie Consent</p>
-                                <p className="text-sm text-gray-400">Show cookie consent banner</p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={settings.enabled}
-                                onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-                                className="h-4 w-4 text-primary"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-white font-medium">Necessary Cookies Only</p>
-                                <p className="text-sm text-gray-400">Only use essential cookies</p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={settings.necessaryOnly}
-                                onChange={(e) => setSettings({ ...settings, necessaryOnly: e.target.checked })}
-                                className="h-4 w-4 text-primary"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-white font-medium">Analytics Cookies</p>
-                                <p className="text-sm text-gray-400">Track visitor behavior</p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={settings.analytics}
-                                onChange={(e) => setSettings({ ...settings, analytics: e.target.checked })}
-                                className="h-4 w-4 text-primary"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-white font-medium">Marketing Cookies</p>
-                                <p className="text-sm text-gray-400">Personalized advertisements</p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={settings.marketing}
-                                onChange={(e) => setSettings({ ...settings, marketing: e.target.checked })}
-                                className="h-4 w-4 text-primary"
-                            />
-                        </div>
-                        <Button onClick={handleSave} disabled={saving} className="w-full bg-primary hover:bg-primary/90">
-                            <Save className="h-4 w-4 mr-2" />
-                            {saving ? 'Saving...' : 'Save Settings'}
-                        </Button>
-                    </CardContent>
-                </Card>
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            const response = await fetch('/api/cookie-consent/export');
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cookie-consent-audit-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                toast.success('Audit log exported successfully');
+            } else {
+                toast.error('Failed to export audit log');
+            }
+        } catch (error) {
+            console.error('Error exporting:', error);
+            toast.error('Error exporting audit log');
+        } finally {
+            setExporting(false);
+        }
+    };
 
-                <Card className="bg-gray-800 border-gray-700">
-                    <CardHeader>
-                        <CardTitle className="text-white flex items-center justify-between">
-                            <span className="flex items-center">
-                                <BarChart3 className="h-5 w-5 mr-2" />
-                                Cookie Statistics
-                            </span>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={loadData}
-                                disabled={loading}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            </Button>
-                        </CardTitle>
-                        <CardDescription className="text-gray-400">
-                            Cookie consent analytics from your visitors
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-background/50 p-4 rounded-lg text-center">
-                                <p className="text-2xl font-bold text-white">{statistics.totalConsents}</p>
-                                <p className="text-sm text-gray-400">Total Consents</p>
+    const handleReset = async () => {
+        if (!confirm('This will permanently delete all consent records from the database. This action cannot be undone. Are you sure?')) {
+            return;
+        }
+        setResetting(true);
+        try {
+            const response = await fetch('/api/cookie-consent', { method: 'DELETE' });
+            if (response.ok) {
+                toast.success('All consent records have been purged');
+                loadData();
+            } else {
+                toast.error('Failed to reset records');
+            }
+        } catch (error) {
+            console.error('Error resetting:', error);
+            toast.error('Error resetting records');
+        } finally {
+            setResetting(false);
+        }
+    };
+
+    const categoryCards = [
+        {
+            key: 'enabled',
+            title: 'Cookie Consent Banner',
+            description: 'Display the consent banner to new visitors',
+            icon: Cookie,
+            required: false,
+        },
+        {
+            key: 'necessaryOnly',
+            title: 'Strict Mode',
+            description: 'Only allow essential cookies by default',
+            icon: Shield,
+            required: false,
+        },
+        {
+            key: 'analytics',
+            title: 'Analytics Tracking',
+            description: 'Enable anonymous visitor behavior tracking',
+            icon: Database,
+            required: false,
+        },
+        {
+            key: 'marketing',
+            title: 'Marketing Pixels',
+            description: 'Enable retargeting and conversion tracking',
+            icon: Target,
+            required: false,
+        },
+    ];
+
+    return (
+        <AdminLayout title="Cookie Consent" description="Privacy compliance & consent audit management">
+            <div className="space-y-6">
+                {/* Status Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${settings.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                        <span className="text-sm text-white font-medium">
+                            Consent Banner: {settings.enabled ? 'Active' : 'Inactive'}
+                        </span>
+                        <Badge className="bg-gold/20 text-gold border-0 text-xs">
+                            MongoDB Persistent
+                        </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={handleExport}
+                            disabled={exporting || statistics.totalConsents === 0}
+                            variant="outline"
+                            size="sm"
+                            className="border-gold/30 text-gold hover:bg-gold/10"
+                        >
+                            <Download className="h-4 w-4 mr-2" />
+                            {exporting ? 'Exporting...' : 'Export Audit Log'}
+                        </Button>
+                        <Button
+                            onClick={loadData}
+                            disabled={loading}
+                            variant="outline"
+                            size="sm"
+                            className="border-white/20 text-white hover:bg-white/10"
+                        >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Settings Card */}
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader>
+                            <CardTitle className="text-white flex items-center gap-2">
+                                <Cookie className="h-5 w-5 text-gold" />
+                                Cookie Categories
+                            </CardTitle>
+                            <CardDescription className="text-slate-400">
+                                Toggle which cookie categories are available on your site
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {categoryCards.map((cat) => (
+                                <div key={cat.key} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-gold/20 transition-all group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-lg bg-gold/10 flex items-center justify-center">
+                                            <cat.icon className="w-4 h-4 text-gold" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-white group-hover:text-gold transition-colors">{cat.title}</p>
+                                            <p className="text-xs text-slate-500">{cat.description}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setSettings({ ...settings, [cat.key]: !(settings as any)[cat.key] })}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${(settings as any)[cat.key]
+                                                ? 'bg-gold'
+                                                : 'bg-white/10'
+                                            }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(settings as any)[cat.key] ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                        />
+                                    </button>
+                                </div>
+                            ))}
+
+                            <div className="pt-4 flex gap-2">
+                                <Button onClick={handleSave} disabled={saving} className="flex-1 bg-gold hover:bg-gold/90 text-navy font-bold">
+                                    <Save className="h-4 w-4 mr-2" />
+                                    {saving ? 'Saving...' : 'Save to Database'}
+                                </Button>
                             </div>
-                            <div className="bg-background/50 p-4 rounded-lg text-center">
-                                <p className="text-2xl font-bold text-white">{statistics.acceptanceRate}%</p>
-                                <p className="text-sm text-gray-400">Acceptance Rate</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Statistics Card */}
+                    <Card className="bg-white/5 border-white/10">
+                        <CardHeader>
+                            <CardTitle className="text-white flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <BarChart3 className="h-5 w-5 text-gold" />
+                                    Consent Analytics
+                                </span>
+                            </CardTitle>
+                            <CardDescription className="text-slate-400">
+                                Live consent statistics from your MongoDB records
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white/5 border border-white/5 p-4 rounded-xl text-center">
+                                    <p className="text-3xl font-black text-white">{statistics.totalConsents}</p>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Total Consents</p>
+                                </div>
+                                <div className="bg-white/5 border border-white/5 p-4 rounded-xl text-center">
+                                    <p className="text-3xl font-black text-gold">{statistics.acceptanceRate}%</p>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Acceptance Rate</p>
+                                </div>
+                                <div className="bg-white/5 border border-white/5 p-4 rounded-xl text-center">
+                                    <p className="text-3xl font-black text-emerald-400">{statistics.analyticsOptIns}</p>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Analytics Opt-ins</p>
+                                </div>
+                                <div className="bg-white/5 border border-white/5 p-4 rounded-xl text-center">
+                                    <p className="text-3xl font-black text-purple-400">{statistics.marketingOptIns}</p>
+                                    <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Marketing Opt-ins</p>
+                                </div>
                             </div>
-                            <div className="bg-background/50 p-4 rounded-lg text-center">
-                                <p className="text-2xl font-bold text-white">{statistics.analyticsOptIns}</p>
-                                <p className="text-sm text-gray-400">Analytics Opt-ins</p>
+
+                            {/* Acceptance Rate Bar */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-slate-400">Overall Acceptance</span>
+                                    <span className="text-sm font-bold text-white">{statistics.acceptanceRate}%</span>
+                                </div>
+                                <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
+                                    <div
+                                        className="bg-gradient-to-r from-gold/50 to-gold h-full rounded-full transition-all duration-700"
+                                        style={{ width: `${Math.max(2, statistics.acceptanceRate)}%` }}
+                                    />
+                                </div>
                             </div>
-                            <div className="bg-background/50 p-4 rounded-lg text-center">
-                                <p className="text-2xl font-bold text-white">{statistics.marketingOptIns}</p>
-                                <p className="text-sm text-gray-400">Marketing Opt-ins</p>
-                            </div>
-                        </div>
-                        <div className="border-t border-gray-700 pt-6">
-                            <h4 className="text-white font-medium mb-4">Live Preview</h4>
-                            <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-4 rounded-lg border border-gray-600">
-                                {/* Banner Preview */}
-                                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-3">
+
+                            {/* Live Preview */}
+                            <div className="border-t border-white/5 pt-6">
+                                <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+                                    <Eye className="w-4 h-4 text-gold" />
+                                    Banner Preview
+                                </h4>
+                                <div className="bg-navy/80 border border-white/10 rounded-lg p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <Cookie className="w-4 h-4 text-amber-500" />
+                                        <div className="w-8 h-8 bg-gold/20 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <Cookie className="w-4 h-4 text-gold" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-white text-sm font-medium mb-1">We value your privacy</p>
-                                            <p className="text-gray-400 text-xs mb-2">
+                                            <p className="text-slate-500 text-xs mb-2">
                                                 We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.
                                             </p>
                                             <div className="flex flex-wrap gap-1">
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-amber-500 hover:bg-amber-600 text-gray-900 text-xs h-7"
-                                                >
+                                                <Button size="sm" className="bg-gold hover:bg-gold/90 text-navy text-xs h-7 font-bold">
                                                     Accept All
                                                 </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-gray-600 text-gray-300 text-xs h-7"
-                                                >
-                                                    Reject Non-Essential
+                                                <Button size="sm" variant="outline" className="border-white/20 text-white text-xs h-7">
+                                                    Reject
                                                 </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-gray-600 text-gray-300 text-xs h-7"
-                                                >
+                                                <Button size="sm" variant="outline" className="border-white/20 text-white text-xs h-7">
                                                     Customize
                                                 </Button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs text-gray-500 text-center">
-                                    This is how your cookie banner appears on the site
+                                <p className="text-xs text-slate-600 text-center mt-2">
+                                    Live preview of the cookie banner displayed on your site
                                 </p>
                             </div>
-                        </div>
-                        <div className="border-t border-gray-700 pt-6">
-                            <h4 className="text-white font-medium mb-2">Quick Links</h4>
-                            <div className="flex flex-wrap gap-2">
-                                <a
-                                    href="/cookie-policy"
-                                    target="_blank"
-                                    className="text-amber-500 hover:text-amber-400 text-sm underline"
+
+                            {/* Danger Zone */}
+                            <div className="border-t border-red-500/20 pt-4">
+                                <h4 className="text-red-400 font-medium text-sm mb-3">Danger Zone</h4>
+                                <Button
+                                    onClick={handleReset}
+                                    disabled={resetting || statistics.totalConsents === 0}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 w-full"
                                 >
-                                    View Cookie Policy Page
-                                </a>
-                                <span className="text-gray-600">|</span>
-                                <a
-                                    href="/"
-                                    target="_blank"
-                                    className="text-amber-500 hover:text-amber-400 text-sm underline"
-                                >
-                                    View Live Site
-                                </a>
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    {resetting ? 'Purging...' : `Purge All Records (${statistics.totalConsents})`}
+                                </Button>
+                                <p className="text-xs text-slate-600 mt-2">
+                                    This will permanently delete all consent records from MongoDB. Export first for compliance.
+                                </p>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Quick Links */}
+                <div className="flex flex-wrap gap-3 justify-center pt-4">
+                    <a href="/cookie-policy" target="_blank" className="text-gold hover:text-gold/80 text-sm underline underline-offset-4">
+                        View Cookie Policy Page →
+                    </a>
+                    <span className="text-slate-700">|</span>
+                    <a href="/" target="_blank" className="text-gold hover:text-gold/80 text-sm underline underline-offset-4">
+                        View Live Site →
+                    </a>
+                </div>
             </div>
         </AdminLayout>
     );

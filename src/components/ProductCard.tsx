@@ -72,7 +72,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent opacity-60" />
 
-          {/* Quick Actions Overlay */}
+          {/* Quick Add Button - Always Visible at Bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
+            <Button
+              className="w-full bg-gold hover:bg-yellow text-navy font-bold text-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart(product);
+              }}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Add to Cart
+            </Button>
+          </div>
+
+          {/* Quick Actions Overlay - Comparison & Wishlist on Hover */}
           <div className="absolute inset-0 p-4 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="flex justify-between items-start">
               {/* Comparison Toggle */}
@@ -113,15 +127,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </Badge>
               )}
             </div>
-
-            {/* Quick Add Button */}
-            <Button
-              className="w-full bg-gold hover:bg-yellow text-navy font-bold shadow-lg shadow-black/20"
-              onClick={() => onAddToCart(product)}
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Quick Add
-            </Button>
           </div>
         </div>
 

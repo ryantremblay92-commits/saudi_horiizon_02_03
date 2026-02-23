@@ -14,6 +14,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     const [dir, setDir] = useState<"ltr" | "rtl">("ltr");
     const [lang, setLang] = useState("en");
 
+    // Warm up database connection on app load
+    useEffect(() => {
+        // Pre-connect to database to avoid cold start on first API call
+        fetch('/api/warmup', {
+            method: 'GET',
+            cache: 'no-store'
+        }).then(() => {
+            console.log('🔌 Database connection warmed up');
+        }).catch(() => {
+            // Ignore errors, fallback will handle it
+        });
+    }, []);
+
     useEffect(() => {
         // Dynamic import of i18n to avoid SSR issues
         import("@/lib/i18n").then((i18nModule) => {

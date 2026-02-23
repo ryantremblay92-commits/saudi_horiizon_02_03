@@ -17,6 +17,8 @@ function getProductsFromJSON(): any[] {
 }
 
 export async function GET(request: NextRequest) {
+    let dbProducts = null;
+
     try {
         await connectDB();
 
@@ -61,22 +63,28 @@ export async function GET(request: NextRequest) {
         const hasValidPrices = products.some((p: any) => p.price > 0);
 
         if (!hasValidPrices || total === 0) {
-            console.log('MongoDB products have no valid prices, falling back to JSON');
-            throw new Error('Invalid product data in MongoDB');
-        }
-
-        return NextResponse.json(
-            { products, total },
-            {
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
+            console.log('MongoDB products have no valid prices, will fall back to JSON');
+            dbProducts = null;
+        } else {
+            console.log('✅ Using MongoDB products - hasValidPrices:', hasValidPrices, 'total:', total);
+            return NextResponse.json(
+                { products, total, _source: 'mongodb' },
+                {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Data-Source': 'mongodb'
+                    }
                 }
-            }
-        );
+            );
+        }
     } catch (error: unknown) {
-        console.error('Error fetching products from DB, falling back to JSON:', error);
+        console.log('Error fetching from MongoDB, falling back to JSON:', error);
+    }
+
+    // Fallback to JSON if DB failed or had invalid prices
+    if (!dbProducts) {
 
         // Fallback to JSON file
         let products = getProductsFromJSON();
@@ -108,7 +116,10 @@ export async function GET(request: NextRequest) {
         const skip = (page - 1) * limit;
         products = products.slice(skip, skip + limit);
 
-        return NextResponse.json({ products, total });
+        return NextResponse.json(
+            { products, total, _source: 'json' },
+            { headers: { 'X-Data-Source': 'json' } }
+        );
     }
 }
 

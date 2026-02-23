@@ -259,6 +259,14 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
                                         3
                                     </Badge>
                                 </Button>
+
+                                <div className="hidden lg:flex flex-col items-end border-l border-white/10 pl-4 ml-4">
+                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Node Sync</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span className="text-[10px] text-white font-mono">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -274,6 +282,6 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
                     </div>
                 </main>
             </div>
-        </div>
+        </div >
     );
 }

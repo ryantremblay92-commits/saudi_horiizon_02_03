@@ -10,17 +10,32 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { getCart, removeFromCart, updateCartItem, clearCart, CartItem } from '@/api/cart';
 import { toast } from 'sonner';
 import { FloatingParticles, AnimatedConnector } from "@/components/effects/SceneEffects";
+import StripeApplePay from '@/components/cart/StripeApplePay';
+import { useSearchParams } from 'next/navigation';
 
 export default function CartPage() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [mounted, setMounted] = useState(false);
 
+    const searchParams = useSearchParams();
+    const isSuccess = searchParams.get('success') === 'true';
+
     useEffect(() => {
         setMounted(true);
         const items = getCart();
         setCartItems(items);
-    }, []);
+
+        if (isSuccess) {
+            toast.success('PROCUREMENT SUCCESSFUL', {
+                description: 'Your industrial order has been synchronized with our logistics terminal.',
+            });
+            clearCart();
+            setCartItems([]);
+            // Clean up the URL
+            window.history.replaceState({}, '', '/cart');
+        }
+    }, [isSuccess]);
 
     const handleRemoveItem = (itemId: string) => {
         removeFromCart(itemId);
@@ -268,9 +283,18 @@ export default function CartPage() {
                                                     <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                                                 </Button>
 
+                                                <div className="mt-8">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="h-px bg-white/5 flex-1" />
+                                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">OR SECURE PAY</span>
+                                                        <div className="h-px bg-white/5 flex-1" />
+                                                    </div>
+                                                    <StripeApplePay cartItems={cartItems} />
+                                                </div>
+
                                                 <Button
                                                     variant="outline"
-                                                    className="w-full mt-4 h-14 rounded-2xl border-white/10 text-white/40 hover:text-gold hover:border-gold/30 hover:bg-white/5 font-black uppercase tracking-[0.2em] text-[10px]"
+                                                    className="w-full mt-6 h-14 rounded-2xl border-white/10 text-white/40 hover:text-gold hover:border-gold/30 hover:bg-white/5 font-black uppercase tracking-[0.2em] text-[10px]"
                                                     onClick={() => router.push('/products')}
                                                 >
                                                     <ShoppingCart className="mr-3 w-4 h-4" />

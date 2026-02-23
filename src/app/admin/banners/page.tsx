@@ -50,6 +50,14 @@ export default function AdminBannersPage() {
         endDate: ''
     });
 
+    const getHeaders = (): HeadersInit => {
+        const token = localStorage.getItem('accessToken');
+        return {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+    };
+
     useEffect(() => {
         loadBanners();
     }, []);
@@ -57,7 +65,7 @@ export default function AdminBannersPage() {
     const loadBanners = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/admin/banners');
+            const response = await fetch('/api/admin/banners', { headers: getHeaders() });
             if (!response.ok) throw new Error('Failed to load banners');
             const data = await response.json();
             setBanners(data);
@@ -79,7 +87,7 @@ export default function AdminBannersPage() {
 
             const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify(formData)
             });
 
@@ -116,7 +124,8 @@ export default function AdminBannersPage() {
 
         try {
             const response = await fetch(`/api/admin/banners/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: getHeaders()
             });
 
             if (!response.ok) throw new Error('Failed to delete banner');
@@ -133,7 +142,7 @@ export default function AdminBannersPage() {
         try {
             const response = await fetch(`/api/admin/banners/${banner._id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({ isActive: !banner.isActive })
             });
 
@@ -168,7 +177,7 @@ export default function AdminBannersPage() {
     };
 
     return (
-        <AdminLayout title="Banners" description="Manage website banners and hero images">
+        <AdminLayout title="Banners" description="Manage website banners and hero images" onRefresh={loadBanners}>
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
@@ -216,8 +225,8 @@ export default function AdminBannersPage() {
                                         <button
                                             onClick={() => handleToggleActive(banner)}
                                             className={`p-2 rounded-lg ${banner.isActive
-                                                    ? 'bg-green-600 hover:bg-green-700'
-                                                    : 'bg-gray-600 hover:bg-gray-700'
+                                                ? 'bg-green-600 hover:bg-green-700'
+                                                : 'bg-gray-600 hover:bg-gray-700'
                                                 }`}
                                         >
                                             {banner.isActive ? (

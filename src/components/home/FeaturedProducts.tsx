@@ -34,7 +34,7 @@ const itemVariants: Variants = {
 export function FeaturedProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const containerRef = useRef(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
     useEffect(() => {
@@ -118,27 +118,28 @@ export function FeaturedProducts() {
                         ))}
                     </div>
                 ) : (
-                    <motion.div
-                        ref={containerRef}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate={isInView ? "visible" : "hidden"}
-                    >
-                        {products.slice(0, 4).map((product, index) => (
-                            <motion.div
-                                key={product._id}
-                                variants={itemVariants}
-                            >
-                                <ProductCard
-                                    product={product}
-                                    onAddToCart={handleAddToCart}
-                                    onQuickInquiry={handleQuickInquiry}
-                                    index={index}
-                                />
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                    <div ref={containerRef} className="relative">
+                        <motion.div
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate={isInView ? "visible" : "hidden"}
+                        >
+                            {products.slice(0, 4).map((product, index) => (
+                                <motion.div
+                                    key={product._id}
+                                    variants={itemVariants}
+                                >
+                                    <ProductCard
+                                        product={product}
+                                        onAddToCart={handleAddToCart}
+                                        onQuickInquiry={handleQuickInquiry}
+                                        index={index}
+                                    />
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </div>
                 )}
 
                 {/* Bottom CTA */}

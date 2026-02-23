@@ -91,12 +91,16 @@ export default function ProductsPageClient() {
         const loadProducts = async () => {
             setIsLoading(true);
             try {
+                console.log('[DEBUG] Loading products from API...');
                 const res = await getProducts();
-                setProducts(res.products);
-                setFilteredProducts(res.products);
+                console.log('[DEBUG] Products loaded:', res.products?.length, 'total:', res.total);
+                setProducts(res.products || []);
+                setFilteredProducts(res.products || []);
             } catch (error) {
+                console.error('[DEBUG] Failed to load products:', error);
                 toast.error('Failed to load products');
             } finally {
+                console.log('[DEBUG] Setting isLoading to false');
                 setIsLoading(false);
             }
         };
@@ -117,16 +121,52 @@ export default function ProductsPageClient() {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-    // Apply search param filters if present
+    // Apply search param filters if present - prevent infinite loop
     useEffect(() => {
         const category = searchParams.get('category');
-        if (category) {
-            // Map category ID to actual product category name
-            const mappedCategory = categoryIdToName[category] || category;
-            setFilters(prev => ({
+        const brand = searchParams.get('brand');
+        const search = searchParams.get('search');
+        const price = searchParams.get('price');
+        const sort = searchParams.get('sort');
+
+        // Map category ID to actual product category name
+        const mappedCategory = category ? (categoryIdToName[category] || category) : '';
+
+        // Parse brand filter
+        const brandList = brand ? brand.split(',') : [];
+
+        // Parse price range
+        let priceRange: [number, number] = [0, 5000];
+        if (price) {
+            const [min, max] = price.split('-').map(Number);
+            if (!isNaN(min) && !isNaN(max)) {
+                priceRange = [min, max];
+            }
+        }
+
+        // Update sort if provided
+        if (sort && sort !== 'relevance') {
+            setSortBy(sort);
+        }
+
+        // Apply all filters from URL - only update if different
+        setFilters(prev => {
+            const newFilters = {
                 ...prev,
-                categories: [mappedCategory],
-            }));
+                categories: mappedCategory ? [mappedCategory] : prev.categories,
+                brands: brandList.length > 0 ? brandList : prev.brands,
+                search: search || prev.search,
+                priceRange: priceRange[0] > 0 || priceRange[1] < 5000 ? priceRange : prev.priceRange,
+            };
+
+            // Only update if filters actually changed
+            const filtersChanged = JSON.stringify(newFilters) !== JSON.stringify(prev);
+            return filtersChanged ? newFilters : prev;
+        });
+
+        // Also update search input
+        if (search && search !== searchInput) {
+            setSearchInput(search);
         }
     }, [searchParams]);
 
@@ -152,6 +192,44 @@ export default function ProductsPageClient() {
     useEffect(() => {
         setCurrentPage(1);
     }, [filters.brands, filters.categories, filters.priceRange, filters.search, sortBy]);
+
+    // Sync filters to URL for shareable links - prevent infinite loop
+    useEffect(() => {
+        const params = new URLSearchParams();
+
+        if (filters.categories.length > 0) {
+            // Convert category names to IDs for shorter URLs
+            const categoryToId: Record<string, string> = {};
+            Object.entries(categoryIdToName).forEach(([id, name]) => {
+                categoryToId[name] = id;
+            });
+            const categoryId = categoryToId[filters.categories[0]] || filters.categories[0];
+            params.set('category', categoryId);
+        }
+
+        if (filters.brands.length > 0) {
+            params.set('brand', filters.brands.join(','));
+        }
+
+        if (filters.search) {
+            params.set('search', filters.search);
+        }
+
+        if (filters.priceRange[0] > 0 || filters.priceRange[1] < 5000) {
+            params.set('price', `${filters.priceRange[0]}-${filters.priceRange[1]}`);
+        }
+
+        if (sortBy !== 'relevance') {
+            params.set('sort', sortBy);
+        }
+
+        // Update URL without reload - prevent infinite loop
+        const newUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname;
+        const currentUrl = window.location.pathname + window.location.search;
+        if (newUrl !== currentUrl) {
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [filters, sortBy]);
 
     // Computed filtered and sorted products
     const processedProducts = useMemo(() => {
@@ -213,10 +291,20 @@ export default function ProductsPageClient() {
         setFilteredProducts(processedProducts);
     }, [processedProducts]);
 
-    // GSAP Scroll Animation for Product Cards
-    useEffect(() => {
-        if (!gridRef.current || isLoading || paginatedProducts.length === 0 || prefersReducedMotion) return;
+    // GSAP Scroll Animation for Product Cards - prevent infinite loop
+    const gsapInitialized = useRef(false);
+    const prevProductCount = useRef(0);
 
+    useEffect(() => {
+        // Skip if still loading, no products, or prefers reduced motion
+        if (isLoading || paginatedProducts.length === 0 || prefersReducedMotion) return;
+        // Skip if no grid element
+        if (!gridRef.current) return;
+        // Skip if already initialized for current product set and count hasn't changed
+        if (gsapInitialized.current && prevProductCount.current === paginatedProducts.length) return;
+
+        gsapInitialized.current = true;
+        prevProductCount.current = paginatedProducts.length;
         const cards = gridRef.current.querySelectorAll<HTMLElement>('.product-card-animated');
 
         const ctx = gsap.context(() => {
@@ -241,7 +329,10 @@ export default function ProductsPageClient() {
             );
         }, gridRef);
 
-        return () => ctx.revert();
+        return () => {
+            ctx.revert();
+            // Don't reset gsapInitialized here to prevent re-triggering
+        };
     }, [paginatedProducts, isLoading, prefersReducedMotion]);
 
     const handleAddToCart = (product: Product) => {
@@ -332,7 +423,13 @@ export default function ProductsPageClient() {
                             Industrial <span className="text-gradient-gold">Parts catalog.</span>
                         </h1>
                         <p className="text-white/40 text-sm font-bold uppercase tracking-[0.2em]">
-                            Displaying <span className="text-gold">{processedProducts.length}</span> high-performance components
+                            {isLoading ? (
+                                <>Loading products...</>
+                            ) : (
+                                <>
+                                    Displaying <span className="text-gold">{processedProducts.length}</span> high-performance components
+                                </>
+                            )}
                         </p>
                     </motion.div>
 

@@ -12,7 +12,8 @@ import {
     Calendar,
     BarChart3,
     Plus,
-    ArrowRight
+    ArrowRight,
+    FileText
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { StatusBadge } from '@/components/admin/StatusBadge';
@@ -30,6 +31,15 @@ interface AdminStats {
         totalAmount: number;
         status: string;
         createdAt: string;
+    }>;
+    stripeBalance?: {
+        available: number;
+        pending: number;
+    };
+    topProducts?: Array<{
+        _id: string;
+        totalSold: number;
+        revenue: number;
     }>;
 }
 
@@ -210,14 +220,20 @@ export default function AdminDashboardPage() {
             color: 'text-gold'
         },
         {
-            title: 'Total Revenue',
-            value: formatCurrency(stats?.totalRevenue || 0),
+            title: 'Stripe Balance',
+            value: formatCurrency(stats?.stripeBalance?.available || 0),
             icon: DollarSign,
-            trend: { value: '+18%', positive: true },
-            onClick: () => router.push('/admin/orders'),
-            sparklineData: [65, 59, 80, 81, 56, 80, 90],
-            color: 'text-green-400'
+            trend: { value: 'Available Now', positive: true },
+            onClick: () => window.open('https://dashboard.stripe.com', '_blank'),
+            sparklineData: [40, 50, 45, 60, 55, 70, 75],
+            color: 'text-amber-400'
         }
+    ];
+
+    const systemHealth = [
+        { label: 'Database Node', status: 'Operational', color: 'bg-emerald-500' },
+        { label: 'Financial Gateway', status: stats?.stripeBalance ? 'Connected' : 'Paused', color: stats?.stripeBalance ? 'bg-emerald-500' : 'bg-amber-500' },
+        { label: 'Dispatch API', status: 'Optimal', color: 'bg-emerald-500' },
     ];
 
     const revenueData = stats?.monthlyRevenue || [];
@@ -264,7 +280,7 @@ export default function AdminDashboardPage() {
                         <div className="p-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-4">
                             <h3 className="text-lg font-bold text-white font-display flex items-center gap-2">
                                 {overviewTab === 'revenue' ? <BarChart3 className="w-5 h-5 text-gold" /> : <ShoppingCart className="w-5 h-5 text-gold" />}
-                                Business Overview
+                                Fulfillment Pipeline
                             </h3>
                             <div className="flex bg-black/40 p-1 rounded-lg border border-white/5">
                                 <button
@@ -274,7 +290,7 @@ export default function AdminDashboardPage() {
                                         : 'text-slate-400 hover:text-white'
                                         }`}
                                 >
-                                    Revenue
+                                    Movement
                                 </button>
                                 <button
                                     onClick={() => setOverviewTab('orders')}
@@ -283,7 +299,7 @@ export default function AdminDashboardPage() {
                                         : 'text-slate-400 hover:text-white'
                                         }`}
                                 >
-                                    Recent Orders
+                                    Live Queue
                                 </button>
                             </div>
                         </div>
@@ -300,7 +316,7 @@ export default function AdminDashboardPage() {
                                         </div>
                                     </div>
 
-                                    {revenueData.length > 0 ? (
+                                    {revenueData.length > 0 && (
                                         <div className="space-y-6">
                                             {revenueData.slice(-6).map((month, index) => (
                                                 <div key={index} className="group">
@@ -330,14 +346,28 @@ export default function AdminDashboardPage() {
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-20 flex flex-col items-center justify-center">
-                                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                                                <TrendingUp className="w-8 h-8 text-slate-600" />
-                                            </div>
-                                            <p className="text-slate-400">No revenue data available yet</p>
-                                        </div>
                                     )}
+
+                                    {/* Top Products Section */}
+                                    <div className="mt-12 pt-8 border-t border-white/5">
+                                        <h4 className="text-white font-medium mb-6 flex items-center gap-2">
+                                            <Package className="w-4 h-4 text-gold" />
+                                            Top Logistics Moving Parts
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {stats?.topProducts?.map((product, idx) => (
+                                                <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-gold/20 transition-all flex items-center justify-between group">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-bold text-white truncate group-hover:text-gold transition-colors">{product._id}</p>
+                                                        <p className="text-xs text-slate-500 font-mono">{product.totalSold} Units Shipped</p>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <p className="text-xs font-black text-gold">{formatCurrency(product.revenue)}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="h-full">
@@ -476,8 +506,24 @@ export default function AdminDashboardPage() {
                                 <div className="flex items-end justify-between">
                                     <span className="text-3xl font-bold text-white font-display">0</span>
                                     <span className="text-xs text-gold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">
-                                        Review <ArrowRight className="w-3 h-3" />
+                                        Dispatch <ArrowRight className="w-3 h-3" />
                                     </span>
+                                </div>
+                            </div>
+
+                            {/* Internal Procurement Notes */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 group">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <FileText className="w-4 h-4 text-blue-400" />
+                                    <span className="text-sm font-medium text-slate-300">Procurement Notes</span>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="p-3 rounded bg-black/20 border-l-2 border-blue-500">
+                                        <p className="text-[10px] text-white/60 leading-relaxed italic">
+                                            "Awaiting technical clearance for Order #H2KW80KL... check hydraulic specs."
+                                        </p>
+                                        <p className="text-[8px] text-blue-400 mt-2 font-black uppercase">LOGISTICS OFFICER - 2H AGO</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -496,6 +542,25 @@ export default function AdminDashboardPage() {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Infrastructure Status */}
+                    <div className="glass rounded-xl border border-white/10 p-6 relative overflow-hidden">
+                        <h3 className="text-lg font-bold text-white font-display mb-4 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-emerald-500 rounded-full inline-block"></span>
+                            Logistics Infrastructure
+                        </h3>
+                        <div className="space-y-4">
+                            {systemHealth.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5">
+                                    <span className="text-xs text-slate-400 uppercase tracking-widest font-bold">{item.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${item.color} animate-pulse`}></div>
+                                        <span className="text-[10px] text-white font-black uppercase tracking-tighter">{item.status}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

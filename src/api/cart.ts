@@ -23,16 +23,27 @@ export interface CartItem {
   type: 'product' | 'machinery';
 }
 
+import { toast } from 'sonner';
+
+// Cart event emitter for cross-component updates
+const CART_STORAGE_KEY = 'saudi_horizon_cart';
+
+export const emitCartChange = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('cart-updated'));
+  }
+};
+
 export const getCart = (): CartItem[] => {
   try {
-    const cart = safeLocalStorage.getItem('cart');
+    const cart = safeLocalStorage.getItem(CART_STORAGE_KEY);
     return cart ? JSON.parse(cart) : [];
   } catch {
     return [];
   }
 };
 
-export const addToCart = (item: CartItem): void => {
+export const addToCart = (item: CartItem): boolean => {
   try {
     const cart = getCart();
     const existingItem = cart.find((i) => i._id === item._id);
@@ -43,9 +54,12 @@ export const addToCart = (item: CartItem): void => {
       cart.push(item);
     }
 
-    safeLocalStorage.setItem('cart', JSON.stringify(cart));
+    safeLocalStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    emitCartChange();
+    return true;
   } catch {
     // Ignore storage errors
+    return false;
   }
 };
 
@@ -53,7 +67,8 @@ export const removeFromCart = (itemId: string): void => {
   try {
     const cart = getCart();
     const filtered = cart.filter((i) => i._id !== itemId);
-    safeLocalStorage.setItem('cart', JSON.stringify(filtered));
+    safeLocalStorage.setItem(CART_STORAGE_KEY, JSON.stringify(filtered));
+    emitCartChange();
   } catch {
     // Ignore storage errors
   }
@@ -69,7 +84,8 @@ export const updateCartItem = (itemId: string, quantity: number): void => {
       if (item.quantity <= 0) {
         removeFromCart(itemId);
       } else {
-        safeLocalStorage.setItem('cart', JSON.stringify(cart));
+        safeLocalStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        emitCartChange();
       }
     }
   } catch {
@@ -79,7 +95,8 @@ export const updateCartItem = (itemId: string, quantity: number): void => {
 
 export const clearCart = (): void => {
   try {
-    safeLocalStorage.removeItem('cart');
+    safeLocalStorage.removeItem(CART_STORAGE_KEY);
+    emitCartChange();
   } catch {
     // Ignore storage errors
   }

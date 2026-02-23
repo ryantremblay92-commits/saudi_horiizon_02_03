@@ -14,6 +14,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { getCart, clearCart, CartItem } from '@/api/cart';
 import { toast } from 'sonner';
 import { FloatingParticles, AnimatedConnector } from "@/components/effects/SceneEffects";
+import StripeApplePay from '@/components/cart/StripeApplePay';
 
 type CheckoutStep = 'information' | 'shipping' | 'payment' | 'review';
 
@@ -326,6 +327,21 @@ export default function CheckoutPage() {
                     </div>
                 ))}
             </RadioGroup>
+
+            {/* Apple Pay / Express Checkout Section */}
+            <div className="mt-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="h-px bg-white/5 flex-1" />
+                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">SECURE EXPRESS AUTHORIZATION</span>
+                    <div className="h-px bg-white/5 flex-1" />
+                </div>
+                <div className="card-premium p-8 rounded-3xl border-gold/20 bg-gold/5">
+                    <StripeApplePay cartItems={cartItems} />
+                    <p className="text-[9px] text-center text-white/20 uppercase tracking-widest mt-4 font-bold">
+                        ONE-CLICK CORPORATE CLEARANCE ENABLED
+                    </p>
+                </div>
+            </div>
 
             {/* Security Box */}
             <div className="mt-10 p-8 rounded-3xl bg-white/5 border border-white/5 flex items-center gap-8">

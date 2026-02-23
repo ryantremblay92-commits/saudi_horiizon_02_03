@@ -56,21 +56,25 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const body = await request.json();
-        const { title, image, link, position } = body;
+        const { title, subtitle, image, link, ctaText, position, isActive, startDate, endDate } = body;
 
-        if (!title || !image || !position) {
+        if (!title || !position) {
             return NextResponse.json(
-                { error: 'title, image, and position are required' },
+                { error: 'title and position are required' },
                 { status: 400 }
             );
         }
 
         const newBanner = await Banner.create({
             title,
-            image,
-            link,
+            subtitle: subtitle || '',
+            image: image || '',
+            link: link || '',
+            ctaText: ctaText || 'Shop Now',
             position,
-            isActive: true
+            isActive: isActive !== undefined ? isActive : true,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined
         });
 
         return NextResponse.json(newBanner, { status: 201 });

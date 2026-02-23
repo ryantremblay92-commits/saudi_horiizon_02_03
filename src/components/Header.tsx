@@ -16,21 +16,37 @@ import {
 } from "./ui/sheet"
 import { Separator } from "./ui/separator"
 import { getCart } from "@/api/cart"
+import { emitCartChange } from "@/api/cart"
 
 export function Header() {
   const { logout, isAuthenticated } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
-  const [cartCount, setCartCount] = useState(getCart().length)
+  const [cartCount, setCartCount] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
+    // Set cart count on mount to avoid hydration mismatch
+    setCartCount(getCart().length)
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
     }
+
+    // Listen for cart updates from other components
+    const handleCartUpdate = () => {
+      setCartCount(getCart().length)
+    }
+
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    window.addEventListener('cart-updated', handleCartUpdate)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('cart-updated', handleCartUpdate)
+    }
   }, [])
+
 
   const handleLogout = () => {
     logout()

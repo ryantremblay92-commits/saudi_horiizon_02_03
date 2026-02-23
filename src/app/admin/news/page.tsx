@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,22 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Edit, Save, X, Search, FileText } from 'lucide-react';
 import { getAllAdminNews, createNews, updateNews, deleteNews, NewsItem } from '@/api/news';
-// import { useToast } from '../../../hooks/useToast';
-
-// Simple mock to avoid build errors if hook is missing or path issues
-const useToast = () => ({
-    toast: (props: any) => console.log('Toast:', props)
-});
+import { toast } from 'sonner';
 
 export default function AdminNewsPage() {
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditing, setIsEditing] = useState(false);
-    const { toast } = useToast();
+
 
     // Form State
     const [currentId, setCurrentId] = useState<string | null>(null);
@@ -48,11 +43,7 @@ export default function AdminNewsPage() {
             const data = await getAllAdminNews();
             setNews(data);
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to fetch news articles",
-                variant: "destructive"
-            });
+            toast.error('Failed to fetch news articles');
         } finally {
             setLoading(false);
         }
@@ -93,9 +84,9 @@ export default function AdminNewsPage() {
         try {
             await deleteNews(id);
             setNews(prev => prev.filter(item => item._id !== id));
-            toast({ title: "Success", description: "Article deleted" });
+            toast.success('Article deleted');
         } catch (error) {
-            toast({ title: "Error", description: "Failed to delete article", variant: "destructive" });
+            toast.error('Failed to delete article');
         }
     };
 
@@ -104,19 +95,15 @@ export default function AdminNewsPage() {
         try {
             if (currentId) {
                 await updateNews(currentId, formData);
-                toast({ title: "Success", description: "Article updated" });
+                toast.success('Article updated');
             } else {
                 await createNews(formData);
-                toast({ title: "Success", description: "Article created" });
+                toast.success('Article created');
             }
             fetchNews();
             resetForm();
         } catch (error: any) {
-            toast({
-                title: "Error",
-                description: error.message || "Failed to save article",
-                variant: "destructive"
-            });
+            toast.error(error.message || 'Failed to save article');
         }
     };
 
@@ -126,16 +113,15 @@ export default function AdminNewsPage() {
     );
 
     return (
-        <div className="container mx-auto py-8 px-4">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Content Management</h1>
-                    <p className="text-muted-foreground">Manage news articles and blog posts.</p>
-                </div>
-                <Button onClick={() => { resetForm(); setIsEditing(true); }}>
+        <AdminLayout
+            title="Content Management"
+            description="Manage news articles and blog posts"
+            actions={
+                <Button onClick={() => { resetForm(); setIsEditing(true); }} className="bg-gold hover:bg-gold/90 text-navy font-bold">
                     <Plus className="mr-2 h-4 w-4" /> Create Article
                 </Button>
-            </div>
+            }
+        >
 
             {isEditing ? (
                 <Card className="max-w-4xl mx-auto">
@@ -297,6 +283,6 @@ export default function AdminNewsPage() {
                     </CardContent>
                 </Card>
             )}
-        </div>
+        </AdminLayout>
     );
 }
