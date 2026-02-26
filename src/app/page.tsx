@@ -11,6 +11,7 @@ import { HomeCTASection } from "@/components/home/premium/HomeCTASection";
 import { FeaturedArticlesSection } from "@/components/home/premium/FeaturedArticlesSection";
 import { FAQSection } from "@/components/home/premium/FAQSection";
 import { StatsSection } from "@/components/home/premium/StatsSection";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
@@ -31,6 +32,8 @@ export default function Home() {
             <FeaturesGridSection />
             <AnimatedConnector />
             <CategoriesSection />
+            <AnimatedConnector />
+            <FeaturedProducts />
             <AnimatedConnector />
             <ProductsSection />
             <AnimatedConnector />

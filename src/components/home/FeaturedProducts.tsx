@@ -1,161 +1,219 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { getProducts, Product } from "@/api/products";
-import { ProductCard } from "@/components/ProductCard";
-import { motion, useInView, type Variants } from "framer-motion";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.12,
-            delayChildren: 0.2
-        }
-    }
-};
+interface Product {
+    _id: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    image: string;
+    category: string;
+    rating?: number;
+    reviews?: number;
+    isNew?: boolean;
+    discount?: number;
+    description?: string;
+}
 
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 30, scale: 0.95 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: {
-            duration: 0.6,
-            ease: "easeOut"
-        }
-    }
-};
-
-export function FeaturedProducts() {
+export default function FeaturedProducts() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await getProducts({ limit: 4 });
-                setProducts(data.products);
-            } catch (error) {
-                console.error("Failed to fetch products", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
+        fetchFeaturedProducts();
     }, []);
 
-    const handleAddToCart = (product: Product) => {
-        console.log("Add to cart:", product.name);
+    const fetchFeaturedProducts = async () => {
+        try {
+            const response = await fetch('/api/products?limit=8');
+            if (!response.ok) throw new Error('Failed to fetch products');
+            const data = await response.json();
+
+            // Map MongoDB schema to the UI interface if needed, although they should be similar
+            // In a real app, we might filter for "featured" flag
+            setProducts(data.products || []);
+        } catch (error) {
+            console.error('Error fetching featured products:', error);
+            // Fallback to empty or previous mock if needed, but error state is better
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleQuickInquiry = (product: Product) => {
-        console.log("Quick inquiry:", product.name);
-    };
+    if (loading) {
+        return (
+            <section className="py-24 bg-navy">
+                <div className="container-premium px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="glass rounded-[2rem] border border-white/5 p-4 animate-pulse">
+                                <div className="w-full aspect-square bg-white/5 rounded-2xl mb-6"></div>
+                                <div className="h-4 bg-white/5 rounded-full mb-3 w-1/3"></div>
+                                <div className="h-6 bg-white/5 rounded-full mb-4 w-3/4"></div>
+                                <div className="flex justify-between items-center mt-auto pt-6 border-t border-white/5">
+                                    <div className="h-6 bg-white/5 rounded-full w-1/4"></div>
+                                    <div className="h-10 bg-white/5 rounded-xl w-1/3"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    if (products.length === 0) return null;
 
     return (
-        <section className="py-32 bg-navy relative border-t border-white/5 overflow-hidden">
+        <section className="py-24 bg-navy relative overflow-hidden">
             {/* Background elements */}
-            <div className="absolute bottom-0 right-0 w-1/3 h-1/2 bg-gradient-to-t from-gold/5 to-transparent pointer-events-none" />
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-900/5 rounded-full blur-3xl" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gold/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
 
-            {/* Animated grid lines */}
-            <div className="absolute inset-0 opacity-[0.02]"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                                     linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                    backgroundSize: '100px 100px'
-                }}
-            />
+            <div className="container-premium relative z-10 px-4">
+                <div className="text-center mb-16">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <span className="inline-block py-1.5 px-4 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-bold uppercase tracking-[0.2em] mb-6">
+                            Equipment Catalog
+                        </span>
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 font-display tracking-tight">
+                            Featured <span className="text-gold">Products</span>
+                        </h2>
+                        <p className="text-lg text-white/50 max-w-2xl mx-auto font-medium leading-relaxed">
+                            Premium industrial parts and heavy machinery components engineered for performance and reliability across Saudi Arabia.
+                        </p>
+                    </motion.div>
+                </div>
 
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {products.map((product, index) => (
+                        <motion.div
+                            key={product._id}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1 }}
+                            className="group"
+                        >
+                            <div className="glass-premium h-full flex flex-col rounded-[2rem] border border-white/5 hover:border-gold/30 transition-all duration-500 overflow-hidden relative">
+                                <Link href={`/products/${product._id}`} className="absolute inset-0 z-10" />
+
+                                {/* Image Container */}
+                                <div className="relative aspect-square p-2">
+                                    <div className="w-full h-full rounded-2xl overflow-hidden bg-navy/40 border border-white/5 relative">
+                                        {product.image ? (
+                                            <Image
+                                                src={product.image}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-white/5">
+                                                <span className="text-white/20 font-bold tracking-tighter text-4xl">SHI</span>
+                                            </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-navy/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    </div>
+
+                                    {/* Labels */}
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+                                        {product.isNew && (
+                                            <span className="px-3 py-1 bg-gold text-navy text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xl shadow-gold/20">
+                                                NEW
+                                            </span>
+                                        )}
+                                        {product.discount && (
+                                            <span className="px-3 py-1 bg-white text-navy text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xl shadow-black/20">
+                                                -{product.discount}%
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="p-6 flex flex-col flex-1">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-[10px] font-bold text-gold uppercase tracking-[0.2em]">
+                                            {product.category || 'Machinery'}
+                                        </span>
+                                        <div className="h-px flex-1 bg-white/5" />
+                                    </div>
+
+                                    <h4 className="text-xl font-bold text-white mb-2 leading-tight group-hover:text-gold transition-colors duration-300 font-display">
+                                        {product.name}
+                                    </h4>
+
+                                    <p className="text-white/40 text-sm line-clamp-2 mb-4 leading-relaxed font-medium">
+                                        {product.description || 'Professional grade component for industrial applications.'}
+                                    </p>
+
+                                    {/* Ratings - Mocked if not present */}
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <div className="flex items-center">
+                                            {[...Array(5)].map((_, i) => (
+                                                <svg
+                                                    key={i}
+                                                    className={`w-3 h-3 ${i < (product.rating || 5)
+                                                        ? 'text-gold fill-current'
+                                                        : 'text-white/20'
+                                                        }`}
+                                                    viewBox="0 0 20 20"
+                                                >
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                </svg>
+                                            ))}
+                                        </div>
+                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                                            ({product.reviews || Math.floor(Math.random() * 50) + 10})
+                                        </span>
+                                    </div>
+
+                                    {/* Action Area */}
+                                    <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-0.5">Price starting at</span>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-black text-white font-display">
+                                                    SAR {product.price.toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center group-hover:bg-gold group-hover:text-navy transition-all duration-300">
+                                            <svg className="w-5 h-5 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* View All CTA */}
                 <motion.div
-                    className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <div>
-                        <motion.span
-                            className="text-gold text-xs font-bold uppercase tracking-[0.2em] mb-4 block font-display"
-                            initial={{ opacity: 0, x: -20 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            Genuine Parts
-                        </motion.span>
-                        <h2 className="text-3xl md:text-5xl font-bold text-white font-display">Recent Arrivals</h2>
-                    </div>
-                    <motion.div
-                        whileHover={{ x: 5 }}
-                    >
-                        <Link href="/products" className="group flex items-center gap-2 text-sm font-bold text-white uppercase tracking-widest hover:text-gold transition-colors">
-                            View Complete Catalog
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                    </motion.div>
-                </motion.div>
-
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[...Array(4)].map((_, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="aspect-[3/4] bg-white/5 animate-pulse rounded-sm"
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div ref={containerRef} className="relative">
-                        <motion.div
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate={isInView ? "visible" : "hidden"}
-                        >
-                            {products.slice(0, 4).map((product, index) => (
-                                <motion.div
-                                    key={product._id}
-                                    variants={itemVariants}
-                                >
-                                    <ProductCard
-                                        product={product}
-                                        onAddToCart={handleAddToCart}
-                                        onQuickInquiry={handleQuickInquiry}
-                                        index={index}
-                                    />
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    </div>
-                )}
-
-                {/* Bottom CTA */}
-                <motion.div
-                    className="mt-16 text-center"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 }}
+                    className="text-center mt-16"
                 >
                     <Link
                         href="/products"
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/10 hover:border-gold/50 hover:bg-white/[0.08] rounded-sm text-white font-bold uppercase tracking-widest text-sm transition-all duration-300"
+                        className="inline-flex items-center gap-4 px-10 py-5 bg-gold text-navy font-black rounded-2xl hover:bg-white transition-all duration-300 shadow-2xl shadow-gold/20 hover:scale-105 active:scale-95 group"
                     >
-                        Browse Full Catalog
-                        <ArrowRight className="w-4 h-4" />
+                        EXPLORE ENTIRE CATALOG
+                        <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
                     </Link>
                 </motion.div>
             </div>

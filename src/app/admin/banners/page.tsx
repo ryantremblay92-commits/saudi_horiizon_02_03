@@ -2,426 +2,342 @@
 
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import {
-    Plus,
-    Image as ImageIcon,
-    Pencil,
-    Trash2,
-    Eye,
-    EyeOff,
-    Upload,
-    X
-} from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Loader2, Image as ImageIcon, Link, Calendar, Eye, EyeOff, Layers, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Banner {
     _id: string;
     title: string;
-    subtitle?: string;
+    subtitle: string;
     image: string;
-    link?: string;
-    ctaText?: string;
+    link: string;
+    ctaText: string;
     position: string;
     isActive: boolean;
     startDate?: string;
     endDate?: string;
-    createdAt: string;
 }
 
+interface BannerForm {
+    title: string;
+    subtitle: string;
+    image: string;
+    link: string;
+    ctaText: string;
+    position: string;
+    startDate: string;
+    endDate: string;
+}
+
+const defaultForm: BannerForm = { title: '', subtitle: '', image: '', link: '', ctaText: 'Shop Now', position: 'hero', startDate: '', endDate: '' };
+
 export default function AdminBannersPage() {
-    const [banners, setBanners] = useState<Banner[]>([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [banners, setBanners] = useState<Banner[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
-    const [formData, setFormData] = useState({
-        title: '',
-        subtitle: '',
-        image: '',
-        link: '',
-        ctaText: 'Shop Now',
-        position: 'homepage',
-        isActive: true,
-        startDate: '',
-        endDate: ''
-    });
+    const [formData, setFormData] = useState<BannerForm>(defaultForm);
 
     const getHeaders = (): HeadersInit => {
         const token = localStorage.getItem('accessToken');
-        return {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        };
+        return { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
     };
 
-    useEffect(() => {
-        loadBanners();
-    }, []);
-
-    const loadBanners = async () => {
+    const fetchBanners = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const response = await fetch('/api/admin/banners', { headers: getHeaders() });
-            if (!response.ok) throw new Error('Failed to load banners');
-            const data = await response.json();
-            setBanners(data);
-        } catch (error) {
-            console.error('Error loading banners:', error);
-            toast.error('Failed to load banners');
+            const res = await fetch('/api/admin/banners', { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                setBanners(data.banners || []);
+            }
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const url = editingBanner
-                ? `/api/admin/banners/${editingBanner._id}`
-                : '/api/admin/banners';
-            const method = editingBanner ? 'PATCH' : 'POST';
+    useEffect(() => { fetchBanners(); }, []);
 
-            const response = await fetch(url, {
-                method,
-                headers: getHeaders(),
-                body: JSON.stringify(formData)
-            });
-
-            if (!response.ok) throw new Error('Failed to save banner');
-
-            toast.success(editingBanner ? 'Banner updated successfully' : 'Banner created successfully');
-            setShowModal(false);
-            resetForm();
-            loadBanners();
-        } catch (error) {
-            console.error('Error saving banner:', error);
-            toast.error('Failed to save banner');
-        }
+    const openAdd = () => { setEditingBanner(null); setFormData(defaultForm); setShowModal(true); };
+    const openEdit = (b: Banner) => {
+        setEditingBanner(b);
+        setFormData({ title: b.title, subtitle: b.subtitle, image: b.image, link: b.link, ctaText: b.ctaText, position: b.position, startDate: b.startDate || '', endDate: b.endDate || '' });
+        setShowModal(true);
     };
 
-    const handleEdit = (banner: Banner) => {
-        setEditingBanner(banner);
-        setFormData({
-            title: banner.title,
-            subtitle: banner.subtitle || '',
-            image: banner.image,
-            link: banner.link || '',
-            ctaText: banner.ctaText || 'Shop Now',
-            position: banner.position,
-            isActive: banner.isActive,
-            startDate: banner.startDate || '',
-            endDate: banner.endDate || ''
-        });
-        setShowModal(true);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.title) { toast.error('Banner title required'); return; }
+        setSubmitting(true);
+        try {
+            const method = editingBanner ? 'PATCH' : 'POST';
+            const url = editingBanner ? `/api/admin/banners/${editingBanner._id}` : '/api/admin/banners';
+            const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(formData) });
+            if (!res.ok) throw new Error();
+            toast.success(editingBanner ? 'Banner updated' : 'Banner deployed');
+            setShowModal(false);
+            fetchBanners();
+        } catch { toast.error('Operation failed'); } finally { setSubmitting(false); }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this banner?')) return;
-
+        if (!confirm('Permanently remove this banner?')) return;
         try {
-            const response = await fetch(`/api/admin/banners/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
-            });
-
-            if (!response.ok) throw new Error('Failed to delete banner');
-
-            toast.success('Banner deleted successfully');
-            loadBanners();
-        } catch (error) {
-            console.error('Error deleting banner:', error);
-            toast.error('Failed to delete banner');
-        }
+            const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE', headers: getHeaders() });
+            if (!res.ok) throw new Error();
+            toast.success('Banner removed');
+            setBanners(prev => prev.filter(b => b._id !== id));
+        } catch { toast.error('Removal failed'); }
     };
 
-    const handleToggleActive = async (banner: Banner) => {
+    const handleToggle = async (banner: Banner) => {
         try {
-            const response = await fetch(`/api/admin/banners/${banner._id}`, {
-                method: 'PATCH',
-                headers: getHeaders(),
-                body: JSON.stringify({ isActive: !banner.isActive })
-            });
-
-            if (!response.ok) throw new Error('Failed to update banner');
-
+            const res = await fetch(`/api/admin/banners/${banner._id}`, { method: 'PATCH', headers: getHeaders(), body: JSON.stringify({ isActive: !banner.isActive }) });
+            if (!res.ok) throw new Error();
             toast.success(banner.isActive ? 'Banner deactivated' : 'Banner activated');
-            loadBanners();
-        } catch (error) {
-            console.error('Error toggling banner:', error);
-            toast.error('Failed to update banner');
-        }
+            setBanners(prev => prev.map(b => b._id === banner._id ? { ...b, isActive: !b.isActive } : b));
+        } catch { toast.error('Toggle failed'); }
     };
 
-    const resetForm = () => {
-        setEditingBanner(null);
-        setFormData({
-            title: '',
-            subtitle: '',
-            image: '',
-            link: '',
-            ctaText: 'Shop Now',
-            position: 'homepage',
-            isActive: true,
-            startDate: '',
-            endDate: ''
-        });
+    const positionColors: Record<string, string> = {
+        hero: 'text-gold bg-gold/10 border-gold/20',
+        sidebar: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+        popup: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+        category: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
     };
 
-    const openCreateModal = () => {
-        resetForm();
-        setShowModal(true);
-    };
+    const inputCls = "w-full bg-white/[0.03] border border-white/10 text-white placeholder-white/20 rounded-2xl px-5 py-3.5 text-sm font-medium focus:outline-none focus:border-gold/50 focus:bg-white/[0.06] transition-all";
+
+    const activeCount = banners.filter(b => b.isActive).length;
 
     return (
-        <AdminLayout title="Banners" description="Manage website banners and hero images" onRefresh={loadBanners}>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">Banner Management</h2>
-                        <p className="text-gray-400">Manage homepage banners and promotional images</p>
+        <AdminLayout title="Banner Management" description="Visual assets and promotional display grid" onRefresh={fetchBanners}>
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-32 border border-dashed border-white/10 rounded-[3rem]">
+                    <div className="relative w-20 h-20 mb-6">
+                        <div className="absolute inset-0 border-4 border-gold/10 rounded-full" />
+                        <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+                        <Layers className="absolute inset-0 m-auto w-8 h-8 text-gold animate-pulse" />
                     </div>
-                    <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Banner
-                    </Button>
+                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading Display Grid...</p>
                 </div>
-
-                {/* Banner Grid */}
-                {loading ? (
-                    <div className="text-center py-12 text-gray-400">Loading banners...</div>
-                ) : banners.length === 0 ? (
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardContent className="py-12 text-center">
-                            <ImageIcon className="h-12 w-12 mx-auto text-gray-500 mb-4" />
-                            <p className="text-gray-400 mb-4">No banners yet</p>
-                            <Button onClick={openCreateModal} variant="outline" className="border-gray-600 text-gray-300">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create First Banner
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {banners.map((banner) => (
-                            <Card key={banner._id} className="bg-gray-800 border-gray-700 overflow-hidden">
-                                <div className="relative h-48 bg-gray-700">
-                                    {banner.image ? (
-                                        <img
-                                            src={banner.image}
-                                            alt={banner.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <ImageIcon className="h-12 w-12 text-gray-500" />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-2 right-2 flex gap-2">
-                                        <button
-                                            onClick={() => handleToggleActive(banner)}
-                                            className={`p-2 rounded-lg ${banner.isActive
-                                                ? 'bg-green-600 hover:bg-green-700'
-                                                : 'bg-gray-600 hover:bg-gray-700'
-                                                }`}
-                                        >
-                                            {banner.isActive ? (
-                                                <Eye className="h-4 w-4 text-white" />
-                                            ) : (
-                                                <EyeOff className="h-4 w-4 text-white" />
-                                            )}
-                                        </button>
-                                    </div>
-                                    {!banner.isActive && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                            <span className="text-gray-400 font-medium">Inactive</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <CardContent className="p-4">
-                                    <h3 className="font-semibold text-white mb-1">{banner.title}</h3>
-                                    {banner.subtitle && (
-                                        <p className="text-sm text-gray-400 mb-2">{banner.subtitle}</p>
-                                    )}
-                                    <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                                        <span>Position: {banner.position}</span>
-                                        <span>{banner.ctaText}</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            onClick={() => handleEdit(banner)}
-                                            variant="outline"
-                                            size="sm"
-                                            className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
-                                        >
-                                            <Pencil className="h-3 w-3 mr-1" />
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleDelete(banner._id)}
-                                            variant="outline"
-                                            size="sm"
-                                            className="border-gray-600 text-gray-300 hover:bg-red-900 hover:text-red-400"
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+            ) : (
+                <div className="space-y-8">
+                    {/* Header Actions */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{activeCount} Active</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-white/20" />
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{banners.length - activeCount} Staged</span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={openAdd}
+                            className="flex items-center gap-2 px-8 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 shadow-xl shadow-gold/20"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Deploy Banner
+                        </button>
                     </div>
-                )}
-            </div>
 
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center p-6 border-b border-gray-700">
-                            <h2 className="text-xl font-semibold text-white">
-                                {editingBanner ? 'Edit Banner' : 'Create Banner'}
-                            </h2>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <X className="h-5 w-5" />
+                    {/* Banner Grid */}
+                    {banners.length === 0 ? (
+                        <div className="glass-premium rounded-[3rem] border border-dashed border-white/10 flex flex-col items-center justify-center py-32 gap-4">
+                            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                                <Layers className="w-8 h-8 text-white/20" />
+                            </div>
+                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">No Banners Deployed</p>
+                            <button onClick={openAdd} className="px-8 py-3 bg-gold/10 hover:bg-gold/20 text-gold rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gold/20 transition-all">
+                                Deploy First Banner
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="title" className="text-gray-300">Title</Label>
-                                    <Input
-                                        id="title"
-                                        value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="subtitle" className="text-gray-300">Subtitle</Label>
-                                    <Textarea
-                                        id="subtitle"
-                                        value={formData.subtitle}
-                                        onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                        rows={2}
-                                    />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="image" className="text-gray-300">Image URL</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="image"
-                                            value={formData.image}
-                                            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                                            className="bg-gray-700 border-gray-600 text-white flex-1"
-                                            placeholder="https://..."
-                                        />
-                                        <Button type="button" variant="outline" className="border-gray-600 text-gray-300">
-                                            <Upload className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    {formData.image && (
-                                        <div className="mt-2 relative h-32 w-full bg-gray-700 rounded-lg overflow-hidden">
-                                            <img
-                                                src={formData.image}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="ctaText" className="text-gray-300">CTA Button Text</Label>
-                                    <Input
-                                        id="ctaText"
-                                        value={formData.ctaText}
-                                        onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="link" className="text-gray-300">Link URL</Label>
-                                    <Input
-                                        id="link"
-                                        value={formData.link}
-                                        onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                        placeholder="/products"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="position" className="text-gray-300">Position</Label>
-                                    <select
-                                        id="position"
-                                        value={formData.position}
-                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                                        className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 w-full"
-                                    >
-                                        <option value="homepage">Homepage Hero</option>
-                                        <option value="homepage-secondary">Homepage Secondary</option>
-                                        <option value="category">Category Page</option>
-                                        <option value="promotional">Promotional</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-gray-300">Status</Label>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="isActive"
-                                            checked={formData.isActive}
-                                            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                            className="h-4 w-4 text-primary"
-                                        />
-                                        <Label htmlFor="isActive" className="text-gray-300">Active</Label>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="startDate" className="text-gray-300">Start Date</Label>
-                                    <Input
-                                        id="startDate"
-                                        type="date"
-                                        value={formData.startDate}
-                                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="endDate" className="text-gray-300">End Date</Label>
-                                    <Input
-                                        id="endDate"
-                                        type="date"
-                                        value={formData.endDate}
-                                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setShowModal(false)}
-                                    className="border-gray-600 text-gray-300"
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {banners.map((banner, idx) => (
+                                <motion.div
+                                    key={banner._id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.06 }}
+                                    className={`group glass-premium rounded-[2.5rem] border overflow-hidden transition-all hover:scale-[1.02] ${banner.isActive ? 'border-white/10 hover:border-gold/20' : 'border-white/5 opacity-60'}`}
                                 >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                                    {editingBanner ? 'Update Banner' : 'Create Banner'}
-                                </Button>
-                            </div>
-                        </form>
-                    </div>
+                                    {/* Image Preview */}
+                                    <div className="relative h-44 bg-white/5 overflow-hidden">
+                                        {banner.image ? (
+                                            <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                                <ImageIcon className="w-8 h-8 text-white/10" />
+                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">No Image Asset</span>
+                                            </div>
+                                        )}
+                                        {/* Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                        {/* Badges */}
+                                        <div className="absolute top-4 left-4 flex items-center gap-2">
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border ${positionColors[banner.position] || 'text-white/40 bg-white/5 border-white/10'}`}>
+                                                {banner.position}
+                                            </span>
+                                        </div>
+                                        <div className="absolute top-4 right-4">
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border ${banner.isActive ? 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30' : 'bg-white/5 text-white/30 border-white/10'}`}>
+                                                <div className={`w-1.5 h-1.5 rounded-full ${banner.isActive ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
+                                                {banner.isActive ? 'Live' : 'Staged'}
+                                            </div>
+                                        </div>
+                                        {/* CTA Preview */}
+                                        {banner.ctaText && (
+                                            <div className="absolute bottom-4 left-4">
+                                                <span className="bg-gold text-navy px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">
+                                                    {banner.ctaText}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Card Content */}
+                                    <div className="p-6 space-y-4">
+                                        <div>
+                                            <h4 className="text-white font-black text-base uppercase tracking-tight font-display line-clamp-1">{banner.title || 'Untitled'}</h4>
+                                            {banner.subtitle && <p className="text-white/30 text-[11px] font-bold mt-1 line-clamp-2 uppercase tracking-widest">{banner.subtitle}</p>}
+                                        </div>
+
+                                        {(banner.startDate || banner.endDate) && (
+                                            <div className="flex items-center gap-2 text-[9px] font-black text-white/20 uppercase tracking-widest">
+                                                <Calendar className="w-3 h-3" />
+                                                {banner.startDate && <span>{new Date(banner.startDate).toLocaleDateString()}</span>}
+                                                {banner.startDate && banner.endDate && <span>→</span>}
+                                                {banner.endDate && <span>{new Date(banner.endDate).toLocaleDateString()}</span>}
+                                            </div>
+                                        )}
+
+                                        {banner.link && (
+                                            <div className="flex items-center gap-2 text-[9px] font-black text-white/20 uppercase tracking-widest truncate">
+                                                <Link className="w-3 h-3 flex-shrink-0" />
+                                                <span className="truncate">{banner.link}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                            <button
+                                                onClick={() => handleToggle(banner)}
+                                                className={`flex items-center gap-2 flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all ${banner.isActive ? 'bg-white/5 border-white/10 text-white/40 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400' : 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400 hover:bg-emerald-400/20'}`}
+                                            >
+                                                {banner.isActive ? <EyeOff className="w-3 h-3 mx-auto" /> : <Eye className="w-3 h-3 mx-auto" />}
+                                                {banner.isActive ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                            <button
+                                                onClick={() => openEdit(banner)}
+                                                className="flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/40 hover:bg-gold/10 hover:border-gold/20 hover:text-gold transition-all"
+                                            >
+                                                <Edit2 className="w-3 h-3 mx-auto" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(banner._id)}
+                                                className="flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/40 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 transition-all"
+                                            >
+                                                <Trash2 className="w-3 h-3 mx-auto" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
+
+            {/* Modal */}
+            <AnimatePresence>
+                {showModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6" onClick={() => setShowModal(false)}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-premium border border-white/10 rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                            <div className="p-10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">{editingBanner ? 'Modify Banner' : 'Deploy Banner'}</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Visual asset configuration</p>
+                                    </div>
+                                    <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center border border-white/10 transition-all">
+                                        <X className="w-4 h-4 text-white/40" />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Banner Title *</label>
+                                            <input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className={inputCls} placeholder="e.g. Summer Sale Campaign" required />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">CTA Label</label>
+                                            <input value={formData.ctaText} onChange={e => setFormData({ ...formData, ctaText: e.target.value })} className={inputCls} placeholder="Shop Now" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Subtitle Copy</label>
+                                        <textarea value={formData.subtitle} onChange={e => setFormData({ ...formData, subtitle: e.target.value })} className={`${inputCls} resize-none`} rows={2} placeholder="Supporting message..." />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Image Asset URL</label>
+                                        <input value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className={inputCls} placeholder="https://..." />
+                                        {formData.image && (
+                                            <div className="mt-2 h-32 rounded-2xl overflow-hidden border border-white/10">
+                                                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Destination Link</label>
+                                            <input value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className={inputCls} placeholder="/products or https://..." />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Display Position</label>
+                                            <select value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:border-gold/50 transition-all">
+                                                <option value="hero">Hero</option>
+                                                <option value="sidebar">Sidebar</option>
+                                                <option value="popup">Popup</option>
+                                                <option value="category">Category</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Activation Date</label>
+                                            <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className={inputCls} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Expiry Date</label>
+                                            <input type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className={inputCls} />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4">
+                                        <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Abort</button>
+                                        <button type="submit" disabled={submitting} className="flex-1 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] disabled:opacity-50 shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
+                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" />Deploying...</> : <><Zap className="w-4 h-4" />{editingBanner ? 'Update' : 'Deploy'}</>}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </AdminLayout>
     );
 }

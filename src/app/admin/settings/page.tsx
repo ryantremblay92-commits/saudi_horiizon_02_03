@@ -2,12 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
     Save,
@@ -19,14 +13,31 @@ import {
     FileText,
     MapPin,
     Loader2,
+    ChevronRight,
+    Settings,
+    Lock,
+    ToggleLeft,
+    ToggleRight,
+    CheckCircle2,
+    AlertCircle,
+    Clock,
+    Zap,
+    Activity
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminSettingsPage() {
-    const [loading, setLoading] = useState(false);
+    const { isInitialized } = useAuth();
     const [initialLoading, setInitialLoading] = useState(true);
     const [savingSection, setSavingSection] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('store');
+    const [mounted, setMounted] = useState(false);
 
-    // Store Information State
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const [storeInfo, setStoreInfo] = useState({
         name: 'Saudi Horizon',
         tagline: 'Premium Heavy Equipment Parts Supplier',
@@ -38,7 +49,6 @@ export default function AdminSettingsPage() {
         description: 'Leading supplier of genuine heavy equipment parts for Caterpillar, Komatsu, Volvo, and more.'
     });
 
-    // SEO State
     const [seo, setSeo] = useState({
         metaTitle: 'Saudi Horizon - Heavy Equipment Parts Supplier',
         metaDescription: 'Genuine heavy equipment parts for Caterpillar, Komatsu, Volvo, and more. Fast delivery across Saudi Arabia.',
@@ -46,12 +56,10 @@ export default function AdminSettingsPage() {
         ogImage: '/images/og-image.jpg'
     });
 
-    // Content Management State
     const [content, setContent] = useState({
         heroTitle: 'Premium Heavy Equipment Parts',
         heroSubtitle: 'Genuine parts for Caterpillar, Komatsu, Volvo & more',
         heroCta: 'Request a Quote',
-        featuresTitle: 'Why Choose Us',
         feature1Title: 'Genuine Parts',
         feature1Desc: '100% authentic OEM parts',
         feature2Title: 'Fast Delivery',
@@ -62,7 +70,6 @@ export default function AdminSettingsPage() {
         footerContact: 'Contact us: info@saudihorizon.com'
     });
 
-    // General Settings State
     const [general, setGeneral] = useState({
         appName: 'Saudi Horizon',
         appUrl: 'https://saudihorizon.com',
@@ -72,7 +79,6 @@ export default function AdminSettingsPage() {
         language: 'en'
     });
 
-    // Notification Settings State
     const [notifications, setNotifications] = useState({
         orderNotifications: true,
         lowStockAlerts: true,
@@ -81,18 +87,12 @@ export default function AdminSettingsPage() {
         marketingEmails: false
     });
 
-    // Security Settings State
     const [security, setSecurity] = useState({
         twoFactorAuth: false,
         sessionTimeout: '30 minutes',
         passwordPolicy: true,
         loginAttemptsLockout: '5 attempts'
     });
-
-    // Load all settings on mount
-    useEffect(() => {
-        loadSettings();
-    }, []);
 
     const getHeaders = (): HeadersInit => {
         const token = localStorage.getItem('accessToken');
@@ -102,14 +102,19 @@ export default function AdminSettingsPage() {
         };
     };
 
+    useEffect(() => {
+        if (isInitialized) {
+            loadSettings();
+        }
+    }, [isInitialized]);
+
     const loadSettings = async () => {
         try {
             setInitialLoading(true);
             const response = await fetch('/api/admin/settings', { headers: getHeaders() });
-            if (!response.ok) throw new Error('Failed to load settings');
+            if (!response.ok) throw new Error('Failed to load');
             const data = await response.json();
             const s = data.settings || {};
-
             if (s.store) setStoreInfo(prev => ({ ...prev, ...s.store }));
             if (s.seo) setSeo(prev => ({ ...prev, ...s.seo }));
             if (s.content) setContent(prev => ({ ...prev, ...s.content }));
@@ -118,7 +123,6 @@ export default function AdminSettingsPage() {
             if (s.security) setSecurity(prev => ({ ...prev, ...s.security }));
         } catch (err) {
             console.error('Error loading settings:', err);
-            // Use defaults silently — first time will have no saved data
         } finally {
             setInitialLoading(false);
         }
@@ -132,406 +136,414 @@ export default function AdminSettingsPage() {
                 headers: getHeaders(),
                 body: JSON.stringify({ section, data })
             });
-
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || 'Failed to save settings');
+                throw new Error(errData.error || 'Failed to save');
             }
-
-            toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} settings saved`);
+            toast.success(`Protocol "${section}" committed to vault`);
         } catch (err: any) {
-            toast.error(err.message || 'Failed to save settings');
+            toast.error(err.message || 'Commit failed');
         } finally {
             setSavingSection(null);
         }
     };
 
-    if (initialLoading) {
-        return (
-            <AdminLayout title="Settings" description="Configure your application">
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-gold" />
-                    <span className="text-slate-400 ml-3">Loading settings...</span>
+    const tabs = [
+        { id: 'store', label: 'Store Protocol', icon: Store },
+        { id: 'seo', label: 'SEO Matrix', icon: Search },
+        { id: 'content', label: 'Content Grid', icon: FileText },
+        { id: 'general', label: 'Core Config', icon: Globe },
+        { id: 'notifications', label: 'Signal Routes', icon: Bell },
+        { id: 'security', label: 'Security Layer', icon: Shield },
+    ];
+
+    const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+        <div className="space-y-2">
+            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</label>
+            {children}
+        </div>
+    );
+
+    const inputClass = "w-full bg-white/[0.03] border border-white/10 text-white placeholder-white/20 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:border-gold/50 focus:bg-gold/5 transition-all font-sans backdrop-blur-sm";
+
+    const SaveButton = ({ section, data }: { section: string; data: any }) => (
+        <button
+            onClick={() => handleSave(section, data)}
+            disabled={savingSection === section}
+            className="flex items-center gap-3 px-8 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-xl shadow-gold/20"
+        >
+            {savingSection === section
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Committing...</>
+                : <><Save className="w-4 h-4" />Commit to Vault</>
+            }
+        </button>
+    );
+
+    if (initialLoading) return (
+        <AdminLayout title="System Configuration" description="Configure operational parameters">
+            <div className="flex flex-col items-center justify-center py-32">
+                <div className="relative w-20 h-20 mb-6">
+                    <div className="absolute inset-0 border-4 border-gold/10 rounded-full" />
+                    <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+                    <Settings className="absolute inset-0 m-auto w-8 h-8 text-gold animate-pulse" />
                 </div>
-            </AdminLayout>
-        );
-    }
+                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading Configuration Vault...</p>
+            </div>
+        </AdminLayout>
+    );
 
     return (
-        <AdminLayout title="Settings" description="Configure your application">
-            <Tabs defaultValue="store" className="space-y-6">
-                <TabsList className="bg-gray-800 border-gray-700 flex flex-wrap h-auto">
-                    <TabsTrigger value="store" className="data-[state=active]:bg-primary">
-                        <Store className="h-4 w-4 mr-2" />
-                        Store
-                    </TabsTrigger>
-                    <TabsTrigger value="seo" className="data-[state=active]:bg-primary">
-                        <Search className="h-4 w-4 mr-2" />
-                        SEO
-                    </TabsTrigger>
-                    <TabsTrigger value="content" className="data-[state=active]:bg-primary">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Content
-                    </TabsTrigger>
-                    <TabsTrigger value="general" className="data-[state=active]:bg-primary">
-                        <Globe className="h-4 w-4 mr-2" />
-                        General
-                    </TabsTrigger>
-                    <TabsTrigger value="notifications" className="data-[state=active]:bg-primary">
-                        <Bell className="h-4 w-4 mr-2" />
-                        Notifications
-                    </TabsTrigger>
-                    <TabsTrigger value="security" className="data-[state=active]:bg-primary">
-                        <Shield className="h-4 w-4 mr-2" />
-                        Security
-                    </TabsTrigger>
-                </TabsList>
+        <AdminLayout
+            title="System Overrides"
+            description="Operational parameters and mainframe protocol management"
+            onRefresh={loadSettings}
+        >
+            <div className="relative z-10">
+                {/* Systemic Status Header */}
+                <div className="flex flex-wrap items-center gap-6 mb-10 p-5 rounded-[2.5rem] bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                    <div className="flex items-center gap-3 px-5 border-r border-white/10">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Mainframe: Synchronized</span>
+                    </div>
+                    <div className="flex items-center gap-3 px-5 border-r border-white/10">
+                        <Lock className="w-4 h-4 text-gold" />
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Vault: Secure</span>
+                    </div>
+                    <div className="flex items-center gap-3 px-5 border-r border-white/10 hidden md:flex">
+                        <Activity className="w-4 h-4 text-blue-400" />
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Encryption: Active</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-4 pr-3">
+                        {mounted && (
+                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] italic">Last Commit: {new Date().toLocaleTimeString()}</span>
+                        )}
+                    </div>
+                </div>
 
-                {/* Store Information */}
-                <TabsContent value="store">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <Store className="h-5 w-5 mr-2" />
-                                Store Information
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Manage your business information displayed to customers
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="storeName" className="text-gray-300">Store Name</Label>
-                                    <Input id="storeName" value={storeInfo.name} onChange={(e) => setStoreInfo({ ...storeInfo, name: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
+                <div className="flex flex-col xl:flex-row gap-10">
+                    {/* Tab Rail */}
+                    <div className="xl:w-72 space-y-3 flex-shrink-0">
+                        <div className="px-4 mb-4">
+                            <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Override Modules</h3>
+                        </div>
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl text-left transition-all relative group overflow-hidden ${activeTab === tab.id
+                                    ? 'bg-gradient-to-r from-gold/20 to-gold/5 text-gold border border-gold/20 shadow-[0_0_30px_rgba(255,215,0,0.1)]'
+                                    : 'bg-white/[0.02] border border-white/5 text-white/40 hover:text-white hover:bg-white/[0.06]'
+                                    }`}
+                            >
+                                {activeTab === tab.id && (
+                                    <motion.div layoutId="activeTabGlow" className="absolute inset-0 bg-gold/5 opacity-50 blur-xl" />
+                                )}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${activeTab === tab.id ? 'bg-navy/40 border border-gold/30' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                                    <tab.icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeTab === tab.id ? 'text-gold fill-gold/20' : ''}`} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="tagline" className="text-gray-300">Tagline</Label>
-                                    <Input id="tagline" value={storeInfo.tagline} onChange={(e) => setStoreInfo({ ...storeInfo, tagline: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-black uppercase tracking-widest">{tab.label}</span>
+                                    {activeTab === tab.id && <span className="text-[8px] font-medium text-gold/60 uppercase tracking-widest mt-0.5">Active Link</span>}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="storeEmail" className="text-gray-300">Email</Label>
-                                    <Input id="storeEmail" type="email" value={storeInfo.email} onChange={(e) => setStoreInfo({ ...storeInfo, email: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="storePhone" className="text-gray-300">Phone</Label>
-                                    <Input id="storePhone" value={storeInfo.phone} onChange={(e) => setStoreInfo({ ...storeInfo, phone: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="whatsapp" className="text-gray-300">WhatsApp</Label>
-                                    <Input id="whatsapp" value={storeInfo.whatsapp} onChange={(e) => setStoreInfo({ ...storeInfo, whatsapp: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="businessHours" className="text-gray-300">Business Hours</Label>
-                                    <Input id="businessHours" value={storeInfo.businessHours} onChange={(e) => setStoreInfo({ ...storeInfo, businessHours: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="address" className="text-gray-300">
-                                        <MapPin className="h-4 w-4 inline mr-1" />
-                                        Address
-                                    </Label>
-                                    <Input id="address" value={storeInfo.address} onChange={(e) => setStoreInfo({ ...storeInfo, address: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="storeDescription" className="text-gray-300">Description</Label>
-                                    <Textarea id="storeDescription" value={storeInfo.description} onChange={(e) => setStoreInfo({ ...storeInfo, description: e.target.value })} className="bg-gray-700 border-gray-600 text-white" rows={3} />
-                                </div>
-                            </div>
-                            <Button onClick={() => handleSave('store', storeInfo)} disabled={savingSection === 'store'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'store' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'store' ? 'Saving...' : 'Save Store Info'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                                <ChevronRight className={`w-4 h-4 ml-auto transition-all ${activeTab === tab.id ? 'translate-x-1 opacity-100' : 'opacity-0 -translate-x-2'}`} />
+                            </button>
+                        ))}
+                    </div>
 
-                {/* SEO Settings */}
-                <TabsContent value="seo">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <Search className="h-5 w-5 mr-2" />
-                                SEO Settings
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Optimize your site for search engines
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="metaTitle" className="text-gray-300">Meta Title</Label>
-                                    <Input id="metaTitle" value={seo.metaTitle} onChange={(e) => setSeo({ ...seo, metaTitle: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                    <p className="text-xs text-gray-500">{seo.metaTitle.length}/60 characters</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="metaDescription" className="text-gray-300">Meta Description</Label>
-                                    <Textarea id="metaDescription" value={seo.metaDescription} onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })} className="bg-gray-700 border-gray-600 text-white" rows={3} />
-                                    <p className="text-xs text-gray-500">{seo.metaDescription.length}/160 characters</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="keywords" className="text-gray-300">Keywords</Label>
-                                    <Input id="keywords" value={seo.keywords} onChange={(e) => setSeo({ ...seo, keywords: e.target.value })} className="bg-gray-700 border-gray-600 text-white" placeholder="Separate keywords with commas" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="ogImage" className="text-gray-300">OG Image URL</Label>
-                                    <Input id="ogImage" value={seo.ogImage} onChange={(e) => setSeo({ ...seo, ogImage: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                            </div>
-                            <Button onClick={() => handleSave('seo', seo)} disabled={savingSection === 'seo'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'seo' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'seo' ? 'Saving...' : 'Save SEO Settings'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* Content Management */}
-                <TabsContent value="content">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <FileText className="h-5 w-5 mr-2" />
-                                Content Management
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Manage homepage and website content
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-8">
-                            {/* Hero Section */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">Hero Section</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="heroTitle" className="text-gray-300">Hero Title</Label>
-                                        <Input id="heroTitle" value={content.heroTitle} onChange={(e) => setContent({ ...content, heroTitle: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="heroCta" className="text-gray-300">CTA Button Text</Label>
-                                        <Input id="heroCta" value={content.heroCta} onChange={(e) => setContent({ ...content, heroCta: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <Label htmlFor="heroSubtitle" className="text-gray-300">Hero Subtitle</Label>
-                                        <Textarea id="heroSubtitle" value={content.heroSubtitle} onChange={(e) => setContent({ ...content, heroSubtitle: e.target.value })} className="bg-gray-700 border-gray-600 text-white" rows={2} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Features Section */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">Features Section</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="space-y-2 p-4 bg-gray-700/50 rounded-lg">
-                                        <Label className="text-gray-300">Feature 1</Label>
-                                        <Input value={content.feature1Title} onChange={(e) => setContent({ ...content, feature1Title: e.target.value })} className="bg-gray-600 border-gray-500 text-white mb-2" placeholder="Title" />
-                                        <Textarea value={content.feature1Desc} onChange={(e) => setContent({ ...content, feature1Desc: e.target.value })} className="bg-gray-600 border-gray-500 text-white" rows={2} placeholder="Description" />
-                                    </div>
-                                    <div className="space-y-2 p-4 bg-gray-700/50 rounded-lg">
-                                        <Label className="text-gray-300">Feature 2</Label>
-                                        <Input value={content.feature2Title} onChange={(e) => setContent({ ...content, feature2Title: e.target.value })} className="bg-gray-600 border-gray-500 text-white mb-2" placeholder="Title" />
-                                        <Textarea value={content.feature2Desc} onChange={(e) => setContent({ ...content, feature2Desc: e.target.value })} className="bg-gray-600 border-gray-500 text-white" rows={2} placeholder="Description" />
-                                    </div>
-                                    <div className="space-y-2 p-4 bg-gray-700/50 rounded-lg">
-                                        <Label className="text-gray-300">Feature 3</Label>
-                                        <Input value={content.feature3Title} onChange={(e) => setContent({ ...content, feature3Title: e.target.value })} className="bg-gray-600 border-gray-500 text-white mb-2" placeholder="Title" />
-                                        <Textarea value={content.feature3Desc} onChange={(e) => setContent({ ...content, feature3Desc: e.target.value })} className="bg-gray-600 border-gray-500 text-white" rows={2} placeholder="Description" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer Section */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-gray-700 pb-2">Footer Content</h3>
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="footerAbout" className="text-gray-300">About Text</Label>
-                                        <Textarea id="footerAbout" value={content.footerAbout} onChange={(e) => setContent({ ...content, footerAbout: e.target.value })} className="bg-gray-700 border-gray-600 text-white" rows={3} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="footerContact" className="text-gray-300">Contact Info</Label>
-                                        <Input id="footerContact" value={content.footerContact} onChange={(e) => setContent({ ...content, footerContact: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button onClick={() => handleSave('content', content)} disabled={savingSection === 'content'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'content' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'content' ? 'Saving...' : 'Save Content'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* General Settings */}
-                <TabsContent value="general">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <Globe className="h-5 w-5 mr-2" />
-                                General Settings
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Configure basic application settings
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="appName" className="text-gray-300">Application Name</Label>
-                                    <Input id="appName" value={general.appName} onChange={(e) => setGeneral({ ...general, appName: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="appUrl" className="text-gray-300">Application URL</Label>
-                                    <Input id="appUrl" value={general.appUrl} onChange={(e) => setGeneral({ ...general, appUrl: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="supportEmail" className="text-gray-300">Support Email</Label>
-                                    <Input id="supportEmail" type="email" value={general.supportEmail} onChange={(e) => setGeneral({ ...general, supportEmail: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="currency" className="text-gray-300">Default Currency</Label>
-                                    <Input id="currency" value={general.currency} onChange={(e) => setGeneral({ ...general, currency: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="timezone" className="text-gray-300">Timezone</Label>
-                                    <Input id="timezone" value={general.timezone} onChange={(e) => setGeneral({ ...general, timezone: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="language" className="text-gray-300">Default Language</Label>
-                                    <Input id="language" value={general.language} onChange={(e) => setGeneral({ ...general, language: e.target.value })} className="bg-gray-700 border-gray-600 text-white" />
-                                </div>
-                            </div>
-                            <Button onClick={() => handleSave('general', general)} disabled={savingSection === 'general'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'general' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'general' ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* Notifications Settings */}
-                <TabsContent value="notifications">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <Bell className="h-5 w-5 mr-2" />
-                                Notification Settings
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Configure email and push notifications
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-4">
-                                {([
-                                    { key: 'orderNotifications', label: 'Order Notifications', desc: 'Receive email when new orders are placed' },
-                                    { key: 'lowStockAlerts', label: 'Low Stock Alerts', desc: 'Get notified when products are running low' },
-                                    { key: 'newUserRegistrations', label: 'New User Registrations', desc: 'Receive email for new user signups' },
-                                    { key: 'quoteRequests', label: 'Quote Requests', desc: 'Get notified for new quote requests' },
-                                    { key: 'marketingEmails', label: 'Marketing Emails', desc: 'Receive promotional offers and updates' },
-                                ] as const).map((item, idx) => (
-                                    <div key={item.key} className={`flex items-center justify-between py-3 ${idx < 4 ? 'border-b border-gray-700' : ''}`}>
-                                        <div>
-                                            <p className="text-white font-medium">{item.label}</p>
-                                            <p className="text-sm text-gray-400">{item.desc}</p>
+                    {/* Content Panel */}
+                    <div className="flex-1 min-w-0">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className="glass-premium rounded-[3.5rem] border border-white/5 p-12 relative overflow-hidden"
+                            >
+                                {/* Decorative elements */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
+                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+                                {activeTab === 'store' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Store Protocol</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Core Merchant Identity Matrix</p>
+                                            </div>
+                                            <SaveButton section="store" data={storeInfo} />
                                         </div>
-                                        <button
-                                            onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notifications[item.key] ? 'bg-gold' : 'bg-gray-600'}`}
-                                        >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notifications[item.key] ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <FieldRow label="Merchant Designation">
+                                                <input className={inputClass} value={storeInfo.name} onChange={e => setStoreInfo({ ...storeInfo, name: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Brand Vision Vector">
+                                                <input className={inputClass} value={storeInfo.tagline} onChange={e => setStoreInfo({ ...storeInfo, tagline: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Inbound Signal (Email)">
+                                                <input type="email" className={inputClass} value={storeInfo.email} onChange={e => setStoreInfo({ ...storeInfo, email: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Voice Command Link">
+                                                <input className={inputClass} value={storeInfo.phone} onChange={e => setStoreInfo({ ...storeInfo, phone: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="WhatsApp Encryption Node">
+                                                <input className={inputClass} value={storeInfo.whatsapp} onChange={e => setStoreInfo({ ...storeInfo, whatsapp: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Operational Duty Cycle">
+                                                <input className={inputClass} value={storeInfo.businessHours} onChange={e => setStoreInfo({ ...storeInfo, businessHours: e.target.value })} />
+                                            </FieldRow>
+                                            <div className="md:col-span-2">
+                                                <FieldRow label="Physical Terminal Coordinate">
+                                                    <input className={inputClass} value={storeInfo.address} onChange={e => setStoreInfo({ ...storeInfo, address: e.target.value })} />
+                                                </FieldRow>
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <FieldRow label="Brand Narrative Protocol">
+                                                    <textarea className={`${inputClass} resize-none`} rows={4} value={storeInfo.description} onChange={e => setStoreInfo({ ...storeInfo, description: e.target.value })} />
+                                                </FieldRow>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                            <Button onClick={() => handleSave('notifications', notifications)} disabled={savingSection === 'notifications'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'notifications' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'notifications' ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                                )}
 
-                {/* Security Settings */}
-                <TabsContent value="security">
-                    <Card className="bg-gray-800 border-gray-700">
-                        <CardHeader>
-                            <CardTitle className="text-white flex items-center">
-                                <Shield className="h-5 w-5 mr-2" />
-                                Security Settings
-                            </CardTitle>
-                            <CardDescription className="text-gray-400">
-                                Configure security and authentication
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between py-3 border-b border-gray-700">
-                                    <div>
-                                        <p className="text-white font-medium">Two-Factor Authentication</p>
-                                        <p className="text-sm text-gray-400">Require 2FA for admin accounts</p>
+                                {activeTab === 'seo' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">SEO Matrix</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Crawler Signal Parameters</p>
+                                            </div>
+                                            <SaveButton section="seo" data={seo} />
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-10">
+                                            <FieldRow label={`Mainframe Identity Title (${seo.metaTitle.length}/60)`}>
+                                                <input className={inputClass} value={seo.metaTitle} onChange={e => setSeo({ ...seo, metaTitle: e.target.value })} />
+                                                <div className="h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden border border-white/5">
+                                                    <div className="h-full bg-gradient-to-r from-gold/50 to-gold rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,215,0,0.3)]" style={{ width: `${Math.min((seo.metaTitle.length / 60) * 100, 100)}%` }} />
+                                                </div>
+                                            </FieldRow>
+                                            <FieldRow label={`Index Narrative Description (${seo.metaDescription.length}/160)`}>
+                                                <textarea className={`${inputClass} resize-none`} rows={4} value={seo.metaDescription} onChange={e => setSeo({ ...seo, metaDescription: e.target.value })} />
+                                                <div className="h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden border border-white/5">
+                                                    <div className="h-full bg-gradient-to-r from-emerald-500/50 to-emerald-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(52,211,153,0.3)]" style={{ width: `${Math.min((seo.metaDescription.length / 160) * 100, 100)}%` }} />
+                                                </div>
+                                            </FieldRow>
+                                            <FieldRow label="Search Engine Signal Tokens (CSV)">
+                                                <input className={inputClass} value={seo.keywords} onChange={e => setSeo({ ...seo, keywords: e.target.value })} placeholder="keyword1, keyword2, ..." />
+                                            </FieldRow>
+                                            <FieldRow label="OpenGraph Visual Asset URL">
+                                                <div className="flex gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/og">
+                                                    <input className={`${inputClass} flex-1`} value={seo.ogImage} onChange={e => setSeo({ ...seo, ogImage: e.target.value })} placeholder="https://..." />
+                                                    <div className="w-20 h-14 rounded-xl bg-navy/40 border border-white/10 overflow-hidden flex-shrink-0 relative group-hover/og:border-gold/30 transition-all">
+                                                        {seo.ogImage ? <img src={seo.ogImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-5 h-5 text-white/10" /></div>}
+                                                    </div>
+                                                </div>
+                                            </FieldRow>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => setSecurity(prev => ({ ...prev, twoFactorAuth: !prev.twoFactorAuth }))}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${security.twoFactorAuth ? 'bg-gold' : 'bg-gray-600'}`}
-                                    >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${security.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'}`} />
-                                    </button>
-                                </div>
-                                <div className="flex items-center justify-between py-3 border-b border-gray-700">
-                                    <div>
-                                        <p className="text-white font-medium">Session Timeout</p>
-                                        <p className="text-sm text-gray-400">Auto logout after inactivity</p>
-                                    </div>
-                                    <select
-                                        value={security.sessionTimeout}
-                                        onChange={(e) => setSecurity({ ...security, sessionTimeout: e.target.value })}
-                                        className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2"
-                                    >
-                                        <option value="15 minutes">15 minutes</option>
-                                        <option value="30 minutes">30 minutes</option>
-                                        <option value="1 hour">1 hour</option>
-                                        <option value="4 hours">4 hours</option>
-                                    </select>
-                                </div>
-                                <div className="flex items-center justify-between py-3 border-b border-gray-700">
-                                    <div>
-                                        <p className="text-white font-medium">Password Policy</p>
-                                        <p className="text-sm text-gray-400">Enforce strong password requirements</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSecurity(prev => ({ ...prev, passwordPolicy: !prev.passwordPolicy }))}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${security.passwordPolicy ? 'bg-gold' : 'bg-gray-600'}`}
-                                    >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${security.passwordPolicy ? 'translate-x-6' : 'translate-x-1'}`} />
-                                    </button>
-                                </div>
-                                <div className="flex items-center justify-between py-3">
-                                    <div>
-                                        <p className="text-white font-medium">Login Attempts Lockout</p>
-                                        <p className="text-sm text-gray-400">Lock account after failed login attempts</p>
-                                    </div>
-                                    <select
-                                        value={security.loginAttemptsLockout}
-                                        onChange={(e) => setSecurity({ ...security, loginAttemptsLockout: e.target.value })}
-                                        className="bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2"
-                                    >
-                                        <option value="3 attempts">3 attempts</option>
-                                        <option value="5 attempts">5 attempts</option>
-                                        <option value="10 attempts">10 attempts</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <Button onClick={() => handleSave('security', security)} disabled={savingSection === 'security'} className="bg-primary hover:bg-primary/90">
-                                {savingSection === 'security' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                                {savingSection === 'security' ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                                )}
 
-            </Tabs>
+                                {activeTab === 'content' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Content Grid</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Tactical Copy & Visual Directives</p>
+                                            </div>
+                                            <SaveButton section="content" data={content} />
+                                        </div>
+                                        <div className="space-y-12">
+                                            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] relative overflow-hidden group/hero">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-3xl rounded-full" />
+                                                <p className="text-[10px] font-black text-gold uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                                                    <Zap className="w-3 h-3" />
+                                                    Hero Module Configuration
+                                                </p>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <FieldRow label="Primary Deployment Title">
+                                                        <input className={inputClass} value={content.heroTitle} onChange={e => setContent({ ...content, heroTitle: e.target.value })} />
+                                                    </FieldRow>
+                                                    <FieldRow label="Call-to-Action Protocol">
+                                                        <input className={inputClass} value={content.heroCta} onChange={e => setContent({ ...content, heroCta: e.target.value })} />
+                                                    </FieldRow>
+                                                    <div className="md:col-span-2">
+                                                        <FieldRow label="Secondary Support Narrative">
+                                                            <textarea className={`${inputClass} resize-none`} rows={3} value={content.heroSubtitle} onChange={e => setContent({ ...content, heroSubtitle: e.target.value })} />
+                                                        </FieldRow>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem]">
+                                                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-6">Value Proposition Nodes</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    {[1, 2, 3].map(n => (
+                                                        <div key={n} className="space-y-4 p-6 bg-white/[0.02] rounded-3xl border border-white/5 group/node hover:border-white/10 transition-all">
+                                                            <p className="text-[10px] font-black text-white/10 uppercase tracking-widest flex items-center justify-between">
+                                                                Node 0{n}
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/node:bg-blue-400 transition-colors" />
+                                                            </p>
+                                                            <input className={`${inputClass} px-4 py-3`} placeholder="Operational Title" value={(content as any)[`feature${n}Title`]} onChange={e => setContent({ ...content, [`feature${n}Title`]: e.target.value } as any)} />
+                                                            <textarea className={`${inputClass} px-4 py-3 resize-none text-xs`} rows={3} placeholder="Functional Objective" value={(content as any)[`feature${n}Desc`]} onChange={e => setContent({ ...content, [`feature${n}Desc`]: e.target.value } as any)} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'general' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Core Configuration</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Fundamental System Parameters</p>
+                                            </div>
+                                            <SaveButton section="general" data={general} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <FieldRow label="System Identity">
+                                                <input className={inputClass} value={general.appName} onChange={e => setGeneral({ ...general, appName: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Deployment URL">
+                                                <input className={inputClass} value={general.appUrl} onChange={e => setGeneral({ ...general, appUrl: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Support Channel">
+                                                <input type="email" className={inputClass} value={general.supportEmail} onChange={e => setGeneral({ ...general, supportEmail: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Base Currency Code">
+                                                <input className={inputClass} value={general.currency} onChange={e => setGeneral({ ...general, currency: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Mainframe Time Zone">
+                                                <input className={inputClass} value={general.timezone} onChange={e => setGeneral({ ...general, timezone: e.target.value })} />
+                                            </FieldRow>
+                                            <FieldRow label="Primary System Language">
+                                                <input className={inputClass} value={general.language} onChange={e => setGeneral({ ...general, language: e.target.value })} />
+                                            </FieldRow>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'notifications' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Signal Routes</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Alert & Notification Nodes</p>
+                                            </div>
+                                            <SaveButton section="notifications" data={notifications} />
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {([
+                                                { key: 'orderNotifications', label: 'Order Intercept', desc: 'Alert triggered on new order intake', icon: Zap },
+                                                { key: 'lowStockAlerts', label: 'Critical Inventory Alert', desc: 'Signal fires when asset levels are depleted', icon: AlertCircle },
+                                                { key: 'newUserRegistrations', label: 'Node Authentication', desc: 'Alert on new personnel registration', icon: ToggleRight },
+                                                { key: 'quoteRequests', label: 'Quote Protocol Signal', desc: 'Notify on inbound quote requests', icon: CheckCircle2 },
+                                                { key: 'marketingEmails', label: 'Campaign Broadcast', desc: 'Enable promotional signal dispatch', icon: Globe },
+                                            ] as const).map((item) => (
+                                                <div key={item.key} className="flex items-center justify-between p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group overflow-hidden relative">
+                                                    <div className="flex items-center gap-6 relative z-10">
+                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${notifications[item.key] ? 'bg-gold/10 border border-gold/30' : 'bg-white/5 border border-white/10'}`}>
+                                                            <item.icon className={`w-5 h-5 ${notifications[item.key] ? 'text-gold' : 'text-white/20'}`} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-gold transition-colors">{item.label}</p>
+                                                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">{item.desc}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key] }))}
+                                                        className={`relative w-16 h-8 rounded-full transition-all peer z-10 ${notifications[item.key] ? 'bg-gold shadow-[0_0_20px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`}
+                                                    >
+                                                        <span className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-white transition-all shadow-md ${notifications[item.key] ? 'translate-x-8' : 'translate-x-0'}`} />
+                                                    </button>
+                                                    {notifications[item.key] && <div className="absolute inset-0 bg-gold/5 blur-2xl pointer-events-none" />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'security' && (
+                                    <div className="space-y-10">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Security Layer</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Authentication & Access Control</p>
+                                            </div>
+                                            <SaveButton section="security" data={security} />
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-6">
+                                            <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
+                                                <div className="relative z-10">
+                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Dual-Factor Authentication</p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Require 2FA on all administrative access attempts</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSecurity(prev => ({ ...prev, twoFactorAuth: !prev.twoFactorAuth }))}
+                                                    className={`relative w-16 h-8 rounded-full transition-all z-10 ${security.twoFactorAuth ? 'bg-gold shadow-[0_0_20px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`}
+                                                >
+                                                    <span className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-white transition-all shadow-md ${security.twoFactorAuth ? 'translate-x-8' : 'translate-x-0'}`} />
+                                                </button>
+                                                {security.twoFactorAuth && <div className="absolute inset-0 bg-gold/5 blur-3xl pointer-events-none" />}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
+                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                                                        <Clock className="w-3 h-3" />
+                                                        Session Timeout Protocol
+                                                    </p>
+                                                    <select
+                                                        value={security.sessionTimeout}
+                                                        onChange={e => setSecurity({ ...security, sessionTimeout: e.target.value })}
+                                                        className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
+                                                    >
+                                                        <option value="15 minutes">15 Standard Cycles</option>
+                                                        <option value="30 minutes">30 Standard Cycles</option>
+                                                        <option value="1 hour">60 Extended Cycles</option>
+                                                        <option value="4 hours">Operational Shift</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
+                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
+                                                        <Lock className="w-3 h-3" />
+                                                        Lockout Threshold
+                                                    </p>
+                                                    <select
+                                                        value={security.loginAttemptsLockout}
+                                                        onChange={e => setSecurity({ ...security, loginAttemptsLockout: e.target.value })}
+                                                        className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
+                                                    >
+                                                        <option value="3 attempts">3 Strike Policy</option>
+                                                        <option value="5 attempts">5 Strike Policy</option>
+                                                        <option value="10 attempts">10 Strike Policy</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
+                                                <div className="relative z-10">
+                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Credential Entropy Policy</p>
+                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Enforce high-complexity password constraints</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSecurity(prev => ({ ...prev, passwordPolicy: !prev.passwordPolicy }))}
+                                                    className={`relative w-16 h-8 rounded-full transition-all z-10 ${security.passwordPolicy ? 'bg-gold shadow-[0_0_20px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`}
+                                                >
+                                                    <span className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-white transition-all shadow-md ${security.passwordPolicy ? 'translate-x-8' : 'translate-x-0'}`} />
+                                                </button>
+                                                {security.passwordPolicy && <div className="absolute inset-0 bg-gold/5 blur-3xl pointer-events-none" />}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </div>
         </AdminLayout>
     );
 }

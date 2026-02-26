@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, ShoppingCart, ArrowRight, Minus, Plus, Package, ShieldCheck, Truck, Clock } from 'lucide-react';
@@ -13,7 +13,7 @@ import { FloatingParticles, AnimatedConnector } from "@/components/effects/Scene
 import StripeApplePay from '@/components/cart/StripeApplePay';
 import { useSearchParams } from 'next/navigation';
 
-export default function CartPage() {
+function CartContent() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [mounted, setMounted] = useState(false);
@@ -377,6 +377,14 @@ export default function CartPage() {
             {/* Bottom Fade */}
             <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-navy to-transparent pointer-events-none" />
         </div>
+    );
+}
+
+export default function CartPage() {
+    return (
+        <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+            <CartContent />
+        </Suspense>
     );
 }
 

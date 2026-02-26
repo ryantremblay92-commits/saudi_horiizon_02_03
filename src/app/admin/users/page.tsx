@@ -16,10 +16,20 @@ import {
     Calendar,
     X,
     Trash2,
+    Activity,
+    Users,
+    Key,
+    ShieldAlert,
+    ShieldCheck,
     UserCheck,
-    UserX
+    UserX,
+    ChevronRight,
+    Lock,
+    Unlock
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface User {
     _id: string;
@@ -32,6 +42,7 @@ interface User {
 }
 
 export default function AdminUsersPage() {
+    const { isInitialized } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -41,10 +52,17 @@ export default function AdminUsersPage() {
     const [viewUser, setViewUser] = useState<User | null>(null);
     const [addForm, setAddForm] = useState({ name: '', email: '', password: '', role: 'user' });
     const [submitting, setSubmitting] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        loadUsers();
+        setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (isInitialized) {
+            loadUsers();
+        }
+    }, [isInitialized]);
 
     const getHeaders = (): HeadersInit => {
         const token = localStorage.getItem('accessToken');
@@ -69,7 +87,7 @@ export default function AdminUsersPage() {
             setUsers(data.users || []);
         } catch (err: any) {
             console.error('Failed to load users:', err);
-            toast.error('Failed to load users');
+            toast.error('Failed to load user database');
         } finally {
             setLoading(false);
         }
@@ -96,10 +114,10 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to update user role');
             }
 
-            toast.success('User role updated');
+            toast.success(`Access Authorization: Role updated to ${newRole}`);
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to update user role');
+            toast.error(err.message || 'Failed to update clearance level');
         }
     };
 
@@ -116,15 +134,15 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to update user status');
             }
 
-            toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+            toast.success(`Protocol: Account ${!currentStatus ? 'activated' : 'deactivated'}`);
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to update user status');
+            toast.error(err.message || 'Failed to toggle account status');
         }
     };
 
     const deleteUser = async (userId: string) => {
-        if (!confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) return;
+        if (!confirm('Permanent Data Purge: Are you sure you want to delete this user? Operation is IRREVERSIBLE.')) return;
 
         try {
             const response = await fetch(`/api/users/${userId}`, {
@@ -137,18 +155,18 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to delete user');
             }
 
-            toast.success('User deleted');
+            toast.success('Identity Purge Successful');
             if (viewUser?._id === userId) setViewUser(null);
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to delete user');
+            toast.error(err.message || 'Failed to purge user record');
         }
     };
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!addForm.name || !addForm.email || !addForm.password) {
-            toast.error('Please fill all required fields');
+            toast.error('Required fields missing in registration packet');
             return;
         }
         setSubmitting(true);
@@ -164,12 +182,12 @@ export default function AdminUsersPage() {
                 throw new Error(data.message || 'Failed to create user');
             }
 
-            toast.success('User created successfully');
+            toast.success('New operator registered successfully');
             setShowAddModal(false);
             setAddForm({ name: '', email: '', password: '', role: 'user' });
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to create user');
+            toast.error(err.message || 'Failed to initialize account');
         } finally {
             setSubmitting(false);
         }
@@ -184,99 +202,136 @@ export default function AdminUsersPage() {
 
     return (
         <AdminLayout
-            title="Users"
-            description="Manage user accounts"
+            title="Registry & Access"
+            description="Operational security and personnel database"
             onRefresh={loadUsers}
         >
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {/* KPI Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {[
+                    { label: 'Total Personnel', value: mounted ? users.length : '---', icon: Users, color: 'text-white' },
+                    { label: 'Secure Accounts (Admins)', value: mounted ? users.filter(u => u.role === 'admin').length : '---', icon: ShieldCheck, color: 'text-gold' },
+                    { label: 'Active Terminals', value: mounted ? users.filter(u => u.isActive).length : '---', icon: Activity, color: 'text-emerald-400' },
+                    { label: 'Inactive/Locked', value: mounted ? users.filter(u => !u.isActive).length : '---', icon: Lock, color: 'text-red-400' }
+                ].map((kpi, index) => (
+                    <motion.div
+                        key={kpi.label}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="glass-premium p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] flex items-center gap-5"
+                    >
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5`}>
+                            <kpi.icon className={`w-7 h-7 ${kpi.color}`} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{kpi.label}</p>
+                            <h4 className="text-3xl font-black text-white font-display leading-none">{kpi.value}</h4>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
                     <Input
-                        placeholder="Search users..."
+                        placeholder="Scan for personnel by identity or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-gray-800 border-gray-700 text-white"
+                        className="pl-14 bg-white/[0.03] border-white/5 text-white rounded-[1.5rem] h-14 focus:ring-gold/20 focus:border-gold/40 transition-all font-medium"
                     />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <div className="relative">
                         <Button
-                            variant="outline"
-                            className="border-gray-700 text-gray-300"
+                            variant="ghost"
+                            className={`h-14 px-8 border border-white/5 bg-white/[0.03] rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] ${roleFilter !== 'all' ? 'text-gold' : 'text-white/60'}`}
                             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                         >
                             <Filter className="h-4 w-4 mr-2" />
-                            {roleFilter === 'all' ? 'Filter' : `Role: ${roleFilter}`}
+                            Clearance: {roleFilter === 'all' ? 'Global' : roleFilter}
                         </Button>
-                        {showFilterDropdown && (
-                            <div className="absolute top-full mt-1 right-0 z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden min-w-[150px]">
-                                {['all', 'admin', 'manager', 'user', 'customer'].map(role => (
-                                    <button
-                                        key={role}
-                                        onClick={() => { setRoleFilter(role); setShowFilterDropdown(false); }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-white/10 ${roleFilter === role ? 'text-gold bg-gold/10' : 'text-white'}`}
-                                    >
-                                        {role === 'all' ? 'All Roles' : role.charAt(0).toUpperCase() + role.slice(1)}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <AnimatePresence>
+                            {showFilterDropdown && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute top-full mt-3 right-0 z-50 bg-navy/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden min-w-[200px] p-2"
+                                >
+                                    {['all', 'admin', 'manager', 'user', 'customer'].map(role => (
+                                        <button
+                                            key={role}
+                                            onClick={() => { setRoleFilter(role); setShowFilterDropdown(false); }}
+                                            className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${roleFilter === role ? 'bg-gold text-navy' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+                                        >
+                                            {role === 'all' ? 'All Clearances' : role}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                     <Button
-                        className="bg-gold hover:bg-gold/90 text-navy font-bold"
+                        className="h-14 px-8 bg-gold hover:bg-white text-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-gold/20 transition-all active:scale-95"
                         onClick={() => setShowAddModal(true)}
                     >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add User
+                        <Plus className="h-4 w-4 mr-2 stroke-[3]" />
+                        Initialize Personnel
                     </Button>
                 </div>
             </div>
 
             {/* Users Table */}
-            <div className="glass rounded-xl border border-white/10 overflow-hidden">
+            <div className="glass-premium rounded-[2.5rem] border border-white/5 bg-white/[0.01] overflow-hidden shadow-2xl">
                 {loading ? (
-                    <div className="p-8 text-center">
-                        <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-slate-400">Loading users...</p>
+                    <div className="p-32 text-center">
+                        <div className="relative w-16 h-16 mx-auto mb-8">
+                            <div className="absolute inset-0 border-4 border-gold/10 rounded-full animate-pulse"></div>
+                            <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <p className="text-white/30 font-black uppercase tracking-[0.3em]">Querying Access Database...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-white/5">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">User</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">Role</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">Status</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">Joined</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">Last Login</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-white uppercase tracking-wider font-display">Actions</th>
+                            <thead>
+                                <tr className="bg-white/[0.03] border-b border-white/5">
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Identity</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Clearance</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Terminal Status</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Joined Network</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Last Link</th>
+                                    <th className="px-8 py-7 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {filteredUsers.length > 0 ? (
                                     filteredUsers.map((user) => (
-                                        <tr key={user._id} className="hover:bg-white/5 transition-colors group">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 rounded-full bg-gold/10 flex items-center justify-center mr-3 border border-gold/20">
-                                                        <span className="text-gold font-bold font-display">
+                                        <tr key={user._id} className="hover:bg-white/[0.03] transition-colors group">
+                                            <td className="px-8 py-7 whitespace-nowrap">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-gold/50 transition-all">
+                                                        <span className="text-white font-black font-display text-lg relative z-10">
                                                             {user.email.charAt(0).toUpperCase()}
                                                         </span>
+                                                        <div className="absolute inset-0 bg-gold/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-white font-medium group-hover:text-gold transition-colors font-display">
-                                                            {user.name || 'No name'}
+                                                        <p className="text-white font-black text-sm tracking-tight group-hover:text-gold transition-colors font-display uppercase">
+                                                            {user.name || 'Anonymous Operator'}
                                                         </p>
-                                                        <p className="text-slate-400 text-sm">{user.email}</p>
+                                                        <p className="text-white/30 text-[11px] font-bold">{user.email}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-8 py-7 whitespace-nowrap">
                                                 <select
                                                     value={user.role}
                                                     onChange={(e) => updateUserRole(user._id, e.target.value)}
-                                                    className="bg-navy border border-white/10 text-white text-sm rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-gold/50 cursor-pointer"
+                                                    className="bg-navy/80 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gold/30 cursor-pointer hover:border-gold/30 transition-all appearance-none text-center min-w-[120px]"
                                                 >
                                                     <option value="user">User</option>
                                                     <option value="admin">Admin</option>
@@ -284,50 +339,50 @@ export default function AdminUsersPage() {
                                                     <option value="customer">Customer</option>
                                                 </select>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <Badge className={user.isActive ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}>
-                                                    {user.isActive ? 'Active' : 'Inactive'}
+                                            <td className="px-8 py-7 whitespace-nowrap">
+                                                <Badge className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${user.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                                                    {user.isActive ? 'Network Online' : 'Terminal Locked'}
                                                 </Badge>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center text-slate-400">
-                                                    <Calendar className="h-4 w-4 mr-2" />
-                                                    <span className="text-sm">{formatDate(user.createdAt)}</span>
+                                            <td className="px-8 py-7 whitespace-nowrap">
+                                                <div className="flex items-center text-white/40 gap-2">
+                                                    <Calendar className="h-4 w-4 text-white/10" />
+                                                    <span className="text-xs font-bold tracking-tight">{formatDate(user.createdAt)}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-slate-400 text-sm">
-                                                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}
+                                            <td className="px-8 py-7 whitespace-nowrap">
+                                                <span className="text-white/20 text-[10px] font-black uppercase tracking-widest">
+                                                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'LOGS CLEAR'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                <div className="flex items-center justify-end gap-1">
+                                            <td className="px-8 py-7 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="text-slate-400 hover:text-white hover:bg-white/10"
-                                                        title="View details"
+                                                        className="w-11 h-11 rounded-2xl text-white/20 hover:text-white hover:bg-white/5"
+                                                        title="Access Manifest"
                                                         onClick={() => setViewUser(user)}
                                                     >
-                                                        <Eye className="h-4 w-4" />
+                                                        <Eye className="h-5 w-5" />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className={user.isActive ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-green-400 hover:text-green-300 hover:bg-green-500/10'}
-                                                        title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                                                        className={`w-11 h-11 rounded-2xl transition-all ${user.isActive ? 'text-white/20 hover:text-red-400 hover:bg-red-500/10' : 'text-white/20 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                                                        title={user.isActive ? 'Lock Terminal' : 'Unlock Terminal'}
                                                         onClick={() => toggleUserStatus(user._id, user.isActive)}
                                                     >
-                                                        {user.isActive ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                                                        {user.isActive ? <Lock className="h-5 w-5" /> : <Unlock className="h-5 w-5" />}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                                        title="Delete user"
+                                                        className="w-11 h-11 rounded-2xl text-white/20 hover:text-red-500 hover:bg-red-500/20 transition-all"
+                                                        title="Purge Identity"
                                                         onClick={() => deleteUser(user._id)}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-5 w-5" />
                                                     </Button>
                                                 </div>
                                             </td>
@@ -335,8 +390,14 @@ export default function AdminUsersPage() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                                            No users found
+                                        <td colSpan={6} className="px-8 py-32 text-center">
+                                            <div className="max-w-xs mx-auto">
+                                                <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mx-auto mb-6">
+                                                    <ShieldAlert className="w-10 h-10 text-white/10" />
+                                                </div>
+                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">Registry Empty</h5>
+                                                <p className="text-white/30 text-xs font-bold leading-relaxed">No matching personnel signatures found in the current security sector.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
@@ -346,126 +407,160 @@ export default function AdminUsersPage() {
                 )}
             </div>
 
-            {/* View User Modal */}
-            {viewUser && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setViewUser(null)}>
-                    <div className="bg-gray-900 border border-white/10 rounded-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white font-display">User Details</h3>
-                            <Button variant="ghost" size="icon" onClick={() => setViewUser(null)} className="text-slate-400 hover:text-white">
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="h-16 w-16 rounded-full bg-gold/10 flex items-center justify-center border-2 border-gold/30">
-                                    <span className="text-gold text-2xl font-bold font-display">{viewUser.email.charAt(0).toUpperCase()}</span>
-                                </div>
+            {/* View Personnel Manifest Modal */}
+            <AnimatePresence>
+                {viewUser && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-navy/80 backdrop-blur-xl z-50 flex items-center justify-center p-4"
+                        onClick={() => setViewUser(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-gray-900 border border-white/10 rounded-[3rem] max-w-lg w-full p-10 shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <p className="text-white font-bold text-lg">{viewUser.name || 'No name set'}</p>
-                                    <p className="text-slate-400 text-sm">{viewUser.email}</p>
+                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Identity Analysis</h3>
+                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Operator Dossier</p>
                                 </div>
+                                <Button variant="ghost" size="icon" onClick={() => setViewUser(null)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
+                                    <X className="h-6 w-6" />
+                                </Button>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-slate-500 uppercase mb-1">Role</p>
+
+                            <div className="flex flex-col items-center mb-10">
+                                <div className="h-32 w-32 rounded-[3.5rem] bg-white/[0.02] border-2 border-gold/30 flex items-center justify-center mb-6 shadow-2xl shadow-gold/10">
+                                    <span className="text-gold text-5xl font-black font-display">{viewUser.email.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <h4 className="text-2xl font-black text-white font-display uppercase tracking-tight">{viewUser.name || 'Anonymous Operator'}</h4>
+                                <p className="text-gold text-xs font-black uppercase tracking-[0.2em] mt-1">{viewUser.email}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mb-10">
+                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Clearance Level</p>
                                     <div className="flex items-center gap-2">
                                         <Shield className="h-4 w-4 text-gold" />
-                                        <span className="text-white capitalize font-medium">{viewUser.role}</span>
+                                        <span className="text-white text-xs font-black uppercase tracking-widest">{viewUser.role}</span>
                                     </div>
                                 </div>
-                                <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-slate-500 uppercase mb-1">Status</p>
-                                    <Badge className={viewUser.isActive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}>
-                                        {viewUser.isActive ? 'Active' : 'Inactive'}
+                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Security Status</p>
+                                    <Badge className={`px-3 py-1 text-[8px] font-black uppercase tracking-tighter ${viewUser.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
+                                        {viewUser.isActive ? 'Network Online' : 'Terminal Locked'}
                                     </Badge>
                                 </div>
-                                <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-slate-500 uppercase mb-1">Joined</p>
-                                    <span className="text-white text-sm">{formatDate(viewUser.createdAt)}</span>
+                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Service Initiation</p>
+                                    <span className="text-white text-[11px] font-bold">{formatDate(viewUser.createdAt)}</span>
                                 </div>
-                                <div className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-xs text-slate-500 uppercase mb-1">Last Login</p>
-                                    <span className="text-white text-sm">{viewUser.lastLoginAt ? formatDate(viewUser.lastLoginAt) : 'Never'}</span>
+                                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Last Network Link</p>
+                                    <span className="text-white text-[11px] font-bold">{viewUser.lastLoginAt ? formatDate(viewUser.lastLoginAt) : 'Never'}</span>
                                 </div>
                             </div>
-                            <div className="bg-white/5 rounded-lg p-3">
-                                <p className="text-xs text-slate-500 uppercase mb-1">User ID</p>
-                                <code className="text-gold text-xs font-mono">{viewUser._id}</code>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
-            {/* Add User Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
-                    <div className="bg-gray-900 border border-white/10 rounded-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white font-display">Add New User</h3>
-                            <Button variant="ghost" size="icon" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                        <form onSubmit={handleAddUser} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Full Name *</Label>
-                                <Input
-                                    value={addForm.name}
-                                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                                    className="bg-gray-800 border-gray-700 text-white"
-                                    placeholder="John Doe"
-                                    required
-                                />
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Hex Identity:</span>
+                                <code className="text-gold text-[10px] font-mono font-black">{viewUser._id}</code>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Email *</Label>
-                                <Input
-                                    type="email"
-                                    value={addForm.email}
-                                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                                    className="bg-gray-800 border-gray-700 text-white"
-                                    placeholder="user@example.com"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Password *</Label>
-                                <Input
-                                    type="password"
-                                    value={addForm.password}
-                                    onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                                    className="bg-gray-800 border-gray-700 text-white"
-                                    placeholder="Minimum 6 characters"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Role</Label>
-                                <select
-                                    value={addForm.role}
-                                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
-                                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2"
-                                >
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="customer">Customer</option>
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="border-gray-700 text-gray-300">
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={submitting} className="bg-gold hover:bg-gold/90 text-navy font-bold">
-                                    {submitting ? 'Creating...' : 'Create User'}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Add Personnel Modal */}
+            <AnimatePresence>
+                {showAddModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-navy/80 backdrop-blur-xl z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowAddModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            className="bg-gray-900 border border-white/10 rounded-[3rem] max-w-md w-full p-10 shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-10">
+                                <div>
+                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Personnel Onboarding</h3>
+                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">New Identity Registration</p>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => setShowAddModal(false)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
+                                    <X className="h-6 w-6" />
                                 </Button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+
+                            <form onSubmit={handleAddUser} className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Identity Name</Label>
+                                    <Input
+                                        value={addForm.name}
+                                        onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                                        className="bg-white/[0.03] border-white/5 text-white h-14 rounded-2xl focus:ring-gold/20 font-bold"
+                                        placeholder="Full Operator Name"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Digital Signature (Email)</Label>
+                                    <Input
+                                        type="email"
+                                        value={addForm.email}
+                                        onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                                        className="bg-white/[0.03] border-white/5 text-white h-14 rounded-2xl focus:ring-gold/20 font-bold"
+                                        placeholder="operator@saudihorizon.com"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Encryption Key (Password)</Label>
+                                    <Input
+                                        type="password"
+                                        value={addForm.password}
+                                        onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                                        className="bg-white/[0.03] border-white/5 text-white h-14 rounded-2xl focus:ring-gold/20 font-bold"
+                                        placeholder="Minimum 8 Characters"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Assigned Clearance</Label>
+                                    <select
+                                        value={addForm.role}
+                                        onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
+                                        className="w-full bg-white/[0.03] border border-white/5 text-white h-14 rounded-2xl px-5 focus:outline-none focus:ring-2 focus:ring-gold/20 font-black uppercase tracking-widest text-xs appearance-none"
+                                    >
+                                        <option value="user">USER CLEARANCE</option>
+                                        <option value="manager">MANAGER ACCESS</option>
+                                        <option value="admin">ADMIN SECURITY</option>
+                                        <option value="customer">CUSTOMER ACCESS</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-4 pt-6">
+                                    <Button type="button" variant="ghost" onClick={() => setShowAddModal(false)} className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/5">
+                                        Abort
+                                    </Button>
+                                    <Button type="submit" disabled={submitting} className="flex-[2] h-14 bg-gold hover:bg-white text-navy font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-2xl shadow-gold/10">
+                                        {submitting ? 'PROCESSING...' : 'INITIALIZE OPERATOR'}
+                                    </Button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </AdminLayout>
     );
 }

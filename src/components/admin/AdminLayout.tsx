@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -55,6 +55,14 @@ const navigation = [
 
 export function AdminLayout({ children, title, description, onRefresh, onExport, actions }: AdminLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [clockTime, setClockTime] = useState('');
+
+    useEffect(() => {
+        const tick = () => setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, []);
     const pathname = usePathname();
     const router = useRouter();
     const { user, logout } = useAuth();
@@ -264,7 +272,7 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
                                     <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Node Sync</span>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <span className="text-[10px] text-white font-mono">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                        <span className="text-[10px] text-white font-mono">{clockTime}</span>
                                     </div>
                                 </div>
                             </div>

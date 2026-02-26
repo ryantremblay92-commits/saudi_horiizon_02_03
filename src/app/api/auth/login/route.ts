@@ -6,11 +6,8 @@ import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt';
 export async function POST(request: NextRequest) {
     try {
         await connectDB();
+        const { email, password } = await request.json();
 
-        const body = await request.json();
-        const { email, password } = body;
-
-        // Validation
         if (!email || !password) {
             return NextResponse.json(
                 { message: 'Email and password are required' },
@@ -19,46 +16,49 @@ export async function POST(request: NextRequest) {
         }
 
         // Find user by email
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const user = await User.findOne({ email });
 
         if (!user) {
             return NextResponse.json(
-                { message: 'Email or password is incorrect' },
-                { status: 400 }
+                { message: 'Invalid credentials' },
+                { status: 401 }
             );
         }
 
         // Verify password
-        const isPasswordValid = await user.comparePassword(password);
-
-        if (!isPasswordValid) {
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
             return NextResponse.json(
-                { message: 'Email or password is incorrect' },
-                { status: 400 }
+                { message: 'Invalid credentials' },
+                { status: 401 }
             );
         }
 
-        // Generate tokens
+        // Generate real JWT tokens
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
 
-        // Save refresh token to database
+        // Save refresh token to user
         user.refreshToken = refreshToken;
         await user.save();
 
-        // Return user data with tokens
         return NextResponse.json({
-            _id: user._id,
-            email: user.email,
-            role: user.role,
+            token: accessToken, // Keeping 'token' as property for frontend compatibility if needed
             accessToken,
             refreshToken,
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.profile?.name || 'User',
+                role: user.role,
+            }
         });
-    } catch (error: unknown) {
+    } catch (error) {
         console.error('Login error:', error);
         return NextResponse.json(
-            { message: 'Authentication failed' },
+            { message: 'Internal server error' },
             { status: 500 }
         );
     }
 }
+

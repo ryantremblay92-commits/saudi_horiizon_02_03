@@ -96,6 +96,15 @@ export function CategoriesSection() {
                                 transition={{ duration: 0.6, delay: index * 0.1 }}
                                 className="group relative h-[440px] overflow-hidden rounded-3xl border border-white/10 cursor-pointer"
                                 onClick={() => router.push(`/products?category=${category.id}`)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        router.push(`/products?category=${category.id}`);
+                                    }
+                                }}
+                                aria-label={`View ${category.name} category`}
                             >
                                 {/* Image */}
                                 <div className="absolute inset-0">

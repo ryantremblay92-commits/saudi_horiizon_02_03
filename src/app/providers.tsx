@@ -8,6 +8,7 @@ import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import ChatWidget from "@/components/ChatWidget";
 import { useEffect, useState } from "react";
+import { CookiesProvider } from "react-cookie";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     const [isI18nReady, setIsI18nReady] = useState(false);
@@ -51,18 +52,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     }, [isI18nReady, dir, lang]);
 
     return (
-        <ComparisonProvider>
-            <WishlistProvider>
-                <AuthProvider>
-                    <ChatProvider>
-                        <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-                            {children}
-                            <Toaster />
-                            <ChatWidget />
-                        </ThemeProvider>
-                    </ChatProvider>
-                </AuthProvider>
-            </WishlistProvider>
-        </ComparisonProvider>
+        <CookiesProvider>
+            <ComparisonProvider>
+                <WishlistProvider>
+                    <AuthProvider>
+                        <ChatProvider>
+                            <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+                                {children}
+                                <Toaster />
+                                <ChatWidget />
+                            </ThemeProvider>
+                        </ChatProvider>
+                    </AuthProvider>
+                </WishlistProvider>
+            </ComparisonProvider>
+        </CookiesProvider>
     );
 }

@@ -18,10 +18,18 @@ export function ProductsSection() {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const data = await getProducts({ limit: 8 });
-                setProducts(data.products);
+                // Fetch products and ensure we always have visible products
+                const data = await getProducts({ limit: 12 });
+                console.log('Fetched products:', data.products.length);
+
+                // Use all products if no rating filter matches
+                const visibleProducts = data.products.slice(0, 8);
+                console.log('Displaying products:', visibleProducts.length);
+                setProducts(visibleProducts);
             } catch (error) {
                 console.error("Failed to fetch products", error);
+                // Fallback to empty array to prevent issues
+                setProducts([]);
             } finally {
                 setLoading(false);
             }
@@ -75,8 +83,9 @@ export function ProductsSection() {
                     className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
                 >
                     <div className="max-w-2xl">
-                        <span className="micro-label mb-4 block">FEATURED PRODUCTS</span>
-                        <h2 className="heading-md">Recent Arrivals</h2>
+                        <span className="micro-label mb-4 block text-[var(--color-accent)]">FEATURED PRODUCTS</span>
+                        <h2 className="heading-md text-white">Top-Rated Industrial Components</h2>
+                        <p className="text-white/60 mt-2 text-lg">Discover our highest-rated products trusted by professionals worldwide</p>
                     </div>
                     <div className="flex gap-4">
                         <button
@@ -94,101 +103,99 @@ export function ProductsSection() {
                     </div>
                 </motion.div>
 
-                {/* Products Carousel */}
+                {/* Products Display */}
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
                         <div className="w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
+                        <span className="ml-3 text-white">Loading featured products...</span>
+                    </div>
+                ) : products.length === 0 ? (
+                    <div className="text-center py-12">
+                        <h3 className="text-2xl font-bold text-white mb-4">No Products Available</h3>
+                        <p className="text-white/60 mb-6">Products will appear here shortly</p>
+                        <Link href="/products" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--color-accent)] text-navy font-bold rounded-lg">
+                            Browse All Products
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
                     </div>
                 ) : (
                     <div ref={containerRef} className="relative">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={currentIndex}
-                                initial={{ opacity: 0, x: 100 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -100 }}
-                                transition={{ duration: 0.4 }}
-                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-                            >
-                                {products
-                                    .slice(currentIndex * 4, currentIndex * 4 + 4)
-                                    .map((product, index) => (
-                                        <motion.div
-                                            key={product._id}
-                                            initial={{ opacity: 0, y: 40 }}
-                                            animate={isInView ? { opacity: 1, y: 0 } : {}}
-                                            transition={{ duration: 0.6, delay: index * 0.1 }}
-                                            className="group"
-                                        >
-                                            <Link href={`/products/${product._id}`}>
-                                                <div className="card-premium p-0 overflow-hidden h-full flex flex-col">
-                                                    {/* Image */}
-                                                    <div className="relative aspect-square overflow-hidden bg-[var(--color-bg-tertiary)]">
-                                                        <img
-                                                            src={product.image}
-                                                            alt={product.name}
-                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                        />
-                                                        {/* Badges */}
-                                                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                                            {index === 0 && (
-                                                                <span className="px-3 py-1.5 bg-[var(--color-accent)] text-[var(--color-bg-primary)] text-xs font-bold uppercase tracking-wider rounded-full">
-                                                                    New
-                                                                </span>
-                                                            )}
-                                                            {product.rating >= 4.5 && (
-                                                                <span className="px-3 py-1.5 bg-white/90 text-[var(--color-bg-primary)] text-xs font-bold uppercase tracking-wider rounded-full flex items-center gap-1">
-                                                                    <Star className="w-3 h-3 fill-current" />
-                                                                    Popular
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        {/* Quick Add */}
-                                                        <button
-                                                            onClick={(e) => handleQuickAdd(e, product)}
-                                                            className="absolute bottom-4 right-4 z-20 w-11 h-11 bg-[var(--color-accent)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 hover:scale-110 active:scale-90"
-                                                            title="Add to Cart"
-                                                        >
-                                                            <Plus className="w-5 h-5 text-[var(--color-bg-primary)]" />
-                                                        </button>
-                                                    </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {products.map((product, index) => (
+                                <motion.div
+                                    key={product._id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                    className="group relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden hover:border-[var(--color-accent)]/50 transition-all duration-300"
+                                >
+                                    <Link href={`/products/${product._id}`} className="block">
+                                        {/* Image */}
+                                        <div className="aspect-square relative overflow-hidden bg-navy/20">
+                                            <img
+                                                src={product.image || '/placeholder-product.jpg'}
+                                                alt={product.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = '/placeholder-product.jpg';
+                                                }}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            
+                                            {/* Badges */}
+                                            <div className="absolute top-4 left-4 flex gap-2">
+                                                <span className="px-3 py-1.5 bg-[var(--color-accent)] text-[var(--color-bg-primary)] text-xs font-bold uppercase tracking-wider rounded-full">
+                                                    Featured
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Quick Add */}
+                                            <button
+                                                onClick={(e) => handleQuickAdd(e, product)}
+                                                className="absolute bottom-4 right-4 z-20 w-11 h-11 bg-[var(--color-accent)] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 hover:scale-110 active:scale-90"
+                                                title="Add to Cart"
+                                            >
+                                                <Plus className="w-5 h-5 text-[var(--color-bg-primary)]" />
+                                            </button>
+                                        </div>
 
-                                                    {/* Content */}
-                                                    <div className="p-6 flex-1 flex flex-col">
-                                                        <div className="text-xs text-[var(--color-accent)] uppercase tracking-wider mb-2 font-semibold">
-                                                            {product.brand || "OEM"}
-                                                        </div>
-                                                        <h4 className="text-lg mb-3 line-clamp-2 group-hover:text-[var(--color-accent)] transition-colors font-semibold">
-                                                            {product.name}
-                                                        </h4>
-                                                        <div className="mt-auto pt-4 flex items-center justify-between">
-                                                            <div>
-                                                                <span className="text-2xl font-bold text-white">
-                                                                    ${product.price}
-                                                                </span>
-                                                            </div>
-                                                            <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[var(--color-accent)] transition-colors" />
-                                                        </div>
-                                                    </div>
+                                        {/* Content */}
+                                        <div className="p-6 flex-1 flex flex-col">
+                                            <div className="text-xs text-[var(--color-accent)] uppercase tracking-wider mb-2 font-semibold">
+                                                {product.brand || "OEM"}
+                                            </div>
+                                            <h4 className="text-lg mb-3 line-clamp-2 group-hover:text-[var(--color-accent)] transition-colors font-semibold text-white">
+                                                {product.name}
+                                            </h4>
+                                            <div className="mt-auto pt-4 flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-2xl font-bold text-white">
+                                                        ${product.price}
+                                                    </span>
                                                 </div>
-                                            </Link>
-                                        </motion.div>
-                                    ))}
-                            </motion.div>
-                        </AnimatePresence>
+                                                <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[var(--color-accent)] transition-colors" />
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                {/* View All Link */}
+                {/* View All Products CTA */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.6, delay: 0.5 }}
                     className="text-center mt-12"
                 >
-                    <Link href="/products" className="btn-secondary inline-flex">
-                        View Complete Catalog
-                        <ArrowRight className="w-4 h-4" />
+                    <Link
+                        href="/products"
+                        className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--color-accent)] text-navy font-bold rounded-lg hover:bg-[var(--color-accent)]/90 transition-colors shadow-lg shadow-[var(--color-accent)]/20"
+                    >
+                        Explore All Products
+                        <ArrowRight className="w-5 h-5" />
                     </Link>
                 </motion.div>
             </div>

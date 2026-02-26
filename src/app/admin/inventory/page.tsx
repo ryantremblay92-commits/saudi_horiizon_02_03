@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 import {
     Search,
     Package,
@@ -16,9 +11,25 @@ import {
     Plus,
     Minus,
     X,
-    Loader2
+    Loader2,
+    BarChart3,
+    Activity,
+    Box,
+    RefreshCw,
+    Filter,
+    ChevronRight,
+    ArrowUpRight,
+    ArrowDownRight,
+    History
 } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { StatusBadge } from '@/components/admin/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface InventoryItem {
     _id: string;
@@ -28,9 +39,11 @@ interface InventoryItem {
     minStock: number;
     price: number;
     category?: string;
+    brand?: string;
 }
 
 export default function AdminInventoryPage() {
+    const router = useRouter();
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -61,18 +74,20 @@ export default function AdminInventoryPage() {
             }
             const data = await response.json();
             const products = data.products || [];
+
             setInventory(products.map((p: any) => ({
                 _id: p._id,
                 name: p.name,
                 sku: p.sku,
                 stock: p.stock || 0,
-                minStock: 10,
+                minStock: 10, // Default threshold
                 price: p.price,
-                category: p.category
+                category: p.category,
+                brand: p.brand
             })));
         } catch (err: any) {
             console.error('Failed to load inventory:', err);
-            toast.error('Failed to load inventory');
+            toast.error('Sync failure with asset database');
         } finally {
             setLoading(false);
         }
@@ -85,7 +100,7 @@ export default function AdminInventoryPage() {
         try {
             const newStock = adjustingItem.stock + adjustAmount;
             if (newStock < 0) {
-                toast.error('Stock cannot go below 0');
+                toast.error('Critical Error: Stock cannot drop below zero-point');
                 setAdjusting(false);
                 return;
             }
@@ -96,19 +111,18 @@ export default function AdminInventoryPage() {
                 body: JSON.stringify({ stock: newStock })
             });
 
-            if (!response.ok) throw new Error('Failed to update stock');
+            if (!response.ok) throw new Error('Update rejected by server');
 
-            // Update local state
             setInventory(prev =>
                 prev.map(item =>
                     item._id === adjustingItem._id ? { ...item, stock: newStock } : item
                 )
             );
-            toast.success(`Stock adjusted: ${adjustingItem.name} → ${newStock} units`);
+            toast.success(`Inventory Corrected: ${adjustingItem.sku} now at ${newStock} units`);
             setAdjustingItem(null);
             setAdjustAmount(0);
         } catch (err) {
-            toast.error('Failed to adjust stock');
+            toast.error('Failed to commit stock adjustment');
         } finally {
             setAdjusting(false);
         }
@@ -116,273 +130,335 @@ export default function AdminInventoryPage() {
 
     const filteredInventory = inventory.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const lowStockItems = inventory.filter(item => item.stock < item.minStock);
-    const outOfStockItems = inventory.filter(item => item.stock === 0);
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'SAR',
+            minimumFractionDigits: 0
+        }).format(amount).replace('SAR', 'SAR ');
+    };
+
+    const stats = {
+        totalItems: inventory.length,
+        totalStock: inventory.reduce((acc, curr) => acc + curr.stock, 0),
+        lowStock: inventory.filter(item => item.stock > 0 && item.stock < item.minStock).length,
+        outOfStock: inventory.filter(item => item.stock === 0).length,
+        totalValue: inventory.reduce((acc, curr) => acc + (curr.price * curr.stock), 0)
+    };
 
     return (
         <AdminLayout
-            title="Inventory"
-            description="Manage product stock and inventory"
+            title="Asset Inventory"
+            description="High-precision stock management and logistics auditing"
             onRefresh={loadInventory}
-            onExport={() => {
-                const csv = [
-                    ['Name', 'SKU', 'Stock', 'Min Stock', 'Price', 'Category', 'Status'].join(','),
-                    ...filteredInventory.map(i => [
-                        `"${i.name}"`, i.sku, i.stock, i.minStock, i.price,
-                        `"${i.category || ''}"`,
-                        i.stock === 0 ? 'Out of Stock' : i.stock < i.minStock ? 'Low Stock' : 'In Stock'
-                    ].join(','))
-                ].join('\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('Inventory exported successfully');
-            }}
         >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card className="glass border-white/10 text-white hover:border-gold/30 transition-all duration-300 hover:-translate-y-1 hover:bg-white/5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-bold font-display text-slate-300">Total Products</CardTitle>
-                        <Package className="h-4 w-4 text-gold" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold bg-gradient-to-br from-white to-slate-400 text-transparent bg-clip-text font-display">{inventory.length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="glass border-white/10 text-white hover:border-yellow-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-white/5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-bold font-display text-slate-300">Low Stock</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-yellow-400 font-display drop-shadow-[0_0_15px_rgba(250,204,21,0.25)]">{lowStockItems.length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="glass border-white/10 text-white hover:border-red-500/30 transition-all duration-300 hover:-translate-y-1 hover:bg-white/5 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-bold font-display text-slate-300">Out of Stock</CardTitle>
-                        <Package className="h-4 w-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-red-400 font-display drop-shadow-[0_0_15px_rgba(248,113,113,0.25)]">{outOfStockItems.length}</div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Search */}
-            <div className="mb-6">
-                <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                        placeholder="Search inventory..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-gray-800 border-gray-700 text-white"
-                    />
+            <div className="relative z-10">
+                {/* Visual Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    {[
+                        { label: 'Total Assets', value: stats.totalItems, icon: Box, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                        { label: 'Stock Valuation', value: formatCurrency(stats.totalValue), icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                        { label: 'Low Stock Alerts', value: stats.lowStock, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', glow: stats.lowStock > 0 },
+                        { label: 'Depleted Stock', value: stats.outOfStock, icon: Package, color: 'text-red-400', bg: 'bg-red-500/10', glow: stats.outOfStock > 0 }
+                    ].map((stat, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className={`glass-premium p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group hover:border-${stat.color.split('-')[1]}/30 transition-all`}
+                        >
+                            <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full blur-3xl -mr-12 -mt-12 transition-all group-hover:scale-150`} />
+                            <div className="relative z-10 flex flex-col justify-between h-full">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center border border-white/10 group-hover:border-${stat.color.split('-')[1]}/30 transition-all`}>
+                                        <stat.icon className={`w-6 h-6 ${stat.color} ${stat.glow ? 'animate-pulse' : ''}`} />
+                                    </div>
+                                    <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Live Data</div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                                    <h3 className="text-2xl font-black text-white font-display tracking-tight group-hover:text-gold transition-colors">{stat.value}</h3>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
-            </div>
 
-            {/* Inventory Table */}
-            <div className="glass rounded-xl border border-white/10 overflow-hidden">
-                {loading ? (
-                    <div className="p-8 text-center">
-                        <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full mx-auto mb-4"></div>
-                        <p className="text-slate-400">Loading inventory...</p>
+                {/* Control Center */}
+                <div className="glass-premium rounded-[3rem] border border-white/5 p-8 mb-10">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="relative flex-1 max-w-xl">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                            <input
+                                type="text"
+                                placeholder="Scan Registry (Name, SKU, Category)..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white placeholder:text-white/20 focus:border-gold/30 focus:ring-1 focus:ring-gold/30 outline-none transition-all"
+                            />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="outline"
+                                className="glass-premium rounded-2xl border-white/5 text-slate-400 hover:text-white"
+                                onClick={() => {
+                                    const csv = [
+                                        ['Name', 'SKU', 'Stock', 'Min Stock', 'Price', 'Category', 'Status'].join(','),
+                                        ...filteredInventory.map(i => [
+                                            `"${i.name}"`, i.sku, i.stock, i.minStock, i.price,
+                                            `"${i.category || ''}"`,
+                                            i.stock === 0 ? 'Depleted' : i.stock < i.minStock ? 'Low' : 'Secure'
+                                        ].join(','))
+                                    ].join('\n');
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `SAUDI-HORIZON-INVENTORY-${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                    toast.success('Inventory manifest exported');
+                                }}
+                            >
+                                <Download className="w-4 h-4 mr-2" />
+                                Export Manifest
+                            </Button>
+                        </div>
                     </div>
-                ) : (
+                </div>
+
+                {/* Inventory Matrix Table */}
+                <div className="glass-premium rounded-[3rem] border border-white/5 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-white/5">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Product
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        SKU
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Stock
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Min Stock
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Price
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider font-display">
-                                        Actions
-                                    </th>
+                        <table className="w-full border-separate border-spacing-0">
+                            <thead>
+                                <tr className="bg-white/[0.02]">
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Asset Detail</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">SKU ID</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5 text-center">Current Stock</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Market Value</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Integrity Status</th>
+                                    <th className="px-8 py-6 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Protocols</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {filteredInventory.length > 0 ? (
-                                    filteredInventory.map((item) => (
-                                        <tr key={item._id} className="hover:bg-white/5 transition-colors group border-b border-white/5 last:border-0 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-white font-medium group-hover:text-gold transition-colors font-display">{item.name}</span>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-20 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="w-12 h-12 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
+                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Synchronizing Asset Database...</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : filteredInventory.length > 0 ? (
+                                    filteredInventory.map((item, idx) => (
+                                        <tr
+                                            key={item._id}
+                                            className="group hover:bg-white/[0.03] transition-all cursor-default"
+                                        >
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-navy border border-white/10 flex items-center justify-center group-hover:border-gold/30 transition-all">
+                                                        <Box className="w-6 h-6 text-white/20 group-hover:text-gold" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-white font-black text-sm tracking-tight font-display uppercase group-hover:text-gold transition-colors">{item.name}</p>
+                                                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{item.category || 'Standard Asset'}</p>
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-slate-400">{item.sku}</span>
+                                            <td className="px-8 py-6">
+                                                <code className="text-[11px] text-white/40 bg-white/5 px-2 py-1 rounded font-mono group-hover:text-gold/60 transition-colors uppercase tracking-widest">
+                                                    {item.sku || 'N/A-SECURE'}
+                                                </code>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`font-medium font-mono ${item.stock === 0 ? 'text-red-400' : item.stock < item.minStock ? 'text-yellow-400' : 'text-white'}`}>
-                                                    {item.stock}
-                                                </span>
+                                            <td className="px-8 py-6">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <span className={`text-xl font-black font-display font-mono ${item.stock === 0 ? 'text-red-500' :
+                                                            item.stock < item.minStock ? 'text-amber-400' : 'text-white'
+                                                        }`}>
+                                                        {item.stock}
+                                                    </span>
+                                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Units Available</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-slate-400 font-mono">{item.minStock}</span>
+                                            <td className="px-8 py-6">
+                                                <span className="text-sm font-black text-white font-display">{formatCurrency(item.price)}</span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-white font-display">${item.price?.toLocaleString()}</span>
+                                            <td className="px-8 py-6">
+                                                <StatusBadge status={
+                                                    item.stock === 0 ? 'cancelled' :
+                                                        item.stock < item.minStock ? 'pending' : 'active'
+                                                } />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <Badge className={
-                                                    item.stock === 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
-                                                        item.stock < item.minStock ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
-                                                            'bg-green-500/10 text-green-500 border border-green-500/20'
-                                                }>
-                                                    {item.stock === 0 ? 'Out of Stock' : item.stock < item.minStock ? 'Low Stock' : 'In Stock'}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
-                                                        title="Add Stock"
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
                                                         onClick={() => {
                                                             setAdjustingItem(item);
-                                                            setAdjustAmount(10);
+                                                            setAdjustAmount(1);
                                                             setAdjustReason('restock');
                                                         }}
+                                                        className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-500 hover:text-navy hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
                                                     >
-                                                        <Plus className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                                        title="Reduce Stock"
+                                                        <Plus className="w-4 h-4" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => {
                                                             setAdjustingItem(item);
                                                             setAdjustAmount(-1);
                                                             setAdjustReason('damaged');
                                                         }}
+                                                        className="w-10 h-10 rounded-xl bg-red-400/10 border border-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-navy hover:shadow-lg hover:shadow-red-500/20 transition-all"
                                                     >
-                                                        <Minus className="h-4 w-4" />
-                                                    </Button>
+                                                        <Minus className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAdjustingItem(item)}
+                                                        className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-gold hover:border-gold/30 hover:bg-white/10 transition-all"
+                                                    >
+                                                        <History className="w-4 h-4" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
-                                            No inventory items found
+                                        <td colSpan={6} className="py-32 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <Package className="w-12 h-12 text-white/5" />
+                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Asset Registry Empty for Current Query</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Stock Adjustment Modal */}
-            {adjustingItem && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setAdjustingItem(null)}>
-                    <div className="bg-gray-900 border border-white/10 rounded-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-white font-display">Adjust Stock</h3>
-                            <Button variant="ghost" size="icon" onClick={() => setAdjustingItem(null)} className="text-slate-400 hover:text-white">
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                <p className="text-white font-medium">{adjustingItem.name}</p>
-                                <p className="text-sm text-slate-400">SKU: {adjustingItem.sku}</p>
-                                <p className="text-sm text-slate-400 mt-1">
-                                    Current Stock: <span className="font-mono text-white">{adjustingItem.stock}</span>
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Reason</Label>
-                                <select
-                                    value={adjustReason}
-                                    onChange={(e) => setAdjustReason(e.target.value)}
-                                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2"
-                                >
-                                    <option value="restock">Restock / New Shipment</option>
-                                    <option value="return">Customer Return</option>
-                                    <option value="damaged">Damaged / Write-off</option>
-                                    <option value="correction">Inventory Correction</option>
-                                    <option value="sold_offline">Sold Offline</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-gray-300">Adjustment Amount</Label>
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                        onClick={() => setAdjustAmount(prev => prev - 1)}
-                                    >
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <Input
-                                        type="number"
-                                        value={adjustAmount}
-                                        onChange={(e) => setAdjustAmount(parseInt(e.target.value) || 0)}
-                                        className="bg-gray-800 border-gray-700 text-white text-center font-mono w-24"
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="border-green-500/30 text-green-400 hover:bg-green-500/10"
-                                        onClick={() => setAdjustAmount(prev => prev + 1)}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
+            {/* Premium Adjustment Modal */}
+            <AnimatePresence>
+                {adjustingItem && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-navy/80 backdrop-blur-xl"
+                            onClick={() => setAdjustingItem(null)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-lg glass-premium rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl"
+                        >
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-3xl -mr-32 -mt-32" />
+                            <div className="p-10 relative z-10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Supply Adjustment</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">SECURE PROTOCOL ACTIVE</p>
+                                    </div>
+                                    <button onClick={() => setAdjustingItem(null)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:text-white transition-colors">
+                                        <X className="w-6 h-6" />
+                                    </button>
                                 </div>
-                                <p className="text-xs text-slate-500">
-                                    {adjustAmount > 0 ? `Adding ${adjustAmount} units` : adjustAmount < 0 ? `Removing ${Math.abs(adjustAmount)} units` : 'No change'}
-                                    → New stock: <span className={`font-mono ${(adjustingItem.stock + adjustAmount) < 0 ? 'text-red-400' : 'text-green-400'}`}>{Math.max(0, adjustingItem.stock + adjustAmount)}</span>
-                                </p>
-                            </div>
 
-                            <div className="flex justify-end gap-3 pt-4">
-                                <Button type="button" variant="outline" onClick={() => setAdjustingItem(null)} className="border-gray-700 text-gray-300">
-                                    Cancel
-                                </Button>
-                                <Button
-                                    onClick={handleStockAdjust}
-                                    disabled={adjustAmount === 0 || adjusting || (adjustingItem.stock + adjustAmount) < 0}
-                                    className="bg-gold hover:bg-gold/90 text-navy font-bold"
-                                >
-                                    {adjusting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ArrowUpDown className="h-4 w-4 mr-2" />}
-                                    {adjusting ? 'Updating...' : 'Adjust Stock'}
-                                </Button>
+                                <div className="space-y-6">
+                                    <div className="p-6 rounded-3xl bg-white/[0.03] border border-white/5">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-navy border border-gold/20 flex items-center justify-center">
+                                                <Box className="w-6 h-6 text-gold" />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-black uppercase font-display tracking-tight">{adjustingItem.name}</p>
+                                                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{adjustingItem.sku}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Current Balance</span>
+                                            <span className="text-xl font-black text-white font-display">{adjustingItem.stock} UNITS</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Calibration Metric</Label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {['restock', 'correction', 'damaged', 'sold_offline'].map((reason) => (
+                                                <button
+                                                    key={reason}
+                                                    onClick={() => setAdjustReason(reason)}
+                                                    className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${adjustReason === reason
+                                                            ? 'bg-gold text-navy border-gold shadow-lg shadow-gold/20'
+                                                            : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'
+                                                        }`}
+                                                >
+                                                    {reason.replace('_', ' ')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Asset Variance</Label>
+                                        <div className="flex items-center gap-4">
+                                            <button
+                                                onClick={() => setAdjustAmount(prev => prev - 1)}
+                                                className="w-14 h-14 rounded-2xl bg-red-400/10 border border-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-400 hover:text-navy transition-all"
+                                            >
+                                                <Minus className="w-6 h-6 font-black" />
+                                            </button>
+                                            <div className="flex-1 bg-white/[0.03] border border-white/5 rounded-2xl h-14 flex items-center justify-center">
+                                                <span className={`text-2xl font-black font-display ${adjustAmount > 0 ? 'text-emerald-400' : adjustAmount < 0 ? 'text-red-400' : 'text-white'}`}>
+                                                    {adjustAmount > 0 ? '+' : ''}{adjustAmount}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => setAdjustAmount(prev => prev + 1)}
+                                                className="w-14 h-14 rounded-2xl bg-emerald-400/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 hover:bg-emerald-400 hover:text-navy transition-all"
+                                            >
+                                                <Plus className="w-6 h-6 font-black" />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between px-2">
+                                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Net Projection</span>
+                                            <span className="text-[9px] font-black text-gold uppercase tracking-widest">
+                                                {adjustingItem.stock} → {Math.max(0, adjustingItem.stock + adjustAmount)} UNITS
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-6">
+                                        <Button
+                                            onClick={() => setAdjustingItem(null)}
+                                            variant="outline"
+                                            className="flex-1 rounded-2xl py-6 border-white/10 text-white/40 hover:text-white"
+                                        >
+                                            ABORT
+                                        </Button>
+                                        <Button
+                                            onClick={handleStockAdjust}
+                                            disabled={adjustAmount === 0 || adjusting || (adjustingItem.stock + adjustAmount) < 0}
+                                            className="flex-1 bg-gold hover:bg-gold/90 text-navy font-black rounded-2xl py-6 shadow-xl shadow-gold/20"
+                                        >
+                                            {adjusting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'COMMIT CHANGES'}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </AdminLayout>
     );
 }

@@ -1,288 +1,177 @@
 'use client';
 
-import React from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
-import { User, Mail, Lock, Phone, Building, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
-
-type RegisterForm = {
-    name: string;
-    email: string;
-    phone: string;
-    company: string;
-    password: string;
-    confirmPassword: string;
-    agreedToTerms: boolean;
-};
+import Link from 'next/link';
 
 export default function RegisterPage() {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        phone: '',
+    });
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { register: registerUser, isAuthenticated } = useAuth();
-    const [loading, setLoading] = React.useState(false);
-    const [showPassword, setShowPassword] = React.useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-    const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterForm>();
-    const password = watch('password', '');
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
-    React.useEffect(() => {
-        if (isAuthenticated) {
-            router.push('/');
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            setLoading(false);
+            return;
         }
-    }, [isAuthenticated, router]);
 
-    const onSubmit = async (data: RegisterForm) => {
         try {
-            setLoading(true);
-            // Note: AuthContext register only accepts email and password
-            // Additional user data can be stored separately or updated after registration
-            await registerUser(data.email, data.password);
-            toast.success('Account created successfully!');
-            router.push('/');
-        } catch (error: any) {
-            console.error('Registration error:', error);
-            toast.error(error?.message || 'Registration failed');
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    phone: formData.phone,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.cookie = `auth-token=${data.token}; path=/; max-age=86400`;
+                router.push('/');
+            } else {
+                setError(data.message || 'Registration failed');
+            }
+        } catch (err) {
+            setError('An error occurred during registration');
         } finally {
             setLoading(false);
         }
     };
 
-    // Password strength validation
-    const getPasswordStrength = (pwd: string) => {
-        let strength = 0;
-        if (pwd.length >= 8) strength++;
-        if (/[A-Z]/.test(pwd)) strength++;
-        if (/[a-z]/.test(pwd)) strength++;
-        if (/[0-9]/.test(pwd)) strength++;
-        if (/[^A-Za-z0-9]/.test(pwd)) strength++;
-        return strength;
-    };
-
-    const passwordStrength = getPasswordStrength(password || '');
-    const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
-    const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-emerald-500'];
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background to-secondary py-12 px-4">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="max-w-lg mx-auto"
-            >
-                <Card className="glass-light dark:glass-dark">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">Create an Account</CardTitle>
-                        <CardDescription>Join Saudi Horizon for exclusive access to machinery and parts</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                            {/* Name Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="name"
-                                        placeholder="Enter your full name"
-                                        className="pl-10"
-                                        {...register('name', { required: 'Name is required' })}
-                                    />
-                                </div>
-                                {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-                            </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8">
+                <div>
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Create your account
+                    </h2>
+                    <p className="mt-2 text-center text-sm text-gray-600">
+                        Or{' '}
+                        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                            sign in to your existing account
+                        </Link>
+                    </p>
+                </div>
 
-                            {/* Email Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="Enter your email"
-                                        className="pl-10"
-                                        {...register('email', {
-                                            required: 'Email is required',
-                                            pattern: {
-                                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                                message: 'Invalid email address'
-                                            }
-                                        })}
-                                    />
-                                </div>
-                                {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
-                            </div>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {error && (
+                        <div className="rounded-md bg-red-50 p-4">
+                            <div className="text-sm text-red-700">{error}</div>
+                        </div>
+                    )}
 
-                            {/* Phone Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="phone"
-                                        type="tel"
-                                        placeholder="Enter your phone number"
-                                        className="pl-10"
-                                        {...register('phone', {
-                                            pattern: {
-                                                value: /^[0-9+\-\s]{8,}$/,
-                                                message: 'Invalid phone number'
-                                            }
-                                        })}
-                                    />
-                                </div>
-                                {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
-                            </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                Full Name
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                required
+                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Full Name"
+                                value={formData.name}
+                                onChange={handleChange}
+                            />
+                        </div>
 
-                            {/* Company Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="company">Company Name</Label>
-                                <div className="relative">
-                                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="company"
-                                        placeholder="Enter your company name"
-                                        className="pl-10"
-                                        {...register('company')}
-                                    />
-                                </div>
-                            </div>
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                Email Address
+                            </label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Email address"
+                                value={formData.email}
+                                onChange={handleChange}
+                            />
+                        </div>
 
-                            {/* Password Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="password"
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="Create a password"
-                                        className="pl-10 pr-10"
-                                        {...register('password', {
-                                            required: 'Password is required',
-                                            minLength: {
-                                                value: 8,
-                                                message: 'Password must be at least 8 characters'
-                                            },
-                                            pattern: {
-                                                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                                                message: 'Password must contain uppercase, lowercase, and number'
-                                            }
-                                        })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                                {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                        <div>
+                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                                Phone Number
+                            </label>
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Phone Number (optional)"
+                                value={formData.phone}
+                                onChange={handleChange}
+                            />
+                        </div>
 
-                                {/* Password Strength Indicator */}
-                                {password && password.length > 0 && (
-                                    <div className="space-y-1">
-                                        <div className="flex gap-1">
-                                            {[1, 2, 3, 4, 5].map((level) => (
-                                                <div
-                                                    key={level}
-                                                    className={`h-1 flex-1 rounded-full transition-colors ${level <= passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-muted'
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Password strength: <span className={strengthColors[passwordStrength - 1]}>{strengthLabels[passwordStrength - 1]}</span>
-                                        </p>
-                                    </div>
-                                )}
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Password"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
+                        </div>
 
-                                {/* Password Requirements */}
-                                <div className="space-y-1 text-xs text-muted-foreground">
-                                    <p className="flex items-center gap-2">
-                                        <CheckCircle className={`w-3 h-3 ${password.length >= 8 ? 'text-green-500' : 'text-muted-foreground'}`} />
-                                        At least 8 characters
-                                    </p>
-                                    <p className="flex items-center gap-2">
-                                        <CheckCircle className={`w-3 h-3 ${/[A-Z]/.test(password || '') ? 'text-green-500' : 'text-muted-foreground'}`} />
-                                        One uppercase letter
-                                    </p>
-                                    <p className="flex items-center gap-2">
-                                        <CheckCircle className={`w-3 h-3 ${/[a-z]/.test(password || '') ? 'text-green-500' : 'text-muted-foreground'}`} />
-                                        One lowercase letter
-                                    </p>
-                                    <p className="flex items-center gap-2">
-                                        <CheckCircle className={`w-3 h-3 ${/\d/.test(password || '') ? 'text-green-500' : 'text-muted-foreground'}`} />
-                                        One number
-                                    </p>
-                                </div>
-                            </div>
+                        <div>
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                                Confirm Password
+                            </label>
+                            <input
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                type="password"
+                                required
+                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Confirm Password"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
 
-                            {/* Confirm Password Field */}
-                            <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="confirmPassword"
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        placeholder="Confirm your password"
-                                        className="pl-10 pr-10"
-                                        {...register('confirmPassword', {
-                                            required: 'Please confirm your password',
-                                            validate: (value) => value === password || 'Passwords do not match'
-                                        })}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                    </button>
-                                </div>
-                                {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
-                            </div>
-
-                            {/* Terms Agreement */}
-                            <div className="flex items-start gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="terms"
-                                    className="mt-1"
-                                    {...register('agreedToTerms', { required: 'You must agree to the terms' })}
-                                />
-                                <Label htmlFor="terms" className="text-sm text-muted-foreground">
-                                    I agree to the <a href="/terms" className="text-primary hover:underline">Terms of Service</a> and{' '}
-                                    <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
-                                </Label>
-                            </div>
-                            {errors.agreedToTerms && <p className="text-sm text-red-500">{errors.agreedToTerms.message}</p>}
-
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? 'Creating account...' : 'Create Account'}
-                            </Button>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="flex justify-center">
-                        <Button
-                            variant="link"
-                            onClick={() => router.push('/login')}
-                            className="text-sm text-muted-foreground"
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                         >
-                            Already have an account? Sign in
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </motion.div>
+                            {loading ? 'Creating account...' : 'Create account'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

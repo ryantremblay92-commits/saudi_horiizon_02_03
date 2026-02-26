@@ -1,60 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db/mongodb';
-import User from '@/lib/db/models/User';
-import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt';
+
+// Simple in-memory user store for demo
+let users = [
+    {
+        id: 1,
+        email: 'admin@saudifresh.com',
+        password: 'admin123',
+        name: 'Admin User',
+        role: 'admin',
+        phone: '+966500000000',
+    },
+];
 
 export async function POST(request: NextRequest) {
     try {
-        await connectDB();
+        const { name, email, password, phone } = await request.json();
 
-        const body = await request.json();
-        const { email, password } = body;
-
-        // Validation
-        if (!email || !password) {
+        if (!name || !email || !password) {
             return NextResponse.json(
-                { message: 'Email and password are required' },
+                { message: 'Name, email, and password are required' },
                 { status: 400 }
             );
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
-
+        const existingUser = users.find(u => u.email === email);
         if (existingUser) {
             return NextResponse.json(
-                { message: 'User with this email already exists' },
-                { status: 400 }
+                { message: 'User already exists' },
+                { status: 409 }
             );
         }
 
         // Create new user
-        const user = await User.create({
-            email: email.toLowerCase(),
-            password,
+        const newUser = {
+            id: users.length + 1,
+            email,
+            password, // In production, hash the password
+            name,
             role: 'user',
-        });
+            phone: phone || '',
+        };
 
-        // Generate tokens
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
+        users.push(newUser);
 
-        // Save refresh token to database
-        user.refreshToken = refreshToken;
-        await user.save();
+        // Generate token
+        const token = btoa(JSON.stringify({
+            userId: newUser.id,
+            email: newUser.email,
+            role: newUser.role,
+            exp: Date.now() + 24 * 60 * 60 * 1000
+        }));
 
-        // Return user data with tokens
         return NextResponse.json({
-            _id: user._id,
-            email: user.email,
-            role: user.role,
-            accessToken,
-            refreshToken,
-        }, { status: 201 });
-    } catch (error: unknown) {
-        console.error('Registration error:', error);
+            token,
+            user: {
+                id: newUser.id,
+                email: newUser.email,
+                name: newUser.name,
+                role: newUser.role,
+            }
+        });
+    } catch (error) {
         return NextResponse.json(
-            { message: 'Registration failed' },
+            { message: 'Internal server error' },
             { status: 500 }
         );
     }

@@ -37,6 +37,8 @@ export function HeroSection() {
                     style={{
                         backgroundImage: "url('/images/home/hero_bulldozer.png')",
                     }}
+                    role="img"
+                    aria-label="Background bulldozer image"
                 />
                 <div className="absolute inset-0 gradient-hero-overlay" />
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 gradient-accent-glow" />
