@@ -3,22 +3,22 @@ import { BannerModel } from '@/lib/database/schemas/notifications';
 
 // Simple auth middleware replacement
 async function getAuthFromRequest(request: NextRequest) {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-        return { authorized: false, user: null };
-    }
-    // For now, just check if header exists
-    return { authorized: true, user: { _id: 'system' } };
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return { authorized: false, user: null };
+  }
+  // For now, just check if header exists
+  return { authorized: true, user: { _id: 'system' } };
 }
 
 export async function GET(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
-    
+
     const { position, targetUser } = Object.fromEntries(request.nextUrl.searchParams);
-    
+
     const query: any = { isActive: true };
-    
+
     if (position) {
       query.position = position;
     }
@@ -30,9 +30,10 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    const now = new Date();
     const banners = await BannerModel.find(query)
-      .where('startDate').lte(new Date())
-      .where('endDate').gte(new Date())
+      .where('startDate').lte(now)
+      .where('endDate').gte(now)
       .sort({ displayOrder: 1, createdAt: -1 });
 
     return NextResponse.json(banners);
@@ -45,9 +46,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
-    
+
     const bannerData = await request.json();
-    
+
     if (!bannerData.title || !bannerData.content || !bannerData.startDate || !bannerData.endDate) {
       return NextResponse.json({ error: 'Title, content, start date, and end date are required' }, { status: 400 });
     }
@@ -69,10 +70,10 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
-    
+
     const id = request.nextUrl.searchParams.get('id');
     const bannerData = await request.json();
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Banner ID is required' }, { status: 400 });
     }
@@ -97,9 +98,9 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
-    
+
     const id = request.nextUrl.searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Banner ID is required' }, { status: 400 });
     }

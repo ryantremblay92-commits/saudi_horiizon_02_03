@@ -22,15 +22,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onQuickInquiry,
   index = 0,
-  selectedEquipment,
 }) => {
   const router = useRouter();
-  const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
   // Comparison functionality
   const { comparisonProducts, addProduct, removeProduct, isFull } = useComparison();
-  const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isInComparison = comparisonProducts.includes(product._id);
   const inWishlist = isInWishlist(product._id);
   const canAddToComparison = !isFull || isInComparison;
@@ -42,14 +40,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       y: 0,
       transition: {
         duration: 0.5,
-        delay: index * 0.1,
+        delay: index * 0.05,
       },
     },
   };
 
   return (
     <motion.div
-      ref={cardRef}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
@@ -58,146 +55,134 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       onHoverEnd={() => setIsHovered(false)}
       className="group relative h-full"
     >
-      <Card className="h-full border border-white/5 bg-surface/50 backdrop-blur-sm hover:border-gold/30 hover:bg-surface/80 transition-all duration-300 overflow-hidden flex flex-col">
-        {/* Image Container */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-white/5">
+      <Card className="h-full border border-white/[0.08] bg-navy-light/30 backdrop-blur-md hover:border-gold/30 hover:bg-navy-light/50 transition-all duration-500 overflow-hidden flex flex-col shadow-2xl">
+        {/* Image Container with Actions */}
+        <div className="relative aspect-[16/10] overflow-hidden bg-white/5 border-b border-white/[0.05]">
           <motion.img
             src={product.image || '/placeholder-image.png'}
             alt={product.name}
-            className="w-full h-full object-cover"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
+            className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700"
+            whileHover={{ scale: 1.1 }}
           />
 
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent opacity-60" />
+          {/* Progress Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/20 to-transparent opacity-80" />
 
-          {/* Quick Add Button - Always Visible at Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-navy to-transparent">
-            <Button
-              className="w-full bg-gold hover:bg-yellow text-navy font-bold text-sm"
+          {/* Floating Actions (Wishlist/Compare) */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                onAddToCart(product);
+                inWishlist ? removeFromWishlist(product._id) : addToWishlist(product._id);
               }}
+              className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-xl border transition-all ${inWishlist ? 'bg-red-500 border-red-500 text-white' : 'bg-black/40 border-white/20 text-white hover:text-red-400'
+                }`}
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Add to Cart
-            </Button>
+              <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                isInComparison ? removeProduct(product._id) : addProduct(product._id);
+              }}
+              disabled={!canAddToComparison}
+              className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-xl border transition-all ${isInComparison ? 'bg-gold border-gold text-navy' : 'bg-black/40 border-white/20 text-white hover:text-gold'
+                }`}
+            >
+              <CheckCircle2 className={`w-4 h-4 ${isInComparison ? '' : 'opacity-40'}`} />
+            </button>
           </div>
 
-          {/* Quick Actions Overlay - Comparison & Wishlist on Hover */}
-          <div className="absolute inset-0 p-4 flex flex-col justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="flex justify-between items-start">
-              {/* Comparison Toggle */}
-              <motion.button
-                className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-all ${isInComparison
-                  ? 'bg-gold border-gold text-navy'
-                  : 'bg-black/30 border-white/20 text-white hover:bg-gold hover:border-gold hover:text-navy'
-                  }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  isInComparison ? removeProduct(product._id) : addProduct(product._id);
-                }}
-                disabled={!canAddToComparison}
-                aria-label={isInComparison ? 'Remove from compare' : 'Add to compare'}
-              >
-                {isInComparison ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-              </motion.button>
-
-              {/* Wishlist Toggle */}
-              <motion.button
-                className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-all ${inWishlist
-                  ? 'bg-red-500 border-red-500 text-white'
-                  : 'bg-black/30 border-white/20 text-white hover:bg-red-500 hover:border-red-500'
-                  }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  inWishlist ? removeFromWishlist(product._id) : addToWishlist(product._id);
-                }}
-                aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-              >
-                <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
-              </motion.button>
-
-              {/* Stock Badge */}
-              {product.inStock && (
-                <Badge className="bg-emerald-500/90 hover:bg-emerald-500 text-white border-0 backdrop-blur-sm">
-                  In Stock
-                </Badge>
-              )}
-            </div>
+          {/* Quick Stats Badge */}
+          <div className="absolute top-4 left-4">
+            {product.inStock ? (
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                AVAILABLE
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase backdrop-blur-md">
+                BACKORDER
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        <CardContent className="flex-1 p-5 space-y-4">
-          {/* SKU / Part Number - Important for B2B */}
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Package className="w-3 h-3" />
-            <span className="font-mono">SKU: {product.sku || 'N/A'}</span>
-          </div>
-
-          <div>
-            <div className="text-xs font-bold text-gold/90 mb-1 uppercase tracking-wider font-display">
-              {product.brand}
+        {/* Content Area */}
+        <CardContent className="flex-1 p-4 space-y-3">
+          <div className="flex justify-between items-start gap-4">
+            <div className="space-y-0.5">
+              <span className="text-[9px] font-black text-gold/60 uppercase tracking-[0.2em] font-mono">
+                {product.brand} // {product.sku}
+              </span>
+              <h3 className="text-base font-black text-white leading-tight tracking-tight group-hover:text-gradient-gold transition-all duration-300 line-clamp-2">
+                {product.name}
+              </h3>
             </div>
-            <h3 className="text-lg font-bold text-white leading-tight group-hover:text-gold transition-colors font-display line-clamp-2">
-              {product.name}
-            </h3>
+            <div className="text-right">
+              <span className="block text-[9px] font-bold text-white/30 uppercase tracking-widest mb-0.5">MSRP</span>
+              <span className="text-lg font-black text-white leading-none tracking-tighter">
+                ${product.price.toLocaleString()}
+              </span>
+            </div>
           </div>
 
-          {/* Specs / Short Desc */}
-          <p className="text-sm text-gray-300 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-white/40 leading-relaxed font-medium line-clamp-2 italic">
             {product.description}
           </p>
 
-          <div className="flex items-end justify-between pt-2 border-t border-white/5">
-            <div>
-              <p className="text-xs text-gray-400 font-medium mb-0.5">Price</p>
-              <div className="text-xl font-bold text-white font-display">
-                ${product.price.toLocaleString()}
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.05]">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 fill-gold text-gold" />
               </div>
-              {/* Bulk pricing indicator */}
-              <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                Bulk pricing available
-              </p>
+              <div>
+                <span className="block text-[8px] font-black text-white/20 tracking-widest uppercase">Rating</span>
+                <span className="text-xs font-bold text-white">{product.rating ? Number(product.rating).toFixed(1) : '0.0'} / 5.0</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded">
-              <Star className="w-3.5 h-3.5 fill-gold text-gold" />
-              <span className="text-sm font-bold text-white">{product.rating}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                <Truck className="w-3.5 h-3.5 text-gold" />
+              </div>
+              <div>
+                <span className="block text-[8px] font-black text-white/20 tracking-widest uppercase">Shipping</span>
+                <span className="text-xs font-bold text-white">Express</span>
+              </div>
             </div>
-          </div>
-
-          {/* Shipping Info */}
-          <div className="flex items-center gap-2 text-xs text-slate-400 pt-2 border-t border-white/5">
-            <Truck className="w-3 h-3 text-gold" />
-            <span>Free shipping on orders over $500</span>
           </div>
         </CardContent>
 
-        {/* Footer Actions */}
-        <div className="p-5 pt-0 mt-auto flex gap-3">
-          <Button
-            className="flex-1 border border-white/10 hover:bg-white/5 text-white bg-transparent group-hover:border-gold/30 transition-all font-display tracking-wide uppercase text-xs font-bold h-10"
-            onClick={() => router.push(`/products/${product._id}`)}
-          >
-            Details <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-10 h-10 p-0 border border-white/10 hover:border-gold/30 hover:bg-gold/10 text-gold transition-all"
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickInquiry(product);
-            }}
-            title="Quick Inquiry"
-          >
-            <MessageCircle className="w-4 h-4" />
-          </Button>
+        {/* Action Board */}
+        <div className="p-4 pt-0 flex bg-navy-light/10 border-t border-white/[0.03]">
+          <div className="flex-1 flex gap-2">
+            <Button
+              className="flex-1 bg-gold hover:bg-gold-light text-navy font-black tracking-widest uppercase text-[9px] h-10 rounded-xl shadow-[0_4px_20px_rgba(197,160,89,0.2)] hover:shadow-[0_8px_30px_rgba(197,160,89,0.4)] transition-all duration-300"
+              onClick={() => onAddToCart(product)}
+            >
+              <ShoppingCart className="w-3.5 h-3.5 mr-2" />
+              ADD TO CART
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="w-11 h-11 p-0 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-gold/50"
+                onClick={() => router.push(`/products/${product._id}`)}
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="w-11 h-11 p-0 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-gold/50"
+                onClick={() => onQuickInquiry(product)}
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </Card>
     </motion.div>
   );
 };
+
