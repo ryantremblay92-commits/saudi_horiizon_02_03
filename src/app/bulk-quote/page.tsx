@@ -47,9 +47,38 @@ export default function BulkQuotePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        toast.success('Quote request submitted! Our B2B team will respond within 24 hours.');
-        setIsSubmitting(false);
+        try {
+            const response = await fetch('/api/quotes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit quote request');
+            }
+
+            toast.success('Quote request submitted! Our B2B team will respond within 24 hours.');
+            // Clear form
+            setFormData({
+                companyName: '',
+                contactPerson: '',
+                phone: '',
+                email: '',
+                projectType: '',
+                items: '',
+                quantities: '',
+                timeline: '',
+                notes: '',
+            });
+        } catch (error) {
+            console.error('Error submitting quote:', error);
+            toast.error('Failed to submit quote request. Please try again or contact us directly.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
