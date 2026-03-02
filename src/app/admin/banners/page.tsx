@@ -78,7 +78,7 @@ export default function AdminBannersPage() {
             const url = editingBanner ? `/api/admin/banners/${editingBanner._id}` : '/api/admin/banners';
             const res = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(formData) });
             if (!res.ok) throw new Error();
-            toast.success(editingBanner ? 'Banner updated' : 'Banner deployed');
+            toast.success(editingBanner ? 'Banner updated' : 'Banner created');
             setShowModal(false);
             fetchBanners();
         } catch { toast.error('Operation failed'); } finally { setSubmitting(false); }
@@ -115,7 +115,7 @@ export default function AdminBannersPage() {
     const activeCount = banners.filter(b => b.isActive).length;
 
     return (
-        <AdminLayout title="Banner Management" description="Visual assets and promotional display grid" onRefresh={fetchBanners}>
+        <AdminLayout title="Banner Management" description="Manage promotional banners and advertisements" onRefresh={fetchBanners}>
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-32 border border-dashed border-white/10 rounded-[3rem]">
                     <div className="relative w-20 h-20 mb-6">
@@ -123,7 +123,7 @@ export default function AdminBannersPage() {
                         <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin" />
                         <Layers className="absolute inset-0 m-auto w-8 h-8 text-gold animate-pulse" />
                     </div>
-                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading Display Grid...</p>
+                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading banners...</p>
                 </div>
             ) : (
                 <div className="space-y-8">
@@ -136,7 +136,7 @@ export default function AdminBannersPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-white/20" />
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{banners.length - activeCount} Staged</span>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{banners.length - activeCount} Draft</span>
                             </div>
                         </div>
                         <button
@@ -144,7 +144,7 @@ export default function AdminBannersPage() {
                             className="flex items-center gap-2 px-8 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 shadow-xl shadow-gold/20"
                         >
                             <Plus className="w-4 h-4" />
-                            Deploy Banner
+                            Add Banner
                         </button>
                     </div>
 
@@ -154,9 +154,9 @@ export default function AdminBannersPage() {
                             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                                 <Layers className="w-8 h-8 text-white/20" />
                             </div>
-                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">No Banners Deployed</p>
+                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">No Banners Found</p>
                             <button onClick={openAdd} className="px-8 py-3 bg-gold/10 hover:bg-gold/20 text-gold rounded-2xl text-[10px] font-black uppercase tracking-widest border border-gold/20 transition-all">
-                                Deploy First Banner
+                                Add First Banner
                             </button>
                         </div>
                     ) : (
@@ -176,7 +176,7 @@ export default function AdminBannersPage() {
                                         ) : (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                                                 <ImageIcon className="w-8 h-8 text-white/10" />
-                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">No Image Asset</span>
+                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">No image available</span>
                                             </div>
                                         )}
                                         {/* Overlay */}
@@ -190,7 +190,7 @@ export default function AdminBannersPage() {
                                         <div className="absolute top-4 right-4">
                                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border ${banner.isActive ? 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30' : 'bg-white/5 text-white/30 border-white/10'}`}>
                                                 <div className={`w-1.5 h-1.5 rounded-full ${banner.isActive ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
-                                                {banner.isActive ? 'Live' : 'Staged'}
+                                                {banner.isActive ? 'Live' : 'Draft'}
                                             </div>
                                         </div>
                                         {/* CTA Preview */}
@@ -264,8 +264,8 @@ export default function AdminBannersPage() {
                             <div className="p-10">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">{editingBanner ? 'Modify Banner' : 'Deploy Banner'}</h3>
-                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Visual asset configuration</p>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">{editingBanner ? 'Edit Banner' : 'Add Banner'}</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Banner settings</p>
                                     </div>
                                     <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center border border-white/10 transition-all">
                                         <X className="w-4 h-4 text-white/40" />
@@ -285,12 +285,12 @@ export default function AdminBannersPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Subtitle Copy</label>
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Subtitle</label>
                                         <textarea value={formData.subtitle} onChange={e => setFormData({ ...formData, subtitle: e.target.value })} className={`${inputCls} resize-none`} rows={2} placeholder="Supporting message..." />
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Image Asset URL</label>
+                                        <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Image URL</label>
                                         <input value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className={inputCls} placeholder="https://..." />
                                         {formData.image && (
                                             <div className="mt-2 h-32 rounded-2xl overflow-hidden border border-white/10">
@@ -301,11 +301,11 @@ export default function AdminBannersPage() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Destination Link</label>
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Link URL</label>
                                             <input value={formData.link} onChange={e => setFormData({ ...formData, link: e.target.value })} className={inputCls} placeholder="/products or https://..." />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Display Position</label>
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Banner Position</label>
                                             <select value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl px-5 py-3.5 text-sm font-bold focus:outline-none focus:border-gold/50 transition-all">
                                                 <option value="hero">Hero</option>
                                                 <option value="sidebar">Sidebar</option>
@@ -317,19 +317,19 @@ export default function AdminBannersPage() {
 
                                     <div className="grid grid-cols-2 gap-5">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Activation Date</label>
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Start Date</label>
                                             <input type="date" value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className={inputCls} />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Expiry Date</label>
+                                            <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">End Date</label>
                                             <input type="date" value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className={inputCls} />
                                         </div>
                                     </div>
 
                                     <div className="flex gap-3 pt-4">
-                                        <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Abort</button>
+                                        <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-4 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">Cancel</button>
                                         <button type="submit" disabled={submitting} className="flex-1 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-[1.02] disabled:opacity-50 shadow-lg shadow-gold/20 flex items-center justify-center gap-2">
-                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" />Deploying...</> : <><Zap className="w-4 h-4" />{editingBanner ? 'Update' : 'Deploy'}</>}
+                                            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : <><Plus className="w-4 h-4" />{editingBanner ? 'Save Changes' : 'Create Banner'}</>}
                                         </button>
                                     </div>
                                 </form>

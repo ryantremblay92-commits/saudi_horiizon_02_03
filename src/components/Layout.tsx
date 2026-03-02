@@ -15,6 +15,19 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
+  const isAdminPage = pathname?.startsWith('/admin') || pathname === '/login'
+
+  if (isAdminPage) {
+    return (
+      <div className="min-h-screen bg-[#060B12] flex flex-col relative">
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+        <CookieConsent position="bottom" theme="dark" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-navy flex flex-col relative">
       <SkipLink />

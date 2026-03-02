@@ -87,7 +87,7 @@ export default function AdminInventoryPage() {
             })));
         } catch (err: any) {
             console.error('Failed to load inventory:', err);
-            toast.error('Sync failure with asset database');
+            toast.error('Failed to sync with product database');
         } finally {
             setLoading(false);
         }
@@ -100,7 +100,7 @@ export default function AdminInventoryPage() {
         try {
             const newStock = adjustingItem.stock + adjustAmount;
             if (newStock < 0) {
-                toast.error('Critical Error: Stock cannot drop below zero-point');
+                toast.error('Error: Stock cannot be negative');
                 setAdjusting(false);
                 return;
             }
@@ -111,18 +111,18 @@ export default function AdminInventoryPage() {
                 body: JSON.stringify({ stock: newStock })
             });
 
-            if (!response.ok) throw new Error('Update rejected by server');
+            if (!response.ok) throw new Error('Failed to update stock');
 
             setInventory(prev =>
                 prev.map(item =>
                     item._id === adjustingItem._id ? { ...item, stock: newStock } : item
                 )
             );
-            toast.success(`Inventory Corrected: ${adjustingItem.sku} now at ${newStock} units`);
+            toast.success(`Stock Updated: ${adjustingItem.sku} now at ${newStock} units`);
             setAdjustingItem(null);
             setAdjustAmount(0);
         } catch (err) {
-            toast.error('Failed to commit stock adjustment');
+            toast.error('Failed to save stock adjustment');
         } finally {
             setAdjusting(false);
         }
@@ -152,18 +152,18 @@ export default function AdminInventoryPage() {
 
     return (
         <AdminLayout
-            title="Asset Inventory"
-            description="High-precision stock management and logistics auditing"
+            title="Inventory Management"
+            description="Monitor and manage stock levels"
             onRefresh={loadInventory}
         >
             <div className="relative z-10">
                 {/* Visual Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                     {[
-                        { label: 'Total Assets', value: stats.totalItems, icon: Box, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                        { label: 'Stock Valuation', value: formatCurrency(stats.totalValue), icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                        { label: 'Low Stock Alerts', value: stats.lowStock, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', glow: stats.lowStock > 0 },
-                        { label: 'Depleted Stock', value: stats.outOfStock, icon: Package, color: 'text-red-400', bg: 'bg-red-500/10', glow: stats.outOfStock > 0 }
+                        { label: 'Total Items', value: stats.totalItems, icon: Box, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                        { label: 'Inventory Value', value: formatCurrency(stats.totalValue), icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                        { label: 'Low Stock', value: stats.lowStock, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10', glow: stats.lowStock > 0 },
+                        { label: 'Out of Stock', value: stats.outOfStock, icon: Package, color: 'text-red-400', bg: 'bg-red-500/10', glow: stats.outOfStock > 0 }
                     ].map((stat, idx) => (
                         <motion.div
                             key={idx}
@@ -178,7 +178,7 @@ export default function AdminInventoryPage() {
                                     <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center border border-white/10 group-hover:border-${stat.color.split('-')[1]}/30 transition-all`}>
                                         <stat.icon className={`w-6 h-6 ${stat.color} ${stat.glow ? 'animate-pulse' : ''}`} />
                                     </div>
-                                    <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Live Data</div>
+                                    <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Live Status</div>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
@@ -196,7 +196,7 @@ export default function AdminInventoryPage() {
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                             <input
                                 type="text"
-                                placeholder="Scan Registry (Name, SKU, Category)..."
+                                placeholder="Search inventory by name, SKU or category..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm text-white placeholder:text-white/20 focus:border-gold/30 focus:ring-1 focus:ring-gold/30 outline-none transition-all"
@@ -212,7 +212,7 @@ export default function AdminInventoryPage() {
                                         ...filteredInventory.map(i => [
                                             `"${i.name}"`, i.sku, i.stock, i.minStock, i.price,
                                             `"${i.category || ''}"`,
-                                            i.stock === 0 ? 'Depleted' : i.stock < i.minStock ? 'Low' : 'Secure'
+                                            i.stock === 0 ? 'Out of Stock' : i.stock < i.minStock ? 'Low Stock' : 'In Stock'
                                         ].join(','))
                                     ].join('\n');
                                     const blob = new Blob([csv], { type: 'text/csv' });
@@ -221,11 +221,11 @@ export default function AdminInventoryPage() {
                                     a.href = url;
                                     a.download = `SAUDI-HORIZON-INVENTORY-${new Date().toISOString().split('T')[0]}.csv`;
                                     a.click();
-                                    toast.success('Inventory manifest exported');
+                                    toast.success('Inventory report exported');
                                 }}
                             >
                                 <Download className="w-4 h-4 mr-2" />
-                                Export Manifest
+                                Export Inventory
                             </Button>
                         </div>
                     </div>
@@ -237,12 +237,12 @@ export default function AdminInventoryPage() {
                         <table className="w-full border-separate border-spacing-0">
                             <thead>
                                 <tr className="bg-white/[0.02]">
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Asset Detail</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">SKU ID</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5 text-center">Current Stock</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Market Value</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Integrity Status</th>
-                                    <th className="px-8 py-6 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Protocols</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Product</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">SKU</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5 text-center">Stock</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Price</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Status</th>
+                                    <th className="px-8 py-6 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] border-b border-white/5">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -251,7 +251,7 @@ export default function AdminInventoryPage() {
                                         <td colSpan={6} className="py-20 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="w-12 h-12 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
-                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Synchronizing Asset Database...</p>
+                                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Loading inventory...</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -268,19 +268,19 @@ export default function AdminInventoryPage() {
                                                     </div>
                                                     <div>
                                                         <p className="text-white font-black text-sm tracking-tight font-display uppercase group-hover:text-gold transition-colors">{item.name}</p>
-                                                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{item.category || 'Standard Asset'}</p>
+                                                        <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{item.category || 'Product'}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
                                                 <code className="text-[11px] text-white/40 bg-white/5 px-2 py-1 rounded font-mono group-hover:text-gold/60 transition-colors uppercase tracking-widest">
-                                                    {item.sku || 'N/A-SECURE'}
+                                                    {item.sku || 'No SKU'}
                                                 </code>
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <span className={`text-xl font-black font-display font-mono ${item.stock === 0 ? 'text-red-500' :
-                                                            item.stock < item.minStock ? 'text-amber-400' : 'text-white'
+                                                        item.stock < item.minStock ? 'text-amber-400' : 'text-white'
                                                         }`}>
                                                         {item.stock}
                                                     </span>
@@ -333,7 +333,7 @@ export default function AdminInventoryPage() {
                                         <td colSpan={6} className="py-32 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <Package className="w-12 h-12 text-white/5" />
-                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Asset Registry Empty for Current Query</p>
+                                                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">No products found matching your search</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -365,8 +365,8 @@ export default function AdminInventoryPage() {
                             <div className="p-10 relative z-10">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Supply Adjustment</h3>
-                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">SECURE PROTOCOL ACTIVE</p>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Stock Adjustment</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.2em] mt-1">Update product quantity</p>
                                     </div>
                                     <button onClick={() => setAdjustingItem(null)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:text-white transition-colors">
                                         <X className="w-6 h-6" />
@@ -385,21 +385,21 @@ export default function AdminInventoryPage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Current Balance</span>
+                                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Current Stock</span>
                                             <span className="text-xl font-black text-white font-display">{adjustingItem.stock} UNITS</span>
                                         </div>
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Calibration Metric</Label>
+                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Reason for Change</Label>
                                         <div className="grid grid-cols-2 gap-4">
                                             {['restock', 'correction', 'damaged', 'sold_offline'].map((reason) => (
                                                 <button
                                                     key={reason}
                                                     onClick={() => setAdjustReason(reason)}
                                                     className={`py-3 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${adjustReason === reason
-                                                            ? 'bg-gold text-navy border-gold shadow-lg shadow-gold/20'
-                                                            : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'
+                                                        ? 'bg-gold text-navy border-gold shadow-lg shadow-gold/20'
+                                                        : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'
                                                         }`}
                                                 >
                                                     {reason.replace('_', ' ')}
@@ -409,7 +409,7 @@ export default function AdminInventoryPage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Asset Variance</Label>
+                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Quantity Change</Label>
                                         <div className="flex items-center gap-4">
                                             <button
                                                 onClick={() => setAdjustAmount(prev => prev - 1)}
@@ -430,7 +430,7 @@ export default function AdminInventoryPage() {
                                             </button>
                                         </div>
                                         <div className="flex items-center justify-between px-2">
-                                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Net Projection</span>
+                                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">New Quantity</span>
                                             <span className="text-[9px] font-black text-gold uppercase tracking-widest">
                                                 {adjustingItem.stock} → {Math.max(0, adjustingItem.stock + adjustAmount)} UNITS
                                             </span>
@@ -443,14 +443,14 @@ export default function AdminInventoryPage() {
                                             variant="outline"
                                             className="flex-1 rounded-2xl py-6 border-white/10 text-white/40 hover:text-white"
                                         >
-                                            ABORT
+                                            CANCEL
                                         </Button>
                                         <Button
                                             onClick={handleStockAdjust}
                                             disabled={adjustAmount === 0 || adjusting || (adjustingItem.stock + adjustAmount) < 0}
                                             className="flex-1 bg-gold hover:bg-gold/90 text-navy font-black rounded-2xl py-6 shadow-xl shadow-gold/20"
                                         >
-                                            {adjusting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'COMMIT CHANGES'}
+                                            {adjusting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SAVE CHANGES'}
                                         </Button>
                                     </div>
                                 </div>

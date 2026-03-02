@@ -140,21 +140,21 @@ export default function AdminSettingsPage() {
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.error || 'Failed to save');
             }
-            toast.success(`Protocol "${section}" committed to vault`);
+            toast.success(`Settings for "${section}" saved successfully`);
         } catch (err: any) {
-            toast.error(err.message || 'Commit failed');
+            toast.error(err.message || 'Save failed');
         } finally {
             setSavingSection(null);
         }
     };
 
     const tabs = [
-        { id: 'store', label: 'Store Protocol', icon: Store },
-        { id: 'seo', label: 'SEO Matrix', icon: Search },
-        { id: 'content', label: 'Content Grid', icon: FileText },
-        { id: 'general', label: 'Core Config', icon: Globe },
-        { id: 'notifications', label: 'Signal Routes', icon: Bell },
-        { id: 'security', label: 'Security Layer', icon: Shield },
+        { id: 'store', label: 'Store Profile', icon: Store },
+        { id: 'seo', label: 'SEO Settings', icon: Search },
+        { id: 'content', label: 'Page Content', icon: FileText },
+        { id: 'general', label: 'General Config', icon: Globe },
+        { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'security', label: 'Security', icon: Shield },
     ];
 
     const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -173,29 +173,29 @@ export default function AdminSettingsPage() {
             className="flex items-center gap-3 px-8 py-4 bg-gold hover:bg-gold/90 text-navy rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-xl shadow-gold/20"
         >
             {savingSection === section
-                ? <><Loader2 className="w-4 h-4 animate-spin" />Committing...</>
-                : <><Save className="w-4 h-4" />Commit to Vault</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+                : <><Save className="w-4 h-4" />Save Settings</>
             }
         </button>
     );
 
     if (initialLoading) return (
-        <AdminLayout title="System Configuration" description="Configure operational parameters">
+        <AdminLayout title="Settings" description="Configure store parameters">
             <div className="flex flex-col items-center justify-center py-32">
                 <div className="relative w-20 h-20 mb-6">
                     <div className="absolute inset-0 border-4 border-gold/10 rounded-full" />
                     <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin" />
                     <Settings className="absolute inset-0 m-auto w-8 h-8 text-gold animate-pulse" />
                 </div>
-                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading Configuration Vault...</p>
+                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Loading Settings...</p>
             </div>
         </AdminLayout>
     );
 
     return (
         <AdminLayout
-            title="System Overrides"
-            description="Operational parameters and mainframe protocol management"
+            title="Settings"
+            description="Manage your store's general settings and preferences"
             onRefresh={loadSettings}
         >
             <div className="relative z-10">
@@ -203,19 +203,19 @@ export default function AdminSettingsPage() {
                 <div className="flex flex-wrap items-center gap-6 mb-10 p-5 rounded-[2.5rem] bg-white/[0.02] border border-white/5 backdrop-blur-md">
                     <div className="flex items-center gap-3 px-5 border-r border-white/10">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Mainframe: Synchronized</span>
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Status: Online</span>
                     </div>
                     <div className="flex items-center gap-3 px-5 border-r border-white/10">
                         <Lock className="w-4 h-4 text-gold" />
-                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Vault: Secure</span>
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Security: Active</span>
                     </div>
                     <div className="flex items-center gap-3 px-5 border-r border-white/10 hidden md:flex">
                         <Activity className="w-4 h-4 text-blue-400" />
-                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Encryption: Active</span>
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Database: Connected</span>
                     </div>
                     <div className="ml-auto flex items-center gap-4 pr-3">
                         {mounted && (
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] italic">Last Commit: {new Date().toLocaleTimeString()}</span>
+                            <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] italic">Last Saved: {new Date().toLocaleTimeString()}</span>
                         )}
                     </div>
                 </div>
@@ -224,7 +224,7 @@ export default function AdminSettingsPage() {
                     {/* Tab Rail */}
                     <div className="xl:w-72 space-y-3 flex-shrink-0">
                         <div className="px-4 mb-4">
-                            <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Override Modules</h3>
+                            <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">Settings Modules</h3>
                         </div>
                         {tabs.map(tab => (
                             <button
@@ -243,7 +243,7 @@ export default function AdminSettingsPage() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[11px] font-black uppercase tracking-widest">{tab.label}</span>
-                                    {activeTab === tab.id && <span className="text-[8px] font-medium text-gold/60 uppercase tracking-widest mt-0.5">Active Link</span>}
+                                    {activeTab === tab.id && <span className="text-[8px] font-medium text-gold/60 uppercase tracking-widest mt-0.5">Selected</span>}
                                 </div>
                                 <ChevronRight className={`w-4 h-4 ml-auto transition-all ${activeTab === tab.id ? 'translate-x-1 opacity-100' : 'opacity-0 -translate-x-2'}`} />
                             </button>
@@ -268,37 +268,37 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Store Protocol</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Core Merchant Identity Matrix</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Store Profile</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Public Store Information</p>
                                             </div>
                                             <SaveButton section="store" data={storeInfo} />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <FieldRow label="Merchant Designation">
+                                            <FieldRow label="Store Name">
                                                 <input className={inputClass} value={storeInfo.name} onChange={e => setStoreInfo({ ...storeInfo, name: e.target.value })} />
                                             </FieldRow>
-                                            <FieldRow label="Brand Vision Vector">
+                                            <FieldRow label="Store Tagline">
                                                 <input className={inputClass} value={storeInfo.tagline} onChange={e => setStoreInfo({ ...storeInfo, tagline: e.target.value })} />
                                             </FieldRow>
-                                            <FieldRow label="Inbound Signal (Email)">
+                                            <FieldRow label="Store Email">
                                                 <input type="email" className={inputClass} value={storeInfo.email} onChange={e => setStoreInfo({ ...storeInfo, email: e.target.value })} />
                                             </FieldRow>
-                                            <FieldRow label="Voice Command Link">
+                                            <FieldRow label="Store Phone">
                                                 <input className={inputClass} value={storeInfo.phone} onChange={e => setStoreInfo({ ...storeInfo, phone: e.target.value })} />
                                             </FieldRow>
-                                            <FieldRow label="WhatsApp Encryption Node">
+                                            <FieldRow label="WhatsApp Number">
                                                 <input className={inputClass} value={storeInfo.whatsapp} onChange={e => setStoreInfo({ ...storeInfo, whatsapp: e.target.value })} />
                                             </FieldRow>
-                                            <FieldRow label="Operational Duty Cycle">
+                                            <FieldRow label="Business Hours">
                                                 <input className={inputClass} value={storeInfo.businessHours} onChange={e => setStoreInfo({ ...storeInfo, businessHours: e.target.value })} />
                                             </FieldRow>
                                             <div className="md:col-span-2">
-                                                <FieldRow label="Physical Terminal Coordinate">
+                                                <FieldRow label="Store Address">
                                                     <input className={inputClass} value={storeInfo.address} onChange={e => setStoreInfo({ ...storeInfo, address: e.target.value })} />
                                                 </FieldRow>
                                             </div>
                                             <div className="md:col-span-2">
-                                                <FieldRow label="Brand Narrative Protocol">
+                                                <FieldRow label="Store Description">
                                                     <textarea className={`${inputClass} resize-none`} rows={4} value={storeInfo.description} onChange={e => setStoreInfo({ ...storeInfo, description: e.target.value })} />
                                                 </FieldRow>
                                             </div>
@@ -310,28 +310,28 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">SEO Matrix</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Crawler Signal Parameters</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">SEO Settings</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Search Engine Optimization</p>
                                             </div>
                                             <SaveButton section="seo" data={seo} />
                                         </div>
                                         <div className="grid grid-cols-1 gap-10">
-                                            <FieldRow label={`Mainframe Identity Title (${seo.metaTitle.length}/60)`}>
+                                            <FieldRow label={`Meta Title (${seo.metaTitle.length}/60)`}>
                                                 <input className={inputClass} value={seo.metaTitle} onChange={e => setSeo({ ...seo, metaTitle: e.target.value })} />
                                                 <div className="h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden border border-white/5">
                                                     <div className="h-full bg-gradient-to-r from-gold/50 to-gold rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,215,0,0.3)]" style={{ width: `${Math.min((seo.metaTitle.length / 60) * 100, 100)}%` }} />
                                                 </div>
                                             </FieldRow>
-                                            <FieldRow label={`Index Narrative Description (${seo.metaDescription.length}/160)`}>
+                                            <FieldRow label={`Meta Description (${seo.metaDescription.length}/160)`}>
                                                 <textarea className={`${inputClass} resize-none`} rows={4} value={seo.metaDescription} onChange={e => setSeo({ ...seo, metaDescription: e.target.value })} />
                                                 <div className="h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden border border-white/5">
                                                     <div className="h-full bg-gradient-to-r from-emerald-500/50 to-emerald-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(52,211,153,0.3)]" style={{ width: `${Math.min((seo.metaDescription.length / 160) * 100, 100)}%` }} />
                                                 </div>
                                             </FieldRow>
-                                            <FieldRow label="Search Engine Signal Tokens (CSV)">
+                                            <FieldRow label="Keywords (Comma Separated)">
                                                 <input className={inputClass} value={seo.keywords} onChange={e => setSeo({ ...seo, keywords: e.target.value })} placeholder="keyword1, keyword2, ..." />
                                             </FieldRow>
-                                            <FieldRow label="OpenGraph Visual Asset URL">
+                                            <FieldRow label="Social Share Image (OG Image)">
                                                 <div className="flex gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/og">
                                                     <input className={`${inputClass} flex-1`} value={seo.ogImage} onChange={e => setSeo({ ...seo, ogImage: e.target.value })} placeholder="https://..." />
                                                     <div className="w-20 h-14 rounded-xl bg-navy/40 border border-white/10 overflow-hidden flex-shrink-0 relative group-hover/og:border-gold/30 transition-all">
@@ -347,8 +347,8 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Content Grid</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Tactical Copy & Visual Directives</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Page Content</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Manage Website Text and Content</p>
                                             </div>
                                             <SaveButton section="content" data={content} />
                                         </div>
@@ -357,33 +357,33 @@ export default function AdminSettingsPage() {
                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-3xl rounded-full" />
                                                 <p className="text-[10px] font-black text-gold uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
                                                     <Zap className="w-3 h-3" />
-                                                    Hero Module Configuration
+                                                    Hero Section Content
                                                 </p>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <FieldRow label="Primary Deployment Title">
+                                                    <FieldRow label="Hero Title">
                                                         <input className={inputClass} value={content.heroTitle} onChange={e => setContent({ ...content, heroTitle: e.target.value })} />
                                                     </FieldRow>
-                                                    <FieldRow label="Call-to-Action Protocol">
+                                                    <FieldRow label="CTA Button Text">
                                                         <input className={inputClass} value={content.heroCta} onChange={e => setContent({ ...content, heroCta: e.target.value })} />
                                                     </FieldRow>
                                                     <div className="md:col-span-2">
-                                                        <FieldRow label="Secondary Support Narrative">
+                                                        <FieldRow label="Hero Subtitle">
                                                             <textarea className={`${inputClass} resize-none`} rows={3} value={content.heroSubtitle} onChange={e => setContent({ ...content, heroSubtitle: e.target.value })} />
                                                         </FieldRow>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem]">
-                                                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-6">Value Proposition Nodes</p>
+                                                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-6">Feature Sections</p>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                     {[1, 2, 3].map(n => (
                                                         <div key={n} className="space-y-4 p-6 bg-white/[0.02] rounded-3xl border border-white/5 group/node hover:border-white/10 transition-all">
                                                             <p className="text-[10px] font-black text-white/10 uppercase tracking-widest flex items-center justify-between">
-                                                                Node 0{n}
+                                                                Section 0{n}
                                                                 <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/node:bg-blue-400 transition-colors" />
                                                             </p>
-                                                            <input className={`${inputClass} px-4 py-3`} placeholder="Operational Title" value={(content as any)[`feature${n}Title`]} onChange={e => setContent({ ...content, [`feature${n}Title`]: e.target.value } as any)} />
-                                                            <textarea className={`${inputClass} px-4 py-3 resize-none text-xs`} rows={3} placeholder="Functional Objective" value={(content as any)[`feature${n}Desc`]} onChange={e => setContent({ ...content, [`feature${n}Desc`]: e.target.value } as any)} />
+                                                            <input className={`${inputClass} px-4 py-3`} placeholder="Section Title" value={(content as any)[`feature${n}Title`]} onChange={e => setContent({ ...content, [`feature${n}Title`]: e.target.value } as any)} />
+                                                            <textarea className={`${inputClass} px-4 py-3 resize-none text-xs`} rows={3} placeholder="Section Description" value={(content as any)[`feature${n}Desc`]} onChange={e => setContent({ ...content, [`feature${n}Desc`]: e.target.value } as any)} />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -396,8 +396,8 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Core Configuration</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Fundamental System Parameters</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">General Configuration</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">App and System Settings</p>
                                             </div>
                                             <SaveButton section="general" data={general} />
                                         </div>
@@ -428,18 +428,18 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Signal Routes</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Alert & Notification Nodes</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Notifications</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Admin Alerts and Emails</p>
                                             </div>
                                             <SaveButton section="notifications" data={notifications} />
                                         </div>
                                         <div className="grid grid-cols-1 gap-4">
                                             {([
-                                                { key: 'orderNotifications', label: 'Order Intercept', desc: 'Alert triggered on new order intake', icon: Zap },
-                                                { key: 'lowStockAlerts', label: 'Critical Inventory Alert', desc: 'Signal fires when asset levels are depleted', icon: AlertCircle },
-                                                { key: 'newUserRegistrations', label: 'Node Authentication', desc: 'Alert on new personnel registration', icon: ToggleRight },
-                                                { key: 'quoteRequests', label: 'Quote Protocol Signal', desc: 'Notify on inbound quote requests', icon: CheckCircle2 },
-                                                { key: 'marketingEmails', label: 'Campaign Broadcast', desc: 'Enable promotional signal dispatch', icon: Globe },
+                                                { key: 'orderNotifications', label: 'Order Notifications', desc: 'Receive alerts for new customer orders', icon: Zap },
+                                                { key: 'lowStockAlerts', label: 'Inventory Alerts', desc: 'Notify when products are low on stock', icon: AlertCircle },
+                                                { key: 'newUserRegistrations', label: 'New User Alerts', desc: 'Alert when a new user registers', icon: ToggleRight },
+                                                { key: 'quoteRequests', label: 'Quote Requests', desc: 'Notify on new quote requests', icon: CheckCircle2 },
+                                                { key: 'marketingEmails', label: 'Marketing Emails', desc: 'Enable promotional email campaigns', icon: Globe },
                                             ] as const).map((item) => (
                                                 <div key={item.key} className="flex items-center justify-between p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all group overflow-hidden relative">
                                                     <div className="flex items-center gap-6 relative z-10">
@@ -468,15 +468,15 @@ export default function AdminSettingsPage() {
                                     <div className="space-y-10">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
                                             <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Security Layer</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Authentication & Access Control</p>
+                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Security</h2>
+                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Authentication and Access Control</p>
                                             </div>
                                             <SaveButton section="security" data={security} />
                                         </div>
                                         <div className="grid grid-cols-1 gap-6">
                                             <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
                                                 <div className="relative z-10">
-                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Dual-Factor Authentication</p>
+                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Two-Factor Authentication (2FA)</p>
                                                     <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Require 2FA on all administrative access attempts</p>
                                                 </div>
                                                 <button
@@ -492,40 +492,40 @@ export default function AdminSettingsPage() {
                                                 <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
                                                         <Clock className="w-3 h-3" />
-                                                        Session Timeout Protocol
+                                                        Session Timeout
                                                     </p>
                                                     <select
                                                         value={security.sessionTimeout}
                                                         onChange={e => setSecurity({ ...security, sessionTimeout: e.target.value })}
                                                         className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
                                                     >
-                                                        <option value="15 minutes">15 Standard Cycles</option>
-                                                        <option value="30 minutes">30 Standard Cycles</option>
-                                                        <option value="1 hour">60 Extended Cycles</option>
-                                                        <option value="4 hours">Operational Shift</option>
+                                                        <option value="15 minutes">15 minutes</option>
+                                                        <option value="30 minutes">30 minutes</option>
+                                                        <option value="1 hour">1 hour</option>
+                                                        <option value="4 hours">4 hours</option>
                                                     </select>
                                                 </div>
 
                                                 <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
                                                     <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
                                                         <Lock className="w-3 h-3" />
-                                                        Lockout Threshold
+                                                        Account Lockout Threshold
                                                     </p>
                                                     <select
                                                         value={security.loginAttemptsLockout}
                                                         onChange={e => setSecurity({ ...security, loginAttemptsLockout: e.target.value })}
                                                         className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
                                                     >
-                                                        <option value="3 attempts">3 Strike Policy</option>
-                                                        <option value="5 attempts">5 Strike Policy</option>
-                                                        <option value="10 attempts">10 Strike Policy</option>
+                                                        <option value="3 attempts">3 failed attempts</option>
+                                                        <option value="5 attempts">5 failed attempts</option>
+                                                        <option value="10 attempts">10 failed attempts</option>
                                                     </select>
                                                 </div>
                                             </div>
 
                                             <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
                                                 <div className="relative z-10">
-                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Credential Entropy Policy</p>
+                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Password Complexity Policy</p>
                                                     <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Enforce high-complexity password constraints</p>
                                                 </div>
                                                 <button

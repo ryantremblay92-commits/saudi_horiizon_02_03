@@ -174,7 +174,7 @@ export default function AdminOrdersPage() {
     return (
         <AdminLayout
             title="Order Management"
-            description="Global fulfillment and transaction pipeline"
+            description="Manage and track customer orders"
             onRefresh={loadOrders}
         >
             {/* KPI Section */}
@@ -212,7 +212,7 @@ export default function AdminOrdersPage() {
                                     <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
                                 )}
                             </div>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{status} queue</p>
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{status}</p>
                             <h4 className="text-3xl font-black text-white font-display">{count}</h4>
                         </motion.div>
                     );
@@ -237,7 +237,7 @@ export default function AdminOrdersPage() {
                         onClick={exportOrders}
                     >
                         <Download className="h-4 w-4 mr-2" />
-                        Export Manifest
+                        Export Orders
                     </Button>
                 </div>
             </div>
@@ -250,20 +250,20 @@ export default function AdminOrdersPage() {
                             <div className="absolute inset-0 border-4 border-gold/10 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <p className="text-white/30 font-black uppercase tracking-[0.3em] animate-pulse">Accessing Logistics Stream...</p>
+                        <p className="text-white/30 font-black uppercase tracking-[0.3em] animate-pulse">Loading orders...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-white/[0.03] border-b border-white/5">
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Reference</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Contractor</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Volume</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Valuation</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Order ID</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Customer</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Items</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Total</th>
                                     <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Status</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Dispatch Time</th>
-                                    <th className="px-8 py-7 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Protocol</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Order Date</th>
+                                    <th className="px-8 py-7 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -349,8 +349,8 @@ export default function AdminOrdersPage() {
                                                 <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mx-auto mb-6">
                                                     <Package className="w-10 h-10 text-white/10" />
                                                 </div>
-                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">Queue Empty</h5>
-                                                <p className="text-white/30 text-xs font-bold leading-relaxed">No transactions matching your current security clearance or filter parameters.</p>
+                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">No orders found</h5>
+                                                <p className="text-white/30 text-xs font-bold leading-relaxed">Try adjusting your search or filters.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -380,8 +380,8 @@ export default function AdminOrdersPage() {
                         >
                             <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Order Analysis</h3>
-                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Manifest #{viewOrder._id.slice(-8).toUpperCase()}</p>
+                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Order Details</h3>
+                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Order #{viewOrder._id.slice(-8).toUpperCase()}</p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setViewOrder(null)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
                                     <X className="h-6 w-6" />
@@ -390,26 +390,25 @@ export default function AdminOrdersPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Pipeline Status</p>
+                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Order Status</p>
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-gold/10 flex items-center justify-center border border-gold/20">
                                             <Clock className="w-6 h-6 text-gold" />
                                         </div>
                                         <div>
                                             <p className="text-white font-black uppercase tracking-widest text-sm">{viewOrder.status}</p>
-                                            <p className="text-[10px] text-white/40 font-bold">Synchronized: Just now</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Object Valuation</p>
+                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Order Total</p>
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                                             <DollarSign className="w-6 h-6 text-emerald-400" />
                                         </div>
                                         <div>
                                             <p className="text-white font-black font-display text-2xl">{formatCurrency(viewOrder.totalAmount || 0)}</p>
-                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Gross Manifest Value</p>
+                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Total Amount Paid</p>
                                         </div>
                                     </div>
                                 </div>
@@ -417,7 +416,7 @@ export default function AdminOrdersPage() {
 
                             {/* Items Table */}
                             <div className="mb-10">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Bill of Materials</p>
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Order Items</p>
                                 <div className="space-y-3">
                                     {viewOrder.items?.map((item, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.05] transition-all">
@@ -426,8 +425,8 @@ export default function AdminOrdersPage() {
                                                     <Package className="w-5 h-5 text-white/10 group-hover:text-gold transition-colors" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-white font-bold text-sm tracking-tight">{item.name || 'Industrial Part'}</p>
-                                                    <p className="text-[10px] text-white/30 font-black tracking-widest">QNTY: {item.quantity} UNIT(S)</p>
+                                                    <p className="text-white font-bold text-sm tracking-tight">{item.name || 'Product'}</p>
+                                                    <p className="text-[10px] text-white/30 font-black tracking-widest">QTY: {item.quantity}</p>
                                                 </div>
                                             </div>
                                             <span className="text-white font-black font-display">{formatCurrency(item.price * item.quantity)}</span>
@@ -438,7 +437,7 @@ export default function AdminOrdersPage() {
 
                             {/* Logistics Address */}
                             <div className="mb-10">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Dispatch Destination</p>
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Shipping Address</p>
                                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
                                     <div className="flex items-start gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
@@ -463,7 +462,7 @@ export default function AdminOrdersPage() {
                                             onClick={() => updateOrderStatus(viewOrder._id, getNextStatus(viewOrder.status)!)}
                                         >
                                             <Truck className="w-5 h-5" />
-                                            Advance to {getNextStatus(viewOrder.status)}
+                                            Mark as {getNextStatus(viewOrder.status)}
                                         </Button>
                                     )}
                                     <Button
@@ -472,7 +471,7 @@ export default function AdminOrdersPage() {
                                         onClick={() => updateOrderStatus(viewOrder._id, 'cancelled')}
                                     >
                                         <XCircle className="w-5 h-5" />
-                                        Abort Pipeline
+                                        Cancel Order
                                     </Button>
                                 </div>
                             )}

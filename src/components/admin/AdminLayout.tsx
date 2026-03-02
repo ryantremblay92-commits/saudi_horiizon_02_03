@@ -22,13 +22,19 @@ import {
     Box,
     Cookie,
     Image,
-    FileText
+    FileText,
+    Activity,
+    ShieldAlert,
+    Globe,
+    Zap,
+    ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -79,127 +85,73 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
     };
 
     return (
-        <div className="flex h-screen bg-navy text-white overflow-hidden">
+        <div className="flex h-screen bg-[#060B12] text-slate-200 overflow-hidden font-sans selection:bg-gold/30 selection:text-gold">
             {/* Mobile sidebar backdrop */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-50 md:hidden" onClick={() => setSidebarOpen(false)}>
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
                 </div>
             )}
 
-            {/* Mobile sidebar */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-64 md:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-                <div className="fixed inset-y-0 left-0 w-64 bg-navy/95 backdrop-blur-xl border-r border-white/10 flex flex-col">
-                    <div className="flex h-16 items-center justify-between px-4 border-b border-white/10">
-                        <div className="flex items-center space-x-3 w-full">
-                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                <LayoutDashboard className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-lg font-bold text-white break-words leading-tight">Admin Panel</span>
-                                <p className="text-xs text-gray-400 break-words leading-tight">Management</p>
-                            </div>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSidebarOpen(false)}
-                            className="text-gray-400 hover:text-white"
-                        >
-                            <X className="h-5 w-5" />
-                        </Button>
-                    </div>
-                    <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-                        {currentNav.map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all ${item.current
-                                    ? 'bg-gold/10 text-gold border border-gold/20 shadow-[0_0_15px_rgba(255,215,0,0.1)]'
-                                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                                    }`}
-                            >
-                                <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 ${item.current ? 'text-gold' : 'text-slate-500'}`} />
-                                <span className="break-words leading-tight">{item.name}</span>
-                            </Link>
-                        ))}
-                    </nav>
-                    <div className="p-4 border-t border-gray-700">
-                        <div className="flex items-center space-x-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarFallback className="bg-gray-700 text-white">
-                                    <User className="h-5 w-5" />
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{user?.email || 'admin@example.com'}</p>
-                                <p className="text-xs text-gray-400">Administrator</p>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleLogout}
-                                className="text-gray-400 hover:text-white"
-                            >
-                                <LogOut className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Desktop sidebar */}
-            <aside className="hidden md:flex w-64 flex-col bg-navy border-r border-white/10 flex-shrink-0 z-20 relative">
-                {/* Gold Glow Effect Behind Sidebar */}
-                <div className="absolute top-0 left-0 w-full h-64 bg-gold/5 blur-[100px] pointer-events-none" />
-
-                <div className="flex flex-col flex-grow overflow-y-auto relative z-10">
-                    <div className="flex items-center h-16 px-6 border-b border-white/10 flex-shrink-0">
-                        <div className="flex items-center space-x-3 w-full">
-                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                <LayoutDashboard className="w-6 h-6 text-white" />
+            <aside className="hidden md:flex w-72 flex-col bg-[#0A1017] border-r border-white-[0.05] flex-shrink-0 z-20 relative shadow-2xl">
+                <div className="flex flex-col h-full relative z-10">
+                    {/* Brand Section */}
+                    <div className="flex items-center h-20 px-8 border-b border-white/[0.03] flex-shrink-0">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-gold/10">
+                                <LayoutDashboard className="w-6 h-6 text-navy" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <span className="text-lg font-bold text-white break-words leading-tight">Admin Panel</span>
-                                <p className="text-xs text-gray-400 break-words leading-tight">Management System</p>
+                                <span className="text-base font-bold text-white tracking-tight">Admin System</span>
+                                <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] leading-tight">Saudi Horizon</p>
                             </div>
                         </div>
                     </div>
-                    <nav className="flex-1 space-y-1.5 px-3 py-6 overflow-y-auto">
+
+                    {/* Navigation */}
+                    <nav className="flex-1 px-4 py-6 overflow-y-auto custom-scrollbar space-y-1.5">
+                        <div className="px-4 mb-3">
+                            <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.4em]">Administration</span>
+                        </div>
                         {currentNav.map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 group ${item.current
-                                    ? 'bg-gradient-to-r from-gold/20 to-gold/5 text-gold border border-gold/20 shadow-[0_0_20px_rgba(197,160,89,0.15)] translate-x-1'
-                                    : 'text-slate-400 hover:bg-white/5 hover:text-white hover:translate-x-1'
+                                className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-300 group relative ${item.current
+                                    ? 'bg-gold/5 text-gold border border-gold/10'
+                                    : 'text-slate-400 hover:bg-white/[0.03] hover:text-white'
                                     }`}
                             >
-                                <item.icon className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${item.current ? 'text-gold drop-shadow-[0_0_8px_rgba(197,160,89,0.5)]' : 'text-slate-500 group-hover:text-white'}`} />
-                                <span className={`break-words leading-tight ${item.current ? 'font-bold' : ''}`}>{item.name}</span>
+                                <item.icon className={`mr-4 h-5 w-5 flex-shrink-0 transition-colors ${item.current ? 'text-gold' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                <span className="truncate tracking-tight">{item.name}</span>
                                 {item.current && (
-                                    <div className="absolute right-2 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_10px_#C5A059]" />
+                                    <motion.div
+                                        layoutId="sidebar-indicator"
+                                        className="absolute left-0 w-1 h-5 bg-gold rounded-full shadow-[0_0_15px_rgba(197,160,89,0.5)]"
+                                    />
                                 )}
                             </Link>
                         ))}
                     </nav>
-                    <div className="p-4 border-t border-white/10">
-                        <div className="flex items-center space-x-3">
-                            <Avatar className="h-9 w-9 border border-white/10">
-                                <AvatarFallback className="bg-white/5 text-white">
-                                    <User className="h-5 w-5" />
+
+                    {/* User Profile Section */}
+                    <div className="p-6 border-t border-white/[0.03] bg-black/10">
+                        <div className="flex items-center space-x-3 p-2 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
+                            <Avatar className="h-10 w-10 border border-white/10 ring-2 ring-gold/5">
+                                <AvatarFallback className="bg-navy text-gold font-bold">
+                                    {user?.email?.[0].toUpperCase() || 'A'}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{user?.email || 'admin@example.com'}</p>
-                                <p className="text-xs text-slate-400">Administrator</p>
+                                <p className="text-xs font-bold text-white truncate">{user?.email || 'admin@saudihorizon.com'}</p>
+                                <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">Admin Access</p>
                             </div>
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleLogout}
-                                className="text-slate-400 hover:text-white hover:bg-white/5"
+                                className="text-slate-500 hover:text-red-400 hover:bg-red-400/5 transition-colors h-8 w-8"
                             >
                                 <LogOut className="h-4 w-4" />
                             </Button>
@@ -209,82 +161,76 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
             </aside>
 
             {/* Main content */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
                 {/* Header */}
-                <div className="sticky top-0 z-40 bg-navy/80 backdrop-blur-md border-b border-white/10">
-                    <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+                <header className="sticky top-0 z-40 bg-[#060B12]/80 backdrop-blur-xl border-b border-white/[0.03]">
+                    <div className="flex h-20 items-center justify-between px-8">
                         <div className="flex items-center">
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="md:hidden mr-2 text-gray-300 hover:text-white"
+                                className="md:hidden mr-4 text-slate-300 hover:text-white"
                                 onClick={() => setSidebarOpen(true)}
                             >
-                                <Menu className="h-5 w-5" />
+                                <Menu className="h-6 w-6" />
                             </Button>
                             <div>
-                                <h1 className="text-xl font-bold text-white">{title || 'Dashboard'}</h1>
+                                <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-3">
+                                    {title || 'Dashboard Overview'}
+                                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[8px] font-black uppercase py-0 px-1.5 h-4">Active</Badge>
+                                </h1>
                                 {description && (
-                                    <p className="text-sm text-gray-400 mt-0.5">{description}</p>
+                                    <p className="text-xs text-slate-500 font-medium mt-0.5">{description}</p>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-4">
-                            {/* Search */}
-                            <div className="hidden md:block">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                    <Input
-                                        placeholder="Search..."
-                                        className="pl-10 w-64 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-gold/50 focus:ring-gold/20 transition-all"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-6">
+                            {/* Actions Group */}
+                            <div className="flex items-center bg-white/[0.02] border border-white/[0.05] p-1 rounded-2xl gap-1">
                                 {onExport && (
-                                    <Button variant="outline" size="sm" onClick={onExport} className="border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-primary">
-                                        <Download className="h-4 w-4 mr-2" />
+                                    <Button variant="ghost" size="sm" onClick={onExport} className="h-9 px-4 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                                        <Download className="h-3.5 w-3.5 mr-2" />
                                         Export
                                     </Button>
                                 )}
 
                                 {onRefresh && (
-                                    <Button variant="outline" size="sm" onClick={onRefresh} className="glass border-white/10 text-slate-300 hover:text-white hover:bg-white/10 hover:border-gold/30">
-                                        <RefreshCw className="h-4 w-4 mr-2" />
+                                    <Button variant="ghost" size="sm" onClick={onRefresh} className="h-9 px-4 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                                        <RefreshCw className="h-3.5 w-3.5 mr-2" />
                                         Refresh
                                     </Button>
                                 )}
 
                                 {actions}
+                            </div>
 
-                                {/* Notifications */}
-                                <Button variant="ghost" size="icon" className="relative text-gray-300 hover:text-white">
+                            {/* Notifications & Status */}
+                            <div className="flex items-center gap-6 border-l border-white/[0.05] pl-6">
+                                <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-white transition-colors">
                                     <Bell className="h-5 w-5" />
-                                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs bg-gold text-navy font-bold border-0">
+                                    <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-[10px] font-black text-white flex items-center justify-center rounded-full border-2 border-[#060B12]">
                                         3
-                                    </Badge>
+                                    </span>
                                 </Button>
 
-                                <div className="hidden lg:flex flex-col items-end border-l border-white/10 pl-4 ml-4">
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Node Sync</span>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <span className="text-[10px] text-white font-mono">{clockTime}</span>
+                                <div className="hidden lg:flex flex-col items-end">
+                                    <span className="text-[9px] text-slate-600 uppercase tracking-[0.3em] font-black">System Status</span>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981] animate-pulse"></div>
+                                        <span className="text-[10px] text-white/40 font-mono font-bold">{clockTime}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </header>
 
                 {/* Content */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden bg-navy relative w-full">
                     <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5 pointer-events-none" />
-                    <div className="py-6 relative z-10">
-                        <div className="mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                    <div className="py-8 relative z-10">
+                        <div className="px-8 w-full">
                             {children}
                         </div>
                     </div>

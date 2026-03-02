@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
             setUsers(data.users || []);
         } catch (err: any) {
             console.error('Failed to load users:', err);
-            toast.error('Failed to load user database');
+            toast.error('Failed to load users');
         } finally {
             setLoading(false);
         }
@@ -114,10 +114,10 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to update user role');
             }
 
-            toast.success(`Access Authorization: Role updated to ${newRole}`);
+            toast.success(`Role updated to ${newRole}`);
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to update clearance level');
+            toast.error(err.message || 'Failed to update role');
         }
     };
 
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to update user status');
             }
 
-            toast.success(`Protocol: Account ${!currentStatus ? 'activated' : 'deactivated'}`);
+            toast.success(`User ${!currentStatus ? 'activated' : 'deactivated'}`);
             loadUsers();
         } catch (err: any) {
             toast.error(err.message || 'Failed to toggle account status');
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
     };
 
     const deleteUser = async (userId: string) => {
-        if (!confirm('Permanent Data Purge: Are you sure you want to delete this user? Operation is IRREVERSIBLE.')) return;
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
         try {
             const response = await fetch(`/api/users/${userId}`, {
@@ -155,18 +155,18 @@ export default function AdminUsersPage() {
                 throw new Error(data.error || 'Failed to delete user');
             }
 
-            toast.success('Identity Purge Successful');
+            toast.success('User deleted successfully');
             if (viewUser?._id === userId) setViewUser(null);
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to purge user record');
+            toast.error(err.message || 'Failed to delete user');
         }
     };
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!addForm.name || !addForm.email || !addForm.password) {
-            toast.error('Required fields missing in registration packet');
+            toast.error('Please fill in all required fields');
             return;
         }
         setSubmitting(true);
@@ -182,12 +182,12 @@ export default function AdminUsersPage() {
                 throw new Error(data.message || 'Failed to create user');
             }
 
-            toast.success('New operator registered successfully');
+            toast.success('User added successfully');
             setShowAddModal(false);
             setAddForm({ name: '', email: '', password: '', role: 'user' });
             loadUsers();
         } catch (err: any) {
-            toast.error(err.message || 'Failed to initialize account');
+            toast.error(err.message || 'Failed to create user');
         } finally {
             setSubmitting(false);
         }
@@ -202,17 +202,17 @@ export default function AdminUsersPage() {
 
     return (
         <AdminLayout
-            title="Registry & Access"
-            description="Operational security and personnel database"
+            title="User Management"
+            description="Manage user accounts and permissions"
             onRefresh={loadUsers}
         >
             {/* KPI Section */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {[
-                    { label: 'Total Personnel', value: mounted ? users.length : '---', icon: Users, color: 'text-white' },
-                    { label: 'Secure Accounts (Admins)', value: mounted ? users.filter(u => u.role === 'admin').length : '---', icon: ShieldCheck, color: 'text-gold' },
-                    { label: 'Active Terminals', value: mounted ? users.filter(u => u.isActive).length : '---', icon: Activity, color: 'text-emerald-400' },
-                    { label: 'Inactive/Locked', value: mounted ? users.filter(u => !u.isActive).length : '---', icon: Lock, color: 'text-red-400' }
+                    { label: 'Total Users', value: mounted ? users.length : '---', icon: Users, color: 'text-white' },
+                    { label: 'Admins', value: mounted ? users.filter(u => u.role === 'admin').length : '---', icon: ShieldCheck, color: 'text-gold' },
+                    { label: 'Active Users', value: mounted ? users.filter(u => u.isActive).length : '---', icon: Activity, color: 'text-emerald-400' },
+                    { label: 'Inactive Users', value: mounted ? users.filter(u => !u.isActive).length : '---', icon: Lock, color: 'text-red-400' }
                 ].map((kpi, index) => (
                     <motion.div
                         key={kpi.label}
@@ -237,7 +237,7 @@ export default function AdminUsersPage() {
                 <div className="relative flex-1 group">
                     <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
                     <Input
-                        placeholder="Scan for personnel by identity or email..."
+                        placeholder="Search users by name or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-14 bg-white/[0.03] border-white/5 text-white rounded-[1.5rem] h-14 focus:ring-gold/20 focus:border-gold/40 transition-all font-medium"
@@ -251,7 +251,7 @@ export default function AdminUsersPage() {
                             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                         >
                             <Filter className="h-4 w-4 mr-2" />
-                            Clearance: {roleFilter === 'all' ? 'Global' : roleFilter}
+                            Role: {roleFilter === 'all' ? 'All Roles' : roleFilter}
                         </Button>
                         <AnimatePresence>
                             {showFilterDropdown && (
@@ -267,7 +267,7 @@ export default function AdminUsersPage() {
                                             onClick={() => { setRoleFilter(role); setShowFilterDropdown(false); }}
                                             className={`w-full text-left px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${roleFilter === role ? 'bg-gold text-navy' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
                                         >
-                                            {role === 'all' ? 'All Clearances' : role}
+                                            {role === 'all' ? 'All Roles' : role}
                                         </button>
                                     ))}
                                 </motion.div>
@@ -279,7 +279,7 @@ export default function AdminUsersPage() {
                         onClick={() => setShowAddModal(true)}
                     >
                         <Plus className="h-4 w-4 mr-2 stroke-[3]" />
-                        Initialize Personnel
+                        Add User
                     </Button>
                 </div>
             </div>
@@ -292,18 +292,18 @@ export default function AdminUsersPage() {
                             <div className="absolute inset-0 border-4 border-gold/10 rounded-full animate-pulse"></div>
                             <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <p className="text-white/30 font-black uppercase tracking-[0.3em]">Querying Access Database...</p>
+                        <p className="text-white/30 font-black uppercase tracking-[0.3em]">Loading users...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-white/[0.03] border-b border-white/5">
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Identity</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Clearance</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Terminal Status</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Joined Network</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Last Link</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">User</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Role</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Status</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Joined Date</th>
+                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Last Login</th>
                                     <th className="px-8 py-7 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Actions</th>
                                 </tr>
                             </thead>
@@ -321,7 +321,7 @@ export default function AdminUsersPage() {
                                                     </div>
                                                     <div>
                                                         <p className="text-white font-black text-sm tracking-tight group-hover:text-gold transition-colors font-display uppercase">
-                                                            {user.name || 'Anonymous Operator'}
+                                                            {user.name || 'Anonymous User'}
                                                         </p>
                                                         <p className="text-white/30 text-[11px] font-bold">{user.email}</p>
                                                     </div>
@@ -341,7 +341,7 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-8 py-7 whitespace-nowrap">
                                                 <Badge className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${user.isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
-                                                    {user.isActive ? 'Network Online' : 'Terminal Locked'}
+                                                    {user.isActive ? 'Active' : 'Inactive'}
                                                 </Badge>
                                             </td>
                                             <td className="px-8 py-7 whitespace-nowrap">
@@ -352,7 +352,7 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-8 py-7 whitespace-nowrap">
                                                 <span className="text-white/20 text-[10px] font-black uppercase tracking-widest">
-                                                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'LOGS CLEAR'}
+                                                    {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-7 whitespace-nowrap text-right">
@@ -361,7 +361,7 @@ export default function AdminUsersPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="w-11 h-11 rounded-2xl text-white/20 hover:text-white hover:bg-white/5"
-                                                        title="Access Manifest"
+                                                        title="View Details"
                                                         onClick={() => setViewUser(user)}
                                                     >
                                                         <Eye className="h-5 w-5" />
@@ -370,7 +370,7 @@ export default function AdminUsersPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className={`w-11 h-11 rounded-2xl transition-all ${user.isActive ? 'text-white/20 hover:text-red-400 hover:bg-red-500/10' : 'text-white/20 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
-                                                        title={user.isActive ? 'Lock Terminal' : 'Unlock Terminal'}
+                                                        title={user.isActive ? 'Deactivate User' : 'Activate User'}
                                                         onClick={() => toggleUserStatus(user._id, user.isActive)}
                                                     >
                                                         {user.isActive ? <Lock className="h-5 w-5" /> : <Unlock className="h-5 w-5" />}
@@ -379,7 +379,7 @@ export default function AdminUsersPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="w-11 h-11 rounded-2xl text-white/20 hover:text-red-500 hover:bg-red-500/20 transition-all"
-                                                        title="Purge Identity"
+                                                        title="Delete User"
                                                         onClick={() => deleteUser(user._id)}
                                                     >
                                                         <Trash2 className="h-5 w-5" />
@@ -395,8 +395,8 @@ export default function AdminUsersPage() {
                                                 <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mx-auto mb-6">
                                                     <ShieldAlert className="w-10 h-10 text-white/10" />
                                                 </div>
-                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">Registry Empty</h5>
-                                                <p className="text-white/30 text-xs font-bold leading-relaxed">No matching personnel signatures found in the current security sector.</p>
+                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">No users found</h5>
+                                                <p className="text-white/30 text-xs font-bold leading-relaxed">No users matching your current search or filters.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -426,8 +426,8 @@ export default function AdminUsersPage() {
                         >
                             <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Identity Analysis</h3>
-                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Operator Dossier</p>
+                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">User Details</h3>
+                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">User Information</p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setViewUser(null)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
                                     <X className="h-6 w-6" />
@@ -438,36 +438,36 @@ export default function AdminUsersPage() {
                                 <div className="h-32 w-32 rounded-[3.5rem] bg-white/[0.02] border-2 border-gold/30 flex items-center justify-center mb-6 shadow-2xl shadow-gold/10">
                                     <span className="text-gold text-5xl font-black font-display">{viewUser.email.charAt(0).toUpperCase()}</span>
                                 </div>
-                                <h4 className="text-2xl font-black text-white font-display uppercase tracking-tight">{viewUser.name || 'Anonymous Operator'}</h4>
+                                <h4 className="text-2xl font-black text-white font-display uppercase tracking-tight">{viewUser.name || 'Anonymous User'}</h4>
                                 <p className="text-gold text-xs font-black uppercase tracking-[0.2em] mt-1">{viewUser.email}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 mb-10">
                                 <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Clearance Level</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">User Role</p>
                                     <div className="flex items-center gap-2">
                                         <Shield className="h-4 w-4 text-gold" />
                                         <span className="text-white text-xs font-black uppercase tracking-widest">{viewUser.role}</span>
                                     </div>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Security Status</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Status</p>
                                     <Badge className={`px-3 py-1 text-[8px] font-black uppercase tracking-tighter ${viewUser.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
-                                        {viewUser.isActive ? 'Network Online' : 'Terminal Locked'}
+                                        {viewUser.isActive ? 'Active' : 'Inactive'}
                                     </Badge>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Service Initiation</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Joined Date</p>
                                     <span className="text-white text-[11px] font-bold">{formatDate(viewUser.createdAt)}</span>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center">
-                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Last Network Link</p>
+                                    <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Last Login</p>
                                     <span className="text-white text-[11px] font-bold">{viewUser.lastLoginAt ? formatDate(viewUser.lastLoginAt) : 'Never'}</span>
                                 </div>
                             </div>
 
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
-                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Hex Identity:</span>
+                                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">User ID:</span>
                                 <code className="text-gold text-[10px] font-mono font-black">{viewUser._id}</code>
                             </div>
                         </motion.div>
@@ -494,8 +494,8 @@ export default function AdminUsersPage() {
                         >
                             <div className="flex items-center justify-between mb-10">
                                 <div>
-                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Personnel Onboarding</h3>
-                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">New Identity Registration</p>
+                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Add New User</h3>
+                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Create a new user account</p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => setShowAddModal(false)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
                                     <X className="h-6 w-6" />
@@ -504,7 +504,7 @@ export default function AdminUsersPage() {
 
                             <form onSubmit={handleAddUser} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Identity Name</Label>
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Full Name</Label>
                                     <Input
                                         value={addForm.name}
                                         onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
@@ -514,7 +514,7 @@ export default function AdminUsersPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Digital Signature (Email)</Label>
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Email Address</Label>
                                     <Input
                                         type="email"
                                         value={addForm.email}
@@ -525,7 +525,7 @@ export default function AdminUsersPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Encryption Key (Password)</Label>
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Password</Label>
                                     <Input
                                         type="password"
                                         value={addForm.password}
@@ -536,24 +536,24 @@ export default function AdminUsersPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Assigned Clearance</Label>
+                                    <Label className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-2">Assign Role</Label>
                                     <select
                                         value={addForm.role}
                                         onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
                                         className="w-full bg-white/[0.03] border border-white/5 text-white h-14 rounded-2xl px-5 focus:outline-none focus:ring-2 focus:ring-gold/20 font-black uppercase tracking-widest text-xs appearance-none"
                                     >
-                                        <option value="user">USER CLEARANCE</option>
-                                        <option value="manager">MANAGER ACCESS</option>
-                                        <option value="admin">ADMIN SECURITY</option>
-                                        <option value="customer">CUSTOMER ACCESS</option>
+                                        <option value="user">USER</option>
+                                        <option value="manager">MANAGER</option>
+                                        <option value="admin">ADMIN</option>
+                                        <option value="customer">CUSTOMER</option>
                                     </select>
                                 </div>
                                 <div className="flex gap-4 pt-6">
                                     <Button type="button" variant="ghost" onClick={() => setShowAddModal(false)} className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/5">
-                                        Abort
+                                        Cancel
                                     </Button>
                                     <Button type="submit" disabled={submitting} className="flex-[2] h-14 bg-gold hover:bg-white text-navy font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-2xl shadow-gold/10">
-                                        {submitting ? 'PROCESSING...' : 'INITIALIZE OPERATOR'}
+                                        {submitting ? 'Creating...' : 'Create User'}
                                     </Button>
                                 </div>
                             </form>

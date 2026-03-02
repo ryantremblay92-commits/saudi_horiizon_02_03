@@ -74,7 +74,6 @@ export default function AdminAnalyticsPage() {
     const [salesData, setSalesData] = useState<SalesData | null>(null);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [inventoryData, setInventoryData] = useState<InventoryData | null>(null);
-    const [activeSection, setActiveSection] = useState<'financial' | 'demographics' | 'logistics'>('financial');
 
     useEffect(() => {
         setMounted(true);
@@ -116,7 +115,7 @@ export default function AdminAnalyticsPage() {
             }
         } catch (err) {
             console.error('Failed to load analytics:', err);
-            toast.error('Sync failure: Analytics intelligence backend unreachable');
+            toast.error('Failed to load analytics data');
         } finally {
             setLoading(false);
         }
@@ -136,7 +135,7 @@ export default function AdminAnalyticsPage() {
         if (!data || data.length === 0) return (
             <div className="h-64 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl">
                 <BarChart3 className="w-8 h-8 text-white/5 mb-2" />
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Insufficient Data Points</p>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Not enough data</p>
             </div>
         );
 
@@ -196,31 +195,15 @@ export default function AdminAnalyticsPage() {
 
     return (
         <AdminLayout
-            title="Intelligence Briefing"
-            description="Deep-spectrum operational analysis and resource projections"
+            title="Analytics Dashboard"
+            description="Comprehensive overview of business performance and metrics"
             onRefresh={loadAnalytics}
         >
             <div className="relative z-10">
-                {/* Protocol Selection & Timeline */}
+                {/* Time Period Selection */}
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10">
-                    <div className="flex bg-white/[0.03] p-1.5 rounded-[1.5rem] border border-white/5 backdrop-blur-md">
-                        {[
-                            { id: 'financial', label: 'Financial Core', icon: DollarSign },
-                            { id: 'demographics', label: 'Network Reach', icon: Users },
-                            { id: 'logistics', label: 'Supply Chain', icon: Package }
-                        ].map((sec) => (
-                            <button
-                                key={sec.id}
-                                onClick={() => setActiveSection(sec.id as any)}
-                                className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSection === sec.id
-                                    ? 'bg-gold text-navy shadow-xl shadow-gold/20'
-                                    : 'text-white/40 hover:text-white hover:bg-white/5'
-                                    }`}
-                            >
-                                <sec.icon className="w-4 h-4" />
-                                {sec.label}
-                            </button>
-                        ))}
+                    <div>
+                        <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]">Performance Summary</h2>
                     </div>
 
                     <div className="flex items-center gap-3 bg-white/[0.03] p-1.5 rounded-[1.5rem] border border-white/5">
@@ -246,7 +229,7 @@ export default function AdminAnalyticsPage() {
                             <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
                             <PieChart className="absolute inset-0 m-auto w-8 h-8 text-gold animate-pulse" />
                         </div>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] font-display">Decrypting Intelligence Streams...</p>
+                        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] font-display">Loading business metrics...</p>
                     </div>
                 ) : (
                     <motion.div
@@ -254,133 +237,53 @@ export default function AdminAnalyticsPage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-10"
                     >
-                        {/* Dynamic KPI Layer */}
+                        {/* Key Metrics */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {activeSection === 'financial' && (
-                                <>
-                                    <StatBox
-                                        label="Total Inflow"
-                                        value={mounted ? formatCurrency(salesData?.summary.totalRevenue || 0) : '---'}
-                                        sub={`Across ${salesData?.summary.totalOrders} units`}
-                                        icon={TrendingUp}
-                                        trend="+18.4%"
-                                        color="text-emerald-400"
-                                    />
-                                    <StatBox
-                                        label="Average Yield"
-                                        value={mounted ? formatCurrency(salesData?.summary.avgOrderValue || 0) : '---'}
-                                        sub="Per contract execution"
-                                        icon={Activity}
-                                        trend="+4.2%"
-                                        color="text-gold"
-                                    />
-                                    <StatBox
-                                        label="Market Velocity"
-                                        value={(salesData?.summary.totalOrders || 0) / (period === '7days' ? 7 : period === '30days' ? 30 : 90)}
-                                        sub="Daily transaction density"
-                                        icon={Zap}
-                                        trend="+12%"
-                                        color="text-blue-400"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="Node Engagement"
-                                        value="94.2%"
-                                        sub="Network utilization rate"
-                                        icon={Globe}
-                                        trend="+0.8%"
-                                        color="text-purple-400"
-                                    />
-                                </>
-                            )}
-                            {activeSection === 'demographics' && (
-                                <>
-                                    <StatBox
-                                        label="Network Population"
-                                        value={formatNumber(userData?.totalUsers || 0)}
-                                        sub="Registered personnel"
-                                        icon={Users}
-                                        trend={userData?.growthRate + "%"}
-                                        color="text-blue-400"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="New Authentication"
-                                        value={formatNumber(userData?.newUsers30Days || 0)}
-                                        sub="Last 30-cycle onboarding"
-                                        icon={Zap}
-                                        trend="+22%"
-                                        color="text-emerald-400"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="Active Frequency"
-                                        value={formatNumber(userData?.activeUsers30Days || 0)}
-                                        sub="Signal activity (30d)"
-                                        icon={Activity}
-                                        trend="+11%"
-                                        color="text-gold"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="Retention Vector"
-                                        value="88.4%"
-                                        sub="LTV Projection"
-                                        icon={TrendingUp}
-                                        trend="+1.2%"
-                                        color="text-purple-400"
-                                    />
-                                </>
-                            )}
-                            {activeSection === 'logistics' && (
-                                <>
-                                    <StatBox
-                                        label="Asset Valuation"
-                                        value={mounted ? formatCurrency(inventoryData?.summary.totalValue || 0) : '---'}
-                                        sub="Capital inventory pool"
-                                        icon={Package}
-                                        trend="+2.4%"
-                                        color="text-purple-400"
-                                    />
-                                    <StatBox
-                                        label="Inventory Mass"
-                                        value={mounted ? formatNumber(inventoryData?.summary.totalStock || 0) : '---'}
-                                        sub={`Across ${inventoryData?.summary.totalProducts} lines`}
-                                        icon={Box}
-                                        trend="-0.5%"
-                                        color="text-blue-400"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="Critical Alerts"
-                                        value={formatNumber(inventoryData?.outOfStockCount || 0)}
-                                        sub="Total depleted assets"
-                                        icon={AlertTriangle}
-                                        trend="+2 units"
-                                        color="text-red-500"
-                                        isNumber
-                                    />
-                                    <StatBox
-                                        label="Category Spread"
-                                        value={inventoryData?.categoryDistribution.length || 0}
-                                        sub="Departmental segments"
-                                        icon={PieChart}
-                                        trend="Stable"
-                                        color="text-gold"
-                                        isNumber
-                                    />
-                                </>
-                            )}
+                            <StatBox
+                                label="Total Sales"
+                                value={mounted ? formatCurrency(salesData?.summary.totalRevenue || 0) : '---'}
+                                sub={`From ${salesData?.summary.totalOrders} orders`}
+                                icon={TrendingUp}
+                                trend="+18.4%"
+                                color="text-emerald-400"
+                            />
+                            <StatBox
+                                label="Active Customers"
+                                value={formatNumber(userData?.activeUsers30Days || 0)}
+                                sub="Users active this month"
+                                icon={Users}
+                                trend="+11%"
+                                color="text-gold"
+                                isNumber
+                            />
+                            <StatBox
+                                label="Out of Stock"
+                                value={formatNumber(inventoryData?.outOfStockCount || 0)}
+                                sub="Items needing restock"
+                                icon={AlertTriangle}
+                                trend="+2 units"
+                                color="text-red-500"
+                                isNumber
+                            />
+                            <StatBox
+                                label="Total Inventory"
+                                value={mounted ? formatNumber(inventoryData?.summary.totalStock || 0) : '---'}
+                                sub="Total items in warehouse"
+                                icon={Box}
+                                trend="-0.5%"
+                                color="text-blue-400"
+                                isNumber
+                            />
                         </div>
 
-                        {/* Analysis Grid */}
+                        {/* Performance Analysis */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                             {/* Trend Visualization */}
                             <div className="glass-premium rounded-[3rem] border border-white/5 p-10 flex flex-col">
                                 <div className="flex items-center justify-between mb-10">
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Spectrum Trend</h3>
-                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Live Waveform Analysis</p>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Sales Trend</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Revenue over time</p>
                                     </div>
                                     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
                                         <BarChart3 className="w-6 h-6 text-gold" />
@@ -390,29 +293,29 @@ export default function AdminAnalyticsPage() {
                                     <BarChartSVG
                                         data={salesData?.salesTrend.map(d => ({ label: d._id, value: d.sales })) || []}
                                         maxVal={Math.max(...(salesData?.salesTrend.map(d => d.sales) || [0]))}
-                                        color={activeSection === 'financial' ? '#C5A059' : activeSection === 'demographics' ? '#60A5FA' : '#C084FC'}
+                                        color="#C5A059"
                                     />
                                 </div>
                                 <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                    <span>T-0 Source Signal</span>
+                                    <span>Real-time Data</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                         <span>Sync Active</span>
                                     </div>
-                                    <span>Verified Audit</span>
+                                    <span>Verified</span>
                                 </div>
                             </div>
 
-                            {/* Ranking Matrix */}
+                            {/* Product Performance Rankings */}
                             <div className="glass-premium rounded-[3rem] border border-white/5 p-10">
                                 <div className="flex items-center justify-between mb-10">
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Performance Matrix</h3>
-                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Leaderboard Data</p>
+                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Top Products</h3>
+                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Best performing products</p>
                                     </div>
                                     <div className="flex bg-white/5 p-1 rounded-xl">
-                                        <button className="px-4 py-2 rounded-lg text-[9px] font-black text-white uppercase tracking-widest bg-navy border border-white/10">Yield</button>
-                                        <button className="px-4 py-2 rounded-lg text-[9px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors">Volume</button>
+                                        <button className="px-4 py-2 rounded-lg text-[9px] font-black text-white uppercase tracking-widest bg-navy border border-white/10">Revenue</button>
+                                        <button className="px-4 py-2 rounded-lg text-[9px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors">Orders</button>
                                     </div>
                                 </div>
 
@@ -424,8 +327,8 @@ export default function AdminAnalyticsPage() {
                                                     <span className="text-xs font-black text-gold font-display">{idx + 1}</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-white font-black text-sm tracking-tighter uppercase font-display group-hover:text-gold transition-colors">{product.name || 'Unknown Asset'}</p>
-                                                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{product.quantity} Units Allocated</p>
+                                                    <p className="text-white font-black text-sm tracking-tighter uppercase font-display group-hover:text-gold transition-colors">{product.name || 'Unknown Product'}</p>
+                                                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{product.quantity} Units Sold</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -439,85 +342,59 @@ export default function AdminAnalyticsPage() {
                                     ))}
                                     {(!salesData?.topProducts || salesData.topProducts.length === 0) && (
                                         <div className="py-20 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
-                                            Matrix Empty: Insufficient Stream Flow
+                                            No sales data available for this period
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Distribution Layer */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                            {/* Departmental Yield */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
-                                <h3 className="text-lg font-black text-white font-display uppercase tracking-tight mb-8">Departmental Yield</h3>
-                                <div className="space-y-6">
-                                    {(salesData?.categoryBreakdown || []).map((cat, i) => {
-                                        const maxRev = salesData?.categoryBreakdown[0]?.revenue || 1;
-                                        return (
-                                            <div key={i} className="group">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{cat._id || 'Standard'}</span>
-                                                    <span className="text-xs font-black text-white font-display">{formatCurrency(cat.revenue)}</span>
-                                                </div>
-                                                <div className="h-2.5 bg-white/5 rounded-full border border-white/5 p-0.5 overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${(cat.revenue / maxRev) * 100}%` }}
-                                                        transition={{ duration: 1.5, delay: i * 0.1 }}
-                                                        className="h-full bg-gradient-to-r from-gold/40 to-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.2)]"
-                                                    />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Personnel Access */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
-                                <h3 className="text-lg font-black text-white font-display uppercase tracking-tight mb-8">Access Demographics</h3>
-                                <div className="grid grid-cols-2 gap-4 h-[240px]">
-                                    {[
-                                        { label: 'Total Syncs', val: userData?.totalUsers, color: 'text-white' },
-                                        { label: 'Active Link', val: userData?.activeUsers30Days, color: 'text-blue-400' },
-                                        { label: 'New Signal', val: userData?.newUsers30Days, color: 'text-emerald-400' },
-                                        { label: 'Velocity', val: userData?.growthRate + '%', color: 'text-gold' }
-                                    ].map((box, i) => (
-                                        <div key={i} className="bg-white/[0.03] border border-white/5 rounded-[2rem] p-5 flex flex-col justify-center items-center hover:bg-white/[0.06] transition-all group">
-                                            <span className={`text-2xl font-black font-display font-mono ${box.color} group-hover:scale-110 transition-transform`}>{box.val ?? '---'}</span>
-                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1">{box.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Logistics Integrity */}
+                        {/* Distribution & Alerts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            {/* Inventory Alerts */}
                             <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
                                 <div className="flex items-center justify-between mb-8">
-                                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">Supply Integrity</h3>
+                                    <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">Stock Alerts</h3>
                                     <StatusBadge status={inventoryData?.outOfStockCount === 0 ? 'active' : 'pending'} />
                                 </div>
                                 <div className="space-y-4">
-                                    {inventoryData?.lowStockProducts.slice(0, 4).map((item, i) => (
+                                    {inventoryData?.lowStockProducts.slice(0, 5).map((item, i) => (
                                         <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all group">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20 group-hover:border-amber-500 transition-all">
-                                                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                                                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20 group-hover:border-red-500 transition-all">
+                                                    <AlertTriangle className="w-4 h-4 text-red-500" />
                                                 </div>
-                                                <span className="text-[11px] font-black text-white/60 uppercase tracking-tighter truncate max-w-[120px]">{item.name}</span>
+                                                <span className="text-[11px] font-black text-white/60 uppercase tracking-tighter truncate max-w-[200px]">{item.name}</span>
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-xs font-black text-white font-mono">{item.stock}</span>
-                                                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Units</p>
+                                                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Left</p>
                                             </div>
                                         </div>
                                     ))}
                                     {(!inventoryData?.lowStockProducts || inventoryData.lowStockProducts.length === 0) && (
                                         <div className="py-12 text-center text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
-                                            All Asset Channels Secure
+                                            No critical inventory alerts
                                         </div>
                                     )}
+                                </div>
+                            </div>
+
+                            {/* Activity Summary */}
+                            <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
+                                <h3 className="text-lg font-black text-white font-display uppercase tracking-tight mb-8">Quick Statistics</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {[
+                                        { label: 'Total Revenue', val: formatCurrency(salesData?.summary.totalRevenue || 0), color: 'text-emerald-400' },
+                                        { label: 'Avg Sale', val: formatCurrency(salesData?.summary.avgOrderValue || 0), color: 'text-gold' },
+                                        { label: 'Total Customers', val: formatNumber(userData?.totalUsers || 0), color: 'text-white' },
+                                        { label: 'Sign-up Growth', val: (userData?.growthRate || '0') + '%', color: 'text-blue-400' }
+                                    ].map((box, i) => (
+                                        <div key={i} className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-6 flex flex-col justify-center items-center hover:bg-white/[0.06] transition-all group">
+                                            <span className={`text-xl font-black font-display ${box.color} group-hover:scale-110 transition-transform`}>{box.val}</span>
+                                            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1 text-center">{box.label}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

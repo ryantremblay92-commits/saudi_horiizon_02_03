@@ -238,7 +238,7 @@ export default function AdminProductsPage() {
     return (
         <AdminLayout
             title="Products"
-            description="Manage your global industrial catalog"
+            description="Manage and update your product catalog"
             onRefresh={loadProducts}
             onExport={() => {
                 const headers = ['ID', 'Name', 'SKU', 'Brand', 'Category', 'Price', 'Stock'];
@@ -301,7 +301,7 @@ export default function AdminProductsPage() {
                 <div className="relative flex-1 group">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
                     <Input
-                        placeholder="Search by name, SKU or brand..."
+                        placeholder="Search products by name, SKU or brand..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-12 bg-white/[0.03] border-white/5 text-white rounded-2xl h-14 focus:ring-gold/20 focus:border-gold/40 transition-all font-medium"
@@ -324,20 +324,20 @@ export default function AdminProductsPage() {
                 {loading ? (
                     <div className="p-20 text-center">
                         <div className="animate-spin w-12 h-12 border-2 border-gold border-t-transparent rounded-full mx-auto mb-6"></div>
-                        <p className="text-white/40 font-bold uppercase tracking-widest animate-pulse">Synchronizing Catalog...</p>
+                        <p className="text-white/40 font-bold uppercase tracking-widest animate-pulse">Loading products...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-white/[0.03] border-b border-white/5">
                                 <tr>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Product Info</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">SKU</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Brand</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Price</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Category</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Inventory</th>
-                                    <th className="px-8 py-6 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Actions</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[300px]">Product</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[150px]">SKU</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[120px]">Brand</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[140px]">Price</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[180px]">Category</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[120px]">Stock</th>
+                                    <th className="px-8 py-6 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display w-[120px]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -346,49 +346,54 @@ export default function AdminProductsPage() {
                                         <tr key={product._id} className="hover:bg-white/[0.03] transition-colors group">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center">
-                                                    <div className="w-14 h-14 rounded-xl bg-navy/40 overflow-hidden border border-white/10 shrink-0 relative">
+                                                    <div className="w-14 h-14 rounded-xl bg-[#060B12] overflow-hidden border border-white/5 shrink-0 shadow-lg group-hover:border-gold/20 transition-colors">
                                                         {product.image ? (
                                                             <img
                                                                 src={product.image}
                                                                 alt={product.name}
-                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                             />
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-white/10 font-bold">PIX</div>
+                                                            <div className="w-full h-full flex items-center justify-center text-white/5 font-black text-[10px]">NO_IMG</div>
                                                         )}
                                                     </div>
-                                                    <div className="ml-4 max-w-[200px]">
-                                                        <p className="text-white font-bold font-display truncate group-hover:text-gold transition-colors">{product.name}</p>
-                                                        <p className="text-white/30 text-xs truncate uppercase tracking-widest">{product._id.slice(-8)}</p>
+                                                    <div className="ml-5 flex flex-col justify-center min-w-0">
+                                                        <p className="text-white font-bold font-display text-sm group-hover:text-gold transition-colors truncate">{product.name}</p>
+                                                        <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mt-1">{product._id.slice(-8)}</p>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="text-white/40 font-mono text-xs font-bold">{product.sku}</span>
+                                                <span className="text-white/40 font-mono text-xs font-medium tabular-nums">{product.sku}</span>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="text-white font-bold text-xs uppercase tracking-widest">{product.brand || '---'}</span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className="text-gold font-black font-display text-lg">
-                                                    SAR {product.price?.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <Badge variant="secondary" className="bg-white/5 border-white/5 text-white/40 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                    {product.category || 'N/A'}
-                                                </Badge>
+                                                <span className="text-white/60 font-bold text-[10px] uppercase tracking-[0.15em]">{product.brand || '---'}</span>
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex flex-col">
-                                                    <span className={`text-sm font-black font-mono ${product.stock < 10 ? 'text-red-400' : 'text-white'}`}>
+                                                    <span className="text-[10px] text-white/20 font-black uppercase tracking-widest mb-0.5">Price</span>
+                                                    <span className="text-gold font-black font-display text-base tabular-nums">
+                                                        SAR {product.price?.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 group-hover:border-gold/10 transition-colors">
+                                                    <span className="text-white/40 text-[9px] font-black uppercase tracking-widest">
+                                                        {product.category || 'GENERAL'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex flex-col">
+                                                    <span className={`text-base font-black font-mono tabular-nums ${product.stock <= 5 ? 'text-red-500' : product.stock < 15 ? 'text-orange-400' : 'text-emerald-400'}`}>
                                                         {product.stock}
                                                     </span>
-                                                    <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Units</span>
+                                                    <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Available</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                <div className="flex items-center justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                     <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl text-white/20 hover:text-white hover:bg-white/5">
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
@@ -415,7 +420,7 @@ export default function AdminProductsPage() {
                                                     <Box className="w-8 h-8 text-white/20" />
                                                 </div>
                                                 <h5 className="text-white font-bold mb-2">No Records Found</h5>
-                                                <p className="text-white/30 text-sm">Your catalog is currently empty. Start by adding a new industrial component.</p>
+                                                <p className="text-white/30 text-sm">Your catalog is currently empty. Start by adding your first product.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -429,7 +434,7 @@ export default function AdminProductsPage() {
             {/* Pagination */}
             <div className="mt-10 flex items-center justify-between px-2">
                 <p className="text-xs text-white/20 font-bold uppercase tracking-[0.2em]">
-                    Displaying <span className="text-white/60">{paginatedProducts.length}</span> of <span className="text-white/60">{filteredProducts.length}</span> Objects
+                    Displaying <span className="text-white/60">{paginatedProducts.length}</span> of <span className="text-white/60">{filteredProducts.length}</span> Products
                 </p>
                 <div className="flex gap-4">
                     <Button
@@ -472,10 +477,10 @@ export default function AdminProductsPage() {
                         <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                             <div>
                                 <h2 className="text-2xl font-black text-white font-display uppercase tracking-tight">
-                                    {editingProduct ? 'Update Inventory' : 'Initialize New Object'}
+                                    {editingProduct ? 'Edit Product' : 'Add New Product'}
                                 </h2>
                                 <p className="text-white/30 text-xs font-bold uppercase tracking-widest mt-1">
-                                    {editingProduct ? `Serial: ${editingProduct._id}` : 'Catalog Entry Protocol'}
+                                    {editingProduct ? `Product ID: ${editingProduct._id}` : 'Create a new catalog item'}
                                 </p>
                             </div>
                             <Button
@@ -494,7 +499,7 @@ export default function AdminProductsPage() {
                                 {/* Image Col */}
                                 <div className="lg:col-span-4 space-y-6">
                                     <div className="space-y-4">
-                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Visual Data</Label>
+                                        <Label className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Product Image</Label>
                                         <div className="relative group aspect-square rounded-[2rem] bg-navy border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden transition-all hover:border-gold/30">
                                             {formData.image ? (
                                                 <>
@@ -510,7 +515,7 @@ export default function AdminProductsPage() {
                                                             className="text-white font-black text-[10px] uppercase tracking-widest"
                                                             onClick={() => fileInputRef.current?.click()}
                                                         >
-                                                            Replace Asset
+                                                            Replace Image
                                                         </Button>
                                                     </div>
                                                 </>
@@ -519,7 +524,7 @@ export default function AdminProductsPage() {
                                                     <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-4">
                                                         <Upload className="w-8 h-8 text-white/10" />
                                                     </div>
-                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Upload Component Image</p>
+                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Upload Product Image</p>
                                                 </div>
                                             )}
                                             <input
@@ -545,7 +550,7 @@ export default function AdminProductsPage() {
                                             <div>
                                                 <p className="text-[10px] font-black text-gold uppercase tracking-wider mb-1">Catalog Tip</p>
                                                 <p className="text-[11px] text-white/50 leading-relaxed">
-                                                    Ensure High-resolution imagery (1000x1000px) is used for industrial parts to showcase technical details to B2B clients.
+                                                    Use high-quality product images (1000x1000px) to showcase details clearly to your customers.
                                                 </p>
                                             </div>
                                         </div>
@@ -562,7 +567,7 @@ export default function AdminProductsPage() {
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Scientific Name / Title</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Product Name</Label>
                                                 <Input
                                                     value={formData.name}
                                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -572,7 +577,7 @@ export default function AdminProductsPage() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Serial Number (SKU)</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">SKU</Label>
                                                 <Input
                                                     value={formData.sku}
                                                     onChange={e => setFormData({ ...formData, sku: e.target.value })}
@@ -582,7 +587,7 @@ export default function AdminProductsPage() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Manufacturer (Brand)</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Brand</Label>
                                                 <Input
                                                     value={formData.brand}
                                                     onChange={e => setFormData({ ...formData, brand: e.target.value })}
@@ -591,7 +596,7 @@ export default function AdminProductsPage() {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Object ID (Database)</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Product ID (Internal)</Label>
                                                 <Input
                                                     value={formData._id}
                                                     readOnly={!!editingProduct}
@@ -602,15 +607,15 @@ export default function AdminProductsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Section: Logistics */}
+                                    {/* Section: Pricing & Stock */}
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] shrink-0">02 Logistics</span>
+                                            <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] shrink-0">02 Pricing & Stock</span>
                                             <div className="h-px w-full bg-white/5" />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Unit Price (SAR)</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Price (SAR)</Label>
                                                 <div className="relative">
                                                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold" />
                                                     <Input
@@ -622,7 +627,7 @@ export default function AdminProductsPage() {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Initial Stock Level</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Initial Stock</Label>
                                                 <div className="relative">
                                                     <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
                                                     <Input
@@ -634,7 +639,7 @@ export default function AdminProductsPage() {
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Core Category</Label>
+                                                <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Category</Label>
                                                 <div className="relative">
                                                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
                                                     <select
@@ -642,7 +647,7 @@ export default function AdminProductsPage() {
                                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
                                                         className="w-full h-12 pl-12 bg-white/5 border border-white/10 text-white rounded-xl font-bold appearance-none"
                                                     >
-                                                        <option value="">Select Level</option>
+                                                        <option value="">Select Category</option>
                                                         <option value="Hydraulics">Hydraulics</option>
                                                         <option value="Engine">Engine</option>
                                                         <option value="Transmission">Transmission</option>
@@ -657,7 +662,7 @@ export default function AdminProductsPage() {
                                     {/* Section: Description */}
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-4">
-                                            <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] shrink-0">03 Specifications</span>
+                                            <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] shrink-0">03 Description</span>
                                             <div className="h-px w-full bg-white/5" />
                                         </div>
                                         <div className="space-y-2">
@@ -681,7 +686,7 @@ export default function AdminProductsPage() {
                                     className="h-14 flex-1 border-white/5 bg-white/5 text-white/40 font-black uppercase tracking-widest rounded-2xl hover:bg-white/10"
                                     onClick={() => setShowProductForm(false)}
                                 >
-                                    ABORT
+                                    CANCEL
                                 </Button>
                                 <Button
                                     type="submit"
@@ -691,12 +696,12 @@ export default function AdminProductsPage() {
                                     {isSubmitting ? (
                                         <div className="flex items-center gap-3">
                                             <div className="w-4 h-4 border-2 border-navy border-t-transparent animate-spin rounded-full" />
-                                            <span>SYNCHRONIZING...</span>
+                                            <span>SAVING...</span>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-3">
                                             <Save className="w-5 h-5" />
-                                            <span>COMMIT CHANGES</span>
+                                            <span>SAVE PRODUCT</span>
                                         </div>
                                     )}
                                 </Button>
