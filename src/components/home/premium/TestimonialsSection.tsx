@@ -3,34 +3,27 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { Quote, Star } from "lucide-react";
-
-const testimonials = [
-    {
-        quote: "Saudi Horizon provided exceptional service in sourcing hard-to-find parts for our heavy machinery fleet. Their delivery speed minimized our downtime significantly.",
-        author: "Fahad Al-Otaibi",
-        role: "Operations Director",
-        company: "Al-Otaibi Construction",
-        initials: "FA",
-    },
-    {
-        quote: "The quality of the refurbished equipment we purchased was outstanding. It performs like new but at a fraction of the cost. Highly recommended partner.",
-        author: "John Smith",
-        role: "Fleet Manager",
-        company: "Global Logistics Co.",
-        initials: "JS",
-    },
-    {
-        quote: "Their technical support team went above and beyond to help us identify the correct components for our vintage Caterpillar generators.",
-        author: "Mohammed Asghar",
-        role: "Chief Engineer",
-        company: "Power Systems Ltd.",
-        initials: "MA",
-    },
-];
+import { useTranslation } from "react-i18next";
 
 export function TestimonialsSection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+
+    const testimonials = [
+        {
+            id: "t1",
+            initials: "FA",
+        },
+        {
+            id: "t2",
+            initials: "JS",
+        },
+        {
+            id: "t3",
+            initials: "MA",
+        },
+    ];
 
     return (
         <section ref={containerRef} className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
@@ -71,7 +64,7 @@ export function TestimonialsSection() {
                                 className="flex items-center gap-4 mb-4"
                             >
                                 <div className="w-8 h-px bg-gold/50" />
-                                <span className="micro-label">CLIENT SUCCESS STORIES</span>
+                                <span className="micro-label">{t('home.testimonials.label')}</span>
                                 <div className="w-8 h-px bg-gold/50" />
                             </motion.div>
 
@@ -81,7 +74,7 @@ export function TestimonialsSection() {
                                 transition={{ delay: 0.2 }}
                                 className="heading-md"
                             >
-                                Trusted by <span className="text-gradient-gold">Industry Leaders</span>
+                                {t('home.testimonials.title_prefix')}<span className="text-gradient-gold">{t('home.testimonials.title_accent')}</span>
                             </motion.h2>
                         </div>
 
@@ -89,7 +82,7 @@ export function TestimonialsSection() {
                         <div className="grid lg:grid-cols-3 gap-8">
                             {testimonials.map((testimonial, index) => (
                                 <motion.div
-                                    key={testimonial.author}
+                                    key={testimonial.id}
                                     initial={{ opacity: 0, y: 40 }}
                                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                                     transition={{ duration: 0.6, delay: 0.3 + index * 0.15 }}
@@ -107,7 +100,7 @@ export function TestimonialsSection() {
                                         </div>
 
                                         <p className="text-body-lg text-white/70 mb-10 leading-relaxed italic relative z-10">
-                                            "{testimonial.quote}"
+                                            "{t(`home.testimonials.${testimonial.id}.quote`)}"
                                         </p>
 
                                         {/* Author Block */}
@@ -117,13 +110,13 @@ export function TestimonialsSection() {
                                             </div>
                                             <div>
                                                 <div className="font-bold text-white text-lg group-hover:text-gold transition-colors">
-                                                    {testimonial.author}
+                                                    {t(`home.testimonials.${testimonial.id}.author`)}
                                                 </div>
                                                 <div className="text-xs text-white/40 font-bold uppercase tracking-widest mt-1">
-                                                    {testimonial.role}
+                                                    {t(`home.testimonials.${testimonial.id}.role`)}
                                                 </div>
                                                 <div className="text-[10px] text-gold font-medium mt-0.5 opacity-70">
-                                                    {testimonial.company}
+                                                    {t(`home.testimonials.${testimonial.id}.company`)}
                                                 </div>
                                             </div>
                                         </div>

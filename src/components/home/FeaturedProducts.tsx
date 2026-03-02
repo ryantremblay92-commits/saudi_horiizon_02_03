@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface Product {
     _id: string;
@@ -20,6 +21,7 @@ interface Product {
 }
 
 export default function FeaturedProducts() {
+    const { t, i18n } = useTranslation();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -32,13 +34,9 @@ export default function FeaturedProducts() {
             const response = await fetch('/api/products?limit=8');
             if (!response.ok) throw new Error('Failed to fetch products');
             const data = await response.json();
-
-            // Map MongoDB schema to the UI interface if needed, although they should be similar
-            // In a real app, we might filter for "featured" flag
             setProducts(data.products || []);
         } catch (error) {
             console.error('Error fetching featured products:', error);
-            // Fallback to empty or previous mock if needed, but error state is better
         } finally {
             setLoading(false);
         }
@@ -81,13 +79,13 @@ export default function FeaturedProducts() {
                         viewport={{ once: true }}
                     >
                         <span className="inline-block py-1.5 px-4 rounded-full bg-gold/10 border border-gold/20 text-gold text-xs font-bold uppercase tracking-[0.2em] mb-6">
-                            Equipment Catalog
+                            {t('home.products.label')}
                         </span>
                         <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 font-display tracking-tight">
-                            Featured <span className="text-gold">Products</span>
+                            {t('home.products.title_prefix')}<span className="text-gold">{t('home.products.title_accent')}</span>
                         </h2>
                         <p className="text-lg text-white/50 max-w-2xl mx-auto font-medium leading-relaxed">
-                            Premium industrial parts and heavy machinery components engineered for performance and reliability across Saudi Arabia.
+                            {t('home.products.subtitle')}
                         </p>
                     </motion.div>
                 </div>
@@ -124,10 +122,10 @@ export default function FeaturedProducts() {
                                     </div>
 
                                     {/* Labels */}
-                                    <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none">
+                                    <div className={`absolute top-4 ${i18n.language === 'ar' ? 'right-4' : 'left-4'} flex flex-col gap-2 pointer-events-none`}>
                                         {product.isNew && (
                                             <span className="px-3 py-1 bg-gold text-navy text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xl shadow-gold/20">
-                                                NEW
+                                                {t('home.products.new_badge')}
                                             </span>
                                         )}
                                         {product.discount && (
@@ -142,7 +140,7 @@ export default function FeaturedProducts() {
                                 <div className="p-6 flex flex-col flex-1">
                                     <div className="flex items-center gap-2 mb-3">
                                         <span className="text-[10px] font-bold text-gold uppercase tracking-[0.2em]">
-                                            {product.category || 'Machinery'}
+                                            {product.category || t('home.products.fallback_category')}
                                         </span>
                                         <div className="h-px flex-1 bg-white/5" />
                                     </div>
@@ -152,7 +150,7 @@ export default function FeaturedProducts() {
                                     </h4>
 
                                     <p className="text-white/40 text-sm line-clamp-2 mb-4 leading-relaxed font-medium">
-                                        {product.description || 'Professional grade component for industrial applications.'}
+                                        {product.description || t('home.products.fallback_description')}
                                     </p>
 
                                     {/* Ratings - Mocked if not present */}
@@ -179,17 +177,17 @@ export default function FeaturedProducts() {
                                     {/* Action Area */}
                                     <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
                                         <div className="flex flex-col">
-                                            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-0.5">Price starting at</span>
+                                            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-0.5">{t('home.products.price_starting')}</span>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-2xl font-black text-white font-display">
-                                                    SAR {product.price.toLocaleString()}
+                                                    {i18n.language === 'ar' ? 'ر.س' : 'SAR'} {product.price.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <div className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center group-hover:bg-gold group-hover:text-navy transition-all duration-300">
-                                            <svg className="w-5 h-5 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7-7 7" />
+                                            <svg className={`w-5 h-5 transform ${i18n.language === 'ar' ? 'group-hover:-translate-x-0.5' : 'group-hover:translate-x-0.5'} transition-transform`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d={i18n.language === 'ar' ? "M10 19l-7-7 7-7" : "M14 5l7 7-7 7"} />
                                             </svg>
                                         </div>
                                     </div>
@@ -210,8 +208,8 @@ export default function FeaturedProducts() {
                         href="/products"
                         className="inline-flex items-center gap-4 px-10 py-5 bg-gold text-navy font-black rounded-2xl hover:bg-white transition-all duration-300 shadow-2xl shadow-gold/20 hover:scale-105 active:scale-95 group"
                     >
-                        EXPLORE ENTIRE CATALOG
-                        <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {t('home.products.explore_catalog')}
+                        <svg className={`w-5 h-5 transition-transform ${i18n.language === 'ar' ? 'group-hover:-translate-x-1 rotate-180' : 'group-hover:translate-x-1'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </Link>

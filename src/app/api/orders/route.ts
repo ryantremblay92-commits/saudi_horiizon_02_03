@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         await connectDB();
 
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
+        let userId = searchParams.get('userId');
         const admin = searchParams.get('admin');
 
         // If admin parameter is set, return all orders (for admin panel)
@@ -54,11 +54,20 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ orders });
         }
 
+        // If no userId provided, try to extract from auth token
+        if (!userId) {
+            const { verifyAuth } = await import('@/lib/auth/middleware');
+            const user = await verifyAuth(request);
+            if (user) {
+                userId = user.sub;
+            }
+        }
+
         // Regular user order fetch requires userId
         if (!userId) {
             return NextResponse.json(
-                { message: 'userId is required for regular users' },
-                { status: 400 }
+                { message: 'Authentication required to view orders' },
+                { status: 401 }
             );
         }
 
@@ -66,7 +75,7 @@ export async function GET(request: NextRequest) {
             .populate('items.product')
             .sort({ createdAt: -1 });
 
-        return NextResponse.json({ orders });
+        return NextResponse.json(orders);
     } catch (error: unknown) {
         console.error('Error fetching orders:', error);
         return NextResponse.json(

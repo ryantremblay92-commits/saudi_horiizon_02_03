@@ -4,6 +4,7 @@ import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 function Counter({ value, suffix, inView }: { value: number; suffix: string; inView: boolean }) {
     const [count, setCount] = useState(0);
@@ -36,6 +37,7 @@ function Counter({ value, suffix, inView }: { value: number; suffix: string; inV
 }
 
 export function SplitStorySection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
@@ -84,7 +86,7 @@ export function SplitStorySection() {
                                 className="flex items-center gap-3 mb-6"
                             >
                                 <div className="w-8 h-px bg-gold/50" />
-                                <span className="micro-label">OUR MISSION & STORY</span>
+                                <span className="micro-label uppercase">{t('home.story.label')}</span>
                             </motion.div>
 
                             {/* Headline */}
@@ -94,7 +96,7 @@ export function SplitStorySection() {
                                 transition={{ duration: 0.8, delay: 0.2 }}
                                 className="heading-md mb-8"
                             >
-                                Decades of <span className="text-gradient-gold">excellence</span> in heavy equipment
+                                {t('home.story.title_prefix')}<span className="text-gradient-gold">{t('home.story.title_accent')}</span>{t('home.story.title_suffix')}
                             </motion.h2>
 
                             {/* Content */}
@@ -105,29 +107,26 @@ export function SplitStorySection() {
                                 className="space-y-6 mb-12"
                             >
                                 <p className="text-body-lg text-white/70 leading-relaxed">
-                                    Since 2009, Saudi Horizon has been the trusted name in heavy equipment
-                                    parts across the Middle East. What started as a small warehouse in Riyadh
-                                    has grown into a regional leader.
+                                    {t('home.story.p1')}
                                 </p>
                                 <p className="text-body-lg text-white/70 leading-relaxed">
-                                    We understand that downtime costs thousands per hour. That's why we've
-                                    built our entire operation around speed, reliability, and technical expertise.
+                                    {t('home.story.p2')}
                                 </p>
                             </motion.div>
 
                             {/* Stats Row */}
                             <div className="grid grid-cols-3 gap-6 md:gap-10 py-10 border-y border-white/5 mb-10">
-                                <div className="text-center lg:text-left">
+                                <div className="text-center lg:text-left rtl:lg:text-right">
                                     <Counter value={500} suffix="+" inView={isInView} />
-                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">OEM Parts</div>
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t('home.story.stat1_label')}</div>
                                 </div>
-                                <div className="text-center lg:text-left">
+                                <div className="text-center lg:text-left rtl:lg:text-right">
                                     <Counter value={24} suffix="/7" inView={isInView} />
-                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Support</div>
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t('home.story.stat2_label')}</div>
                                 </div>
-                                <div className="text-center lg:text-left">
+                                <div className="text-center lg:text-left rtl:lg:text-right">
                                     <Counter value={98} suffix="%" inView={isInView} />
-                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">On-Time</div>
+                                    <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t('home.story.stat3_label')}</div>
                                 </div>
                             </div>
 
@@ -137,9 +136,9 @@ export function SplitStorySection() {
                                 animate={isInView ? { opacity: 1, x: 0 } : {}}
                                 transition={{ duration: 0.8, delay: 0.5 }}
                             >
-                                <Link href="/about" className="btn-primary inline-flex">
-                                    Learn Our Story
-                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                <Link href="/about" className="btn-primary inline-flex items-center gap-2">
+                                    {t('home.story.cta')}
+                                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                                 </Link>
                             </motion.div>
                         </div>

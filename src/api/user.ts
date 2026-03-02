@@ -15,16 +15,6 @@ export interface Address {
     isDefault: boolean;
 }
 
-// Payment method types
-export interface PaymentMethod {
-    _id: string;
-    type: string;
-    last4: string;
-    expiry: string;
-    name: string;
-    isDefault: boolean;
-}
-
 // Notification preferences types
 export interface NotificationPreferences {
     orderUpdates: boolean;
@@ -62,6 +52,17 @@ export interface Order {
     status: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface ReturnRequest {
+    _id: string;
+    orderId: string;
+    productId: string;
+    productName: string;
+    reason: string;
+    description: string;
+    status: 'pending' | 'approved' | 'rejected' | 'processing' | 'completed';
+    createdAt: string;
 }
 
 // Helper function to extract error message
@@ -112,36 +113,6 @@ export const deleteAddress = async (id: string): Promise<void> => {
         await api.delete(`/api/users/addresses/${id}`);
     } catch (error) {
         console.error('Error deleting address:', error);
-        throw new Error(getErrorMessage(error));
-    }
-};
-
-// Payment method API functions
-export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
-    try {
-        const response = await api.get('/api/users/payment-methods');
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching payment methods:', error);
-        throw new Error(getErrorMessage(error));
-    }
-};
-
-export const addPaymentMethod = async (paymentMethod: { type: string; cardNumber: string; expiry: string; cvv: string; name: string; isDefault?: boolean }): Promise<PaymentMethod> => {
-    try {
-        const response = await api.post('/api/users/payment-methods', paymentMethod);
-        return response.data;
-    } catch (error) {
-        console.error('Error adding payment method:', error);
-        throw new Error(getErrorMessage(error));
-    }
-};
-
-export const deletePaymentMethod = async (id: string): Promise<void> => {
-    try {
-        await api.delete(`/api/users/payment-methods/${id}`);
-    } catch (error) {
-        console.error('Error deleting payment method:', error);
         throw new Error(getErrorMessage(error));
     }
 };
@@ -205,6 +176,57 @@ export const getOrderById = async (id: string): Promise<Order> => {
         return response.data;
     } catch (error) {
         console.error('Error fetching order:', error);
+        throw new Error(getErrorMessage(error));
+    }
+};
+
+// Returns API functions
+export const getReturns = async (): Promise<ReturnRequest[]> => {
+    try {
+        const response = await api.get('/api/users/returns');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching returns:', error);
+        // Fallback to empty array if endpoint doesn't exist yet to avoid breaking UI
+        return [];
+    }
+};
+
+export const createReturnRequest = async (data: Omit<ReturnRequest, '_id' | 'status' | 'createdAt'>): Promise<ReturnRequest> => {
+    try {
+        const response = await api.post('/api/users/returns', data);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating return request:', error);
+        throw new Error(getErrorMessage(error));
+    }
+};
+
+// Wishlist API functions
+export const getWishlist = async (): Promise<string[]> => {
+    try {
+        const response = await api.get('/api/users/wishlist');
+        return response.data; // Expecting array of product IDs
+    } catch (error) {
+        console.error('Error fetching wishlist:', error);
+        return []; // Fallback to empty
+    }
+};
+
+export const addToWishlistApi = async (productId: string): Promise<void> => {
+    try {
+        await api.post('/api/users/wishlist', { productId });
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        throw new Error(getErrorMessage(error));
+    }
+};
+
+export const removeFromWishlistApi = async (productId: string): Promise<void> => {
+    try {
+        await api.delete(`/api/users/wishlist/${productId}`);
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
         throw new Error(getErrorMessage(error));
     }
 };

@@ -3,30 +3,21 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { User, Package, MapPin, CreditCard, Settings, Bell, ChevronRight, ShoppingBag, FileText, Heart, Undo2 } from 'lucide-react';
+import { User, Package, MapPin, Settings, Bell, ChevronRight, ShoppingBag, FileText, Heart, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Mock data for demonstration
-const mockOrders = [
-    { id: 'SH-12345678', date: '2024-01-15', status: 'delivered', total: 1250, items: 3 },
-    { id: 'SH-23456789', date: '2024-01-10', status: 'shipped', total: 780, items: 2 },
-];
-
-const mockWishlist = [
-    { id: '1', name: 'Hydraulic Pump Assembly', price: 450, image: '/images/home/hydraulics.png' },
-    { id: '2', name: 'Engine Filter Set', price: 89, image: '/images/home/engine.png' },
-];
+import { getOrders, getWishlist, Order } from '@/api/user';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 const accountLinks = [
     { icon: <ShoppingBag className="w-5 h-5" />, title: 'Orders', description: 'View and track your orders', href: '/account/orders' },
     { icon: <Heart className="w-5 h-5" />, title: 'Wishlist', description: 'Your saved products', href: '/account/wishlist' },
     { icon: <Undo2 className="w-5 h-5" />, title: 'Returns', description: 'Track return requests', href: '/account/returns' },
     { icon: <MapPin className="w-5 h-5" />, title: 'Addresses', description: 'Manage shipping addresses', href: '/account/addresses' },
-    { icon: <CreditCard className="w-5 h-5" />, title: 'Payment Methods', description: 'Manage payment options', href: '/account/payment' },
     { icon: <Bell className="w-5 h-5" />, title: 'Notifications', description: 'Manage preferences', href: '/account/notifications' },
     { icon: <Settings className="w-5 h-5" />, title: 'Account Settings', description: 'Profile and security', href: '/account/settings' },
 ];
@@ -42,12 +33,34 @@ const statusColors: Record<string, string> = {
 export default function AccountPage() {
     const router = useRouter();
     const { isAuthenticated, user, isInitialized } = useAuth();
+    const { wishlistCount } = useWishlist();
+    const [orders, setOrders] = React.useState<Order[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
         if (isInitialized && !isAuthenticated) {
             router.push('/login?redirect=/account');
+            return;
         }
+
+        const fetchDashboardData = async () => {
+            if (isAuthenticated) {
+                try {
+                    const ordersData = await getOrders();
+                    setOrders(ordersData);
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchDashboardData();
     }, [isAuthenticated, isInitialized, router]);
+
+    const inTransitCount = orders.filter(o => ['shipped', 'processing'].includes(o.status.toLowerCase())).length;
+    const recentOrders = orders.slice(0, 3);
 
     if (!isInitialized || !isAuthenticated) {
         return null;
@@ -79,7 +92,7 @@ export default function AccountPage() {
                                 <p className="text-sm text-slate-400 text-center">{user?.email || 'customer@example.com'}</p>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account')}>
+                                <Button variant="ghost" className="w-full justify-start text-gold bg-white/5" onClick={() => router.push('/account')}>
                                     <User className="w-4 h-4 mr-2" />
                                     Overview
                                 </Button>
@@ -99,9 +112,13 @@ export default function AccountPage() {
                                     <MapPin className="w-4 h-4 mr-2" />
                                     Addresses
                                 </Button>
-                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/payment')}>
-                                    <CreditCard className="w-4 h-4 mr-2" />
-                                    Payment Methods
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/settings')}>
+                                    <Settings className="w-4 h-4 mr-2" />
+                                    Settings
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/notifications')}>
+                                    <Bell className="w-4 h-4 mr-2" />
+                                    Notifications
                                 </Button>
                             </CardContent>
                         </Card>
@@ -124,7 +141,7 @@ export default function AccountPage() {
                                                 <Package className="w-6 h-6 text-gold" />
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-bold text-white">{mockOrders.length}</p>
+                                                <p className="text-2xl font-bold text-white">{isLoading ? '...' : orders.length}</p>
                                                 <p className="text-sm text-slate-400">Total Orders</p>
                                             </div>
                                         </div>
@@ -137,7 +154,7 @@ export default function AccountPage() {
                                                 <Package className="w-6 h-6 text-purple-400" />
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-bold text-white">1</p>
+                                                <p className="text-2xl font-bold text-white">{isLoading ? '...' : inTransitCount}</p>
                                                 <p className="text-sm text-slate-400">In Transit</p>
                                             </div>
                                         </div>
@@ -150,7 +167,7 @@ export default function AccountPage() {
                                                 <Heart className="w-6 h-6 text-emerald-400" />
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-bold text-white">{mockWishlist.length}</p>
+                                                <p className="text-2xl font-bold text-white">{wishlistCount}</p>
                                                 <p className="text-sm text-slate-400">In Wishlist</p>
                                             </div>
                                         </div>
@@ -169,30 +186,36 @@ export default function AccountPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {mockOrders.map((order) => (
-                                            <div
-                                                key={order.id}
-                                                className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-gold/20"
-                                                onClick={() => router.push(`/account/orders/${order.id}`)}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center">
-                                                        <Package className="w-5 h-5 text-gold" />
+                                        {isLoading ? (
+                                            <div className="text-center py-8 text-slate-400">Loading recent orders...</div>
+                                        ) : recentOrders.length > 0 ? (
+                                            recentOrders.map((order) => (
+                                                <div
+                                                    key={order._id}
+                                                    className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-gold/20"
+                                                    onClick={() => router.push(`/account/orders/${order._id}`)}
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center">
+                                                            <Package className="w-5 h-5 text-gold" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-white">{order._id.slice(-8).toUpperCase()}</p>
+                                                            <p className="text-sm text-slate-400">{new Date(order.createdAt).toLocaleDateString()} • {order.items.length} items</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-semibold text-white">{order.id}</p>
-                                                        <p className="text-sm text-slate-400">{order.date} • {order.items} items</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <Badge className={statusColors[order.status.toLowerCase()] || statusColors.pending}>
+                                                            {order.status}
+                                                        </Badge>
+                                                        <span className="font-semibold text-white text-lg">KWD {order.totalAmount.toFixed(2)}</span>
+                                                        <ChevronRight className="w-4 h-4 text-slate-400" />
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-4">
-                                                    <Badge className={statusColors[order.status]}>
-                                                        {order.status}
-                                                    </Badge>
-                                                    <span className="font-semibold text-white">KWD {order.total.toFixed(2)}</span>
-                                                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-slate-400">No recent orders</div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -208,18 +231,18 @@ export default function AccountPage() {
                                         transition={{ delay: index * 0.1 }}
                                     >
                                         <Card
-                                            className="glass border-white/5 hover:border-gold/30 hover:bg-white/5 transition-all cursor-pointer"
+                                            className="glass border-white/5 hover:border-gold/30 hover:bg-white/5 transition-all cursor-pointer overflow-hidden group"
                                             onClick={() => router.push(link.href)}
                                         >
                                             <CardContent className="p-4 flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center text-gold">
+                                                <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center text-gold group-hover:scale-110 transition-transform">
                                                     {link.icon}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-semibold text-white">{link.title}</p>
+                                                    <p className="font-semibold text-white group-hover:text-gold transition-colors">{link.title}</p>
                                                     <p className="text-sm text-slate-400">{link.description}</p>
                                                 </div>
-                                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                                                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                                             </CardContent>
                                         </Card>
                                     </motion.div>

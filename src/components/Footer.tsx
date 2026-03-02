@@ -71,9 +71,9 @@ export function Footer() {
           >
             <Link href="/" className="inline-block mb-6">
               <span className="text-2xl font-bold tracking-wider text-white font-display uppercase">
-                SAUDI <span className="text-gold">HORIZON</span>
+                {t('common.brand_main')} <span className="text-gold">{t('common.brand_accent')}</span>
               </span>
-              <p className="text-[10px] text-white/40 tracking-[0.2em] mt-1 font-arabic">شركة الأفق السعودية</p>
+              <p className="text-[10px] text-white/40 tracking-[0.2em] mt-1 font-arabic">{t('common.brand_subtitle')}</p>
             </Link>
             <p className="text-body-md text-white/60 mb-8 leading-relaxed">
               {t('footer.description')}
@@ -215,15 +215,15 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <p className="text-body-sm text-white/30 truncate">
-                © 2026 Saudi Horizon Co.
+                © 2026 {t('common.brand_main')} {t('common.brand_accent')}
               </p>
               <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
               <p className="text-[10px] text-white/20 tracking-widest hidden md:block uppercase">{t('footer.industrial_note')}</p>
             </div>
             {/* Added CR and VAT info for compliance */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-              <span className="flex items-center gap-2">{t('footer.cr_label')}: <span className="text-white/40">1010XXXXXX</span></span>
-              <span className="flex items-center gap-2">{t('footer.vat_label')}: <span className="text-white/40">300XXXXXXXXXXXX</span></span>
+              <span className="flex items-center gap-2">{t('footer.cr_label')}: <span className="text-white/40">7051614738</span></span>
+              <span className="flex items-center gap-2">{t('footer.vat_label')}: <span className="text-white/40">314220735100003</span></span>
               <span className="flex items-center gap-2">{t('footer.licensed_in')} <span className="text-white/40">Saudi Arabia</span></span>
             </div>
           </div>

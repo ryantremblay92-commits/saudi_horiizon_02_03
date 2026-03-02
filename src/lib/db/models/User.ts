@@ -50,6 +50,7 @@ export interface IUser extends Document {
     profile?: IUserProfile;
     addresses?: IAddress[];
     paymentMethods?: IPaymentMethod[];
+    wishlist?: string[];
     notificationPreferences?: INotificationPreferences;
     createdAt: Date;
     updatedAt: Date;
@@ -135,6 +136,10 @@ const userSchema = new Schema<IUser>(
         },
         paymentMethods: {
             type: [paymentMethodSchema],
+            default: [],
+        },
+        wishlist: {
+            type: [String],
             default: [],
         },
         notificationPreferences: {

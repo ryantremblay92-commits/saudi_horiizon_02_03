@@ -3,9 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Package, ChevronRight, MapPin, Clock, CheckCircle, FileText, Truck, Search } from 'lucide-react';
+import {
+    User, Package, MapPin, settings as SettingsIcon, Bell,
+    Heart, Undo2, ChevronRight, Clock, CheckCircle,
+    FileText, Truck, Search, ShoppingBag, Settings
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Input } from '@/components/ui/input';
@@ -31,13 +35,13 @@ const statusIcons: Record<string, React.ReactNode> = {
 
 export default function OrdersPage() {
     const router = useRouter();
-    const { isAuthenticated, isInitialized } = useAuth();
+    const { isAuthenticated, user, isInitialized } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (isInitialized && !isAuthenticated) {
             router.push('/login?redirect=/account/orders');
         }
@@ -74,7 +78,7 @@ export default function OrdersPage() {
     return (
         <div className="min-h-screen bg-navy text-white py-8 relative">
             <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5 pointer-events-none" />
-            <div className="max-w-4xl mx-auto px-4 relative z-10">
+            <div className="max-w-6xl mx-auto px-4 relative z-10">
                 <Breadcrumb className="mb-8">
                     <BreadcrumbList className="text-slate-400">
                         <BreadcrumbItem>
@@ -89,184 +93,183 @@ export default function OrdersPage() {
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white font-display">My Orders</h1>
-                        <p className="text-slate-400 mt-1">{orders.length} total orders</p>
+                <div className="grid lg:grid-cols-4 gap-8">
+                    {/* Sidebar */}
+                    <div className="lg:col-span-1">
+                        <Card className="glass border-white/5">
+                            <CardHeader className="pb-4">
+                                <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <User className="w-8 h-8 text-gold" />
+                                </div>
+                                <CardTitle className="text-center text-white font-display">{user?.name || 'Customer'}</CardTitle>
+                                <p className="text-sm text-slate-400 text-center">{user?.email || 'customer@example.com'}</p>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account')}>
+                                    <User className="w-4 h-4 mr-2" />
+                                    Overview
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-gold bg-white/5" onClick={() => router.push('/account/orders')}>
+                                    <Package className="w-4 h-4 mr-2" />
+                                    Orders
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/wishlist')}>
+                                    <Heart className="w-4 h-4 mr-2" />
+                                    Wishlist
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/returns')}>
+                                    <Undo2 className="w-4 h-4 mr-2" />
+                                    Returns
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/addresses')}>
+                                    <MapPin className="w-4 h-4 mr-2" />
+                                    Addresses
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/settings')}>
+                                    <Settings className="w-4 h-4 mr-2" />
+                                    Settings
+                                </Button>
+                                <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-gold hover:bg-white/5" onClick={() => router.push('/account/notifications')}>
+                                    <Bell className="w-4 h-4 mr-2" />
+                                    Notifications
+                                </Button>
+                            </CardContent>
+                        </Card>
                     </div>
-                </div>
 
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            type="text"
-                            placeholder="Search by order ID..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500"
-                        />
-                    </div>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full sm:w-48 bg-white/5 border-white/10 text-white">
-                            <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-navy border-white/10 text-white">
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="processing">Processing</SelectItem>
-                            <SelectItem value="shipped">Shipped</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="space-y-6">
-                    {isLoading ? (
-                        <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-48 bg-white/5 rounded-xl animate-pulse" />
-                            ))}
-                        </div>
-                    ) : filteredOrders.length > 0 ? (
-                        filteredOrders.map((order: Order, index: number) => (
-                            <motion.div
-                                key={order._id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                            >
-                                <Card className="glass border-white/5 hover:border-gold/30 transition-all">
-                                    <CardContent className="p-6">
-                                        {/* Order Header */}
-                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-                                            <div>
-                                                <div className="flex items-center gap-3">
-                                                    <h3
-                                                        className="font-semibold text-lg text-white cursor-pointer hover:text-gold transition-colors"
-                                                        onClick={() => router.push(`/account/orders/${order._id}`)}
-                                                    >
-                                                        {order._id}
-                                                    </h3>
-                                                    <Badge className={statusColors[order.status]}>
-                                                        {statusIcons[order.status]}
-                                                        <span className="ml-1 capitalize">{order.status}</span>
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-sm text-slate-400">Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-xl text-white">KWD {order.totalAmount.toFixed(2)}</p>
-                                                <p className="text-sm text-slate-400">{order.items.length} items</p>
-                                            </div>
-                                        </div>
-
-                                        {/* Order Items */}
-                                        <div className="space-y-3 mb-4">
-                                            {order.items.map((item: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between text-sm">
-                                                    <span className="text-slate-300">{item.product?.name || 'Product'} × {item.quantity}</span>
-                                                    <span className="text-slate-400">KWD {(item.product?.price || 0 * item.quantity).toFixed(2)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Tracking Info */}
-                                        <div className="bg-white/5 rounded-lg p-3 mb-4">
-                                            <div className="flex items-center gap-2 text-sm">
-                                                {statusIcons[order.status]}
-                                                <span className="font-medium text-white">Status: {order.status}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm mt-2 text-slate-400">
-                                                <Clock className="w-4 h-4" />
-                                                <span>
-                                                    Ordered on {new Date(order.createdAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex gap-3 flex-wrap">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="border-white/10 text-slate-300 hover:text-gold hover:border-gold/30"
-                                                onClick={() => router.push(`/account/orders/${order._id}`)}
-                                            >
-                                                Track Order
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="border-white/10 text-slate-300 hover:text-gold hover:border-gold/30"
-                                                onClick={() => router.push(`/account/orders/${order._id}`)}
-                                            >
-                                                View Details
-                                            </Button>
-                                            {order.status === 'delivered' && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="border-white/10 text-slate-300 hover:text-gold hover:border-gold/30"
-                                                >
-                                                    Buy Again
-                                                </Button>
-                                            )}
-                                            {order.status === 'delivered' && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                                    onClick={() => router.push('/account/returns')}
-                                                >
-                                                    Return Item
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))
-                    ) : (
+                    {/* Main Content */}
+                    <div className="lg:col-span-3 space-y-6">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-center py-16"
+                            className="space-y-6"
                         >
-                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gold/10 mb-6">
-                                <Package className="w-10 h-10 text-gold" />
+                            <div className="flex items-center justify-between">
+                                <h1 className="text-3xl font-bold font-display text-white">Order History</h1>
+                                <p className="text-slate-400">{orders.length} total orders</p>
                             </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">
-                                {searchQuery || statusFilter !== 'all' ? 'No orders found' : 'No orders yet'}
-                            </h2>
-                            <p className="text-slate-400 mb-6">
-                                {searchQuery || statusFilter !== 'all'
-                                    ? 'Try adjusting your search or filter criteria'
-                                    : 'Start shopping to see your orders here'}
-                            </p>
-                            {searchQuery || statusFilter !== 'all' ? (
-                                <Button
-                                    variant="outline"
-                                    className="border-gold text-gold hover:bg-gold/10"
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        setStatusFilter('all');
-                                    }}
-                                >
-                                    Clear Filters
-                                </Button>
-                            ) : (
-                                <Button
-                                    className="bg-gold hover:bg-yellow text-navy font-bold"
-                                    onClick={() => router.push('/products')}
-                                >
-                                    Browse Products
-                                </Button>
-                            )}
+
+                            {/* Filters */}
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Search by order ID..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500"
+                                    />
+                                </div>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-full sm:w-48 bg-white/5 border-white/10 text-white">
+                                        <SelectValue placeholder="All Status" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-navy border-white/10 text-white">
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="processing">Processing</SelectItem>
+                                        <SelectItem value="shipped">Shipped</SelectItem>
+                                        <SelectItem value="delivered">Delivered</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-4">
+                                {isLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="h-40 bg-white/5 rounded-xl animate-pulse" />
+                                        ))}
+                                    </div>
+                                ) : filteredOrders.length > 0 ? (
+                                    filteredOrders.map((order: Order) => (
+                                        <Card key={order._id} className="glass border-white/5 hover:border-gold/30 transition-all overflow-hidden group">
+                                            <CardContent className="p-0">
+                                                <div className="p-6">
+                                                    <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-slate-400 text-sm font-medium uppercase tracking-wider">Order</span>
+                                                                <h3 className="font-bold text-lg text-white group-hover:text-gold transition-colors cursor-pointer" onClick={() => router.push(`/account/orders/${order._id}`)}>
+                                                                    #{order._id.slice(-8).toUpperCase()}
+                                                                </h3>
+                                                            </div>
+                                                            <p className="text-sm text-slate-500">Placed on {new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                                                        </div>
+                                                        <div className="flex flex-col sm:items-end gap-2">
+                                                            <Badge className={`${statusColors[order.status]} border-none px-3 py-1 flex items-center gap-1.5`}>
+                                                                {React.cloneElement(statusIcons[order.status] as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+                                                                <span className="capitalize">{order.status}</span>
+                                                            </Badge>
+                                                            <p className="font-bold text-xl text-gold">KWD {order.totalAmount.toFixed(2)}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-x-8 gap-y-4 mb-6">
+                                                        <div className="flex items-center gap-2 text-sm text-slate-300">
+                                                            <ShoppingBag className="w-4 h-4 text-slate-500" />
+                                                            <span>{order.items.length} {order.items.length === 1 ? 'Item' : 'Items'}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-sm text-slate-300">
+                                                            <MapPin className="w-4 h-4 text-slate-500" />
+                                                            <span>Shipping to Riyadh, SA</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-2 pt-4 border-t border-white/5">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-slate-400 hover:text-gold bg-white/5"
+                                                            onClick={() => router.push(`/account/orders/${order._id}`)}
+                                                        >
+                                                            View Details
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-slate-400 hover:text-gold bg-white/5"
+                                                            onClick={() => router.push(`/account/orders/${order._id}`)}
+                                                        >
+                                                            Track Shipment
+                                                        </Button>
+                                                        {order.status === 'delivered' && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-emerald-400 hover:text-emerald-300 bg-emerald-500/5 ml-auto"
+                                                            >
+                                                                Buy Again
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <Card className="glass border-white/5 py-16">
+                                        <div className="text-center space-y-4">
+                                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gold/10 mb-4">
+                                                <Package className="w-10 h-10 text-gold" />
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-white">No orders found</h2>
+                                            <p className="text-slate-400 max-w-sm mx-auto">
+                                                {searchQuery || statusFilter !== 'all'
+                                                    ? 'Try adjusting your search or filters to find what you are looking for.'
+                                                    : 'You haven\'t placed any orders yet. Start shopping to see them here!'}
+                                            </p>
+                                            <Button onClick={() => router.push('/products')} className="bg-gold text-navy hover:bg-yellow">
+                                                Browse Catalog
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                )}
+                            </div>
                         </motion.div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

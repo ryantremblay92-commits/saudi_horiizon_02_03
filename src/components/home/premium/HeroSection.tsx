@@ -45,7 +45,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 gradient-hero-overlay" />
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 gradient-accent-glow" />
             </motion.div>
-            +
+
             {/* Content */}
             <div className="container-premium relative z-10">
                 <div className="max-w-4xl">

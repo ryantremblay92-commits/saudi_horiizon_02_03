@@ -79,7 +79,7 @@ export default function ContactPage() {
         {
             icon: MapPin,
             title: "Headquarters",
-            value: "Al-Noor Mall, Riyadh",
+            value: "Dammam, Industrial District",
             sub: "Kingdom of Saudi Arabia",
             href: "#"
         }

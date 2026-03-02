@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link"
-import { LogOut, ShoppingCart, Menu, LogIn, MessageCircle } from "lucide-react"
+import { LogOut, ShoppingCart, Menu, LogIn, MessageCircle, User } from "lucide-react"
 import { Button } from "./ui/button"
 import { ThemeToggle } from "./ui/theme-toggle"
 import { useAuth } from "@/contexts/AuthContext"
@@ -84,7 +84,7 @@ export function Header() {
               <div className="w-8 h-8 border border-gold flex items-center justify-center rounded-sm">
                 <span className="font-display font-bold text-gold">S</span>
               </div>
-              <span className="font-display tracking-[0.2em] uppercase">Saudi <span className="text-gold">Horizon</span></span>
+              <span className="font-display tracking-[0.2em] uppercase">{t('common.brand_main')} <span className="text-gold">{t('common.brand_accent')}</span></span>
             </Link>
           </div>
 
@@ -122,7 +122,7 @@ export function Header() {
               onClick={() => router.push("/contact")}
               className="btn-gold text-charcoal font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-200 hover:shadow-lg focus:ring-gold h-10 px-6 font-display"
             >
-              Request Quote
+              {t('nav.request_quote')}
             </Button>
 
             <div className="flex items-center gap-2 border-l border-white/10 ml-2 pl-4">
@@ -148,15 +148,26 @@ export function Header() {
               <ThemeToggle />
 
               {isAuthenticated ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleLogout}
-                  aria-label="Logout"
-                  className="text-white/60 hover:text-gold hover:bg-gold/10 transition-all duration-200 focus:ring-gold"
-                >
-                  <LogOut className="h-5 w-5" aria-hidden="true" />
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => router.push("/account")}
+                    aria-label="Account"
+                    className="text-white/60 hover:text-gold hover:bg-gold/10 transition-all duration-200 focus:ring-gold"
+                  >
+                    <User className="h-5 w-5" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleLogout}
+                    aria-label="Logout"
+                    className="text-white/60 hover:text-gold hover:bg-gold/10 transition-all duration-200 focus:ring-gold"
+                  >
+                    <LogOut className="h-5 w-5" aria-hidden="true" />
+                  </Button>
+                </>
               ) : (
                 <Button
                   variant="ghost"
@@ -197,13 +208,23 @@ export function Header() {
                         {item.label}
                       </Button>
                     ))}
+                    {isAuthenticated && (
+                      <Button
+                        variant="ghost"
+                        className="justify-start text-white/80 hover:text-gold hover:bg-gold/10 transition-all duration-200 font-display uppercase text-xs tracking-widest font-bold"
+                        onClick={() => router.push("/account")}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        My Account
+                      </Button>
+                    )}
                     <Separator className="my-4 bg-white/5" />
                     <Button
                       variant="ghost"
                       className="justify-start btn-gold text-charcoal hover:bg-gold/90 transition-all duration-200 hover:shadow-lg font-bold font-display"
                       onClick={() => router.push("/contact")}
                     >
-                      Request a Quote
+                      {t('nav.request_quote')}
                     </Button>
                   </nav>
                 </SheetContent>

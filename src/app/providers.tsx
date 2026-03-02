@@ -61,9 +61,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     return (
         <I18nextProvider i18n={i18n}>
             <CookiesProvider>
-                <ComparisonProvider>
-                    <WishlistProvider>
-                        <AuthProvider>
+                <AuthProvider>
+                    <ComparisonProvider>
+                        <WishlistProvider>
                             <ChatProvider>
                                 <ThemeProvider defaultTheme="light" storageKey="ui-theme">
                                     {children}
@@ -71,9 +71,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                                     <ChatWidget />
                                 </ThemeProvider>
                             </ChatProvider>
-                        </AuthProvider>
-                    </WishlistProvider>
-                </ComparisonProvider>
+                        </WishlistProvider>
+                    </ComparisonProvider>
+                </AuthProvider>
             </CookiesProvider>
         </I18nextProvider>
     );

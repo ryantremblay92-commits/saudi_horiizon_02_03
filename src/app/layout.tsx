@@ -103,16 +103,16 @@ export default async function RootLayout({
               "telephone": "+966570196677",
               "address": {
                 "@type": "PostalAddress",
-                "streetAddress": "Omar bin Al-Khattab Street",
-                "addressLocality": "Riyadh",
-                "addressRegion": "Riyadh",
-                "postalCode": "12345",
+                "streetAddress": "Building 8550, Omar bin Al-Khattab Street, Dallah Industrial District",
+                "addressLocality": "Dammam",
+                "addressRegion": "Eastern Province",
+                "postalCode": "34225",
                 "addressCountry": "SA"
               },
               "geo": {
                 "@type": "GeoCoordinates",
-                "latitude": 24.7136,
-                "longitude": 46.6753
+                "latitude": 26.4207,
+                "longitude": 50.0888
               },
               "openingHoursSpecification": {
                 "@type": "OpeningHoursSpecification",
