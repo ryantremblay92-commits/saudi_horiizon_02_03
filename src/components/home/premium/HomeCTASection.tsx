@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { ArrowRight, Settings, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 export function HomeCTASection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
@@ -29,22 +31,21 @@ export function HomeCTASection() {
                             animate={isInView ? { opacity: 1, x: 0 } : {}}
                             transition={{ duration: 0.8 }}
                         >
-                            <span className="micro-label mb-6 block text-gold">READY TO OPTIMIZE?</span>
+                            <span className="micro-label mb-6 block text-gold uppercase">{t('home.cta.label')}</span>
                             <h2 className="heading-lg mb-6">
-                                Powering Your <span className="text-gradient-gold">Infrastructure</span> Evolution
+                                {t('home.cta.title_prefix')}<span className="text-gradient-gold">{t('home.cta.title_accent')}</span>{t('home.cta.title_suffix')}
                             </h2>
-                            <p className="text-body-lg text-white/70 mb-10 max-w-xl">
-                                From critical engine components to heavy-duty undercarriage systems,
-                                we provide the industrial-grade parts that keep the Kingdom moving.
+                            <p className="text-body-lg text-white/70 mb-10 max-w-xl leading-relaxed">
+                                {t('home.cta.subtitle')}
                             </p>
 
                             <div className="flex flex-wrap gap-4">
                                 <Link href="/contact" className="btn-primary group">
-                                    Get Expert Consultation
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    {t('home.cta.cta_consult')}
+                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform rtl:rotate-180" />
                                 </Link>
                                 <Link href="/products" className="btn-secondary">
-                                    Browse Full Catalog
+                                    {t('home.cta.cta_catalog')}
                                 </Link>
                             </div>
                         </motion.div>
@@ -58,24 +59,24 @@ export function HomeCTASection() {
                             <div className="space-y-5">
                                 <div className="bg-white/5 backdrop-blur-md p-7 rounded-2xl border border-white/10 hover:border-gold/30 transition-colors">
                                     <ShieldCheck className="w-11 h-11 text-gold mb-4" />
-                                    <h4 className="text-white font-bold mb-2 text-lg">OEM Certified</h4>
-                                    <p className="text-sm text-white/50">Genuine parts guaranteed for performance.</p>
+                                    <h4 className="text-white font-bold mb-2 text-lg">{t('home.cta.oem_title')}</h4>
+                                    <p className="text-sm text-white/50">{t('home.cta.oem_desc')}</p>
                                 </div>
-                                <div className="bg-white/5 backdrop-blur-md p-7 rounded-2xl border border-white/10 hover:border-gold/30 transition-colors translate-x-5">
+                                <div className="bg-white/5 backdrop-blur-md p-7 rounded-2xl border border-white/10 hover:border-gold/30 transition-colors translate-x-5 rtl:-translate-x-5">
                                     <Zap className="w-11 h-11 text-gold mb-4" />
-                                    <h4 className="text-white font-bold mb-2 text-lg">Fast Logistics</h4>
-                                    <p className="text-sm text-white/50">Rapid delivery across Saudi Arabia.</p>
+                                    <h4 className="text-white font-bold mb-2 text-lg">{t('home.cta.logistics_title')}</h4>
+                                    <p className="text-sm text-white/50">{t('home.cta.logistics_desc')}</p>
                                 </div>
                             </div>
                             <div className="space-y-5 pt-10">
                                 <div className="bg-white/5 backdrop-blur-md p-7 rounded-2xl border border-white/10 hover:border-gold/30 transition-colors">
                                     <Settings className="w-11 h-11 text-gold mb-4" />
-                                    <h4 className="text-white font-bold mb-2 text-lg">Expert Support</h4>
-                                    <p className="text-sm text-white/50">Dedicated technical assistance 24/7.</p>
+                                    <h4 className="text-white font-bold mb-2 text-lg">{t('home.cta.support_title')}</h4>
+                                    <p className="text-sm text-white/50">{t('home.cta.support_desc')}</p>
                                 </div>
-                                <div className="bg-gold p-7 rounded-2xl border border-gold/10 flex flex-col justify-center items-center text-center -translate-x-5">
-                                    <div className="text-4xl font-bold text-navy mb-1">24 HR</div>
-                                    <div className="text-xs font-bold text-navy/70 uppercase tracking-widest">Inquiry Response</div>
+                                <div className="bg-gold p-7 rounded-2xl border border-gold/10 flex flex-col justify-center items-center text-center -translate-x-5 rtl:translate-x-5">
+                                    <div className="text-4xl font-bold text-navy mb-1 uppercase">{t('home.cta.response_time')}</div>
+                                    <div className="text-xs font-bold text-navy/70 uppercase tracking-widest">{t('home.cta.response_label')}</div>
                                 </div>
                             </div>
                         </motion.div>

@@ -1,52 +1,54 @@
-"use client";
+'use client';
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { ArrowRight, Shield, Clock, Users, Truck, Wrench, Settings } from "lucide-react";
 import Link from "next/link";
-
-const features = [
-    {
-        icon: Shield,
-        title: "OEM Genuine Parts",
-        description: "Certified by original equipment manufacturers, guaranteeing exact fit and performance.",
-        href: "/about",
-    },
-    {
-        icon: Clock,
-        title: "Express Delivery",
-        description: "Critical parts delivered across the Middle East within 24 hours to minimize downtime.",
-        href: "/shipping",
-    },
-    {
-        icon: Users,
-        title: "Technical Support",
-        description: "Seasoned engineers help you identify the right component—first time, every time.",
-        href: "/contact",
-    },
-    {
-        icon: Wrench,
-        title: "Expert Installation",
-        description: "Certified technicians available for on-site installation and maintenance.",
-        href: "/installation",
-    },
-    {
-        icon: Truck,
-        title: "Global Logistics",
-        description: "Strategic freight partnerships ensure safe and timely deliveries worldwide.",
-        href: "/shipping",
-    },
-    {
-        icon: Settings,
-        title: "Quality Assurance",
-        description: "Rigorous inspection protocols and comprehensive warranties back every product.",
-        href: "/warranty",
-    },
-];
+import { useTranslation } from "react-i18next";
 
 export function FeaturesGridSection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+
+    const features = [
+        {
+            icon: Shield,
+            title: t('home.features.oem_title'),
+            description: t('home.features.oem_desc'),
+            href: "/about",
+        },
+        {
+            icon: Clock,
+            title: t('home.features.delivery_title'),
+            description: t('home.features.delivery_desc'),
+            href: "/shipping",
+        },
+        {
+            icon: Users,
+            title: t('home.features.support_title'),
+            description: t('home.features.support_desc'),
+            href: "/contact",
+        },
+        {
+            icon: Wrench,
+            title: t('home.features.install_title'),
+            description: t('home.features.install_desc'),
+            href: "/installation",
+        },
+        {
+            icon: Truck,
+            title: t('home.features.logistics_title'),
+            description: t('home.features.logistics_desc'),
+            href: "/shipping",
+        },
+        {
+            icon: Settings,
+            title: t('home.features.qa_title'),
+            description: t('home.features.qa_desc'),
+            href: "/warranty",
+        },
+    ];
 
     return (
         <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
@@ -63,11 +65,10 @@ export function FeaturesGridSection() {
                             transition={{ duration: 0.6 }}
                             className="text-center max-w-3xl mx-auto mb-20"
                         >
-                            <span className="micro-label mb-6 block tracking-[0.3em]">WHY CHOOSE US</span>
-                            <h2 className="heading-md mb-8">Built Different</h2>
+                            <span className="micro-label mb-6 block tracking-[0.3em] uppercase">{t('home.features.label')}</span>
+                            <h2 className="heading-md mb-8">{t('home.features.title')}</h2>
                             <p className="text-body-lg text-white/60 leading-relaxed">
-                                We're not just a parts supplier. We're your strategic partner in keeping
-                                heavy machinery running at peak performance.
+                                {t('home.features.subtitle')}
                             </p>
                             <div className="w-16 h-px bg-gold/50 mx-auto mt-8" />
                         </motion.div>
@@ -101,8 +102,8 @@ export function FeaturesGridSection() {
                                             href={feature.href}
                                             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gold/60 hover:text-gold transition-colors"
                                         >
-                                            Learn More
-                                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                            {t('home.features.learn_more')}
+                                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" />
                                         </Link>
                                     </div>
                                 </motion.div>

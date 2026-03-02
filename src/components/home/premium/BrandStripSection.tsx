@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 const brands = [
     { name: "CATERPILLAR", short: "CAT" },
@@ -17,6 +18,7 @@ const brands = [
 ];
 
 export function BrandStripSection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
@@ -33,7 +35,7 @@ export function BrandStripSection() {
                             animate={isInView ? { opacity: 1 } : {}}
                             className="text-center mb-8"
                         >
-                            <span className="micro-label text-white/30">SUPPORTING THE WORLD'S LEADING FLEETS</span>
+                            <span className="micro-label text-white/30 uppercase">{t('home.brands.label')}</span>
                         </motion.div>
 
                         <div ref={containerRef} className="relative">

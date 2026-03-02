@@ -90,5 +90,68 @@
         "vat_label": "VAT",
         "licensed_in": "Licensed in",
         "secure_payments": "Secure Payments"
+    },
+    "home": {
+        "hero": {
+            "label": "SINCE 2009 — PREMIUM EQUIPMENT PARTS",
+            "title": "Engineered for performance.",
+            "subtitle": "Genuine OEM and aftermarket spare parts for the world's toughest machines. Your equipment's reliability starts here.",
+            "cta_explore": "Explore Catalog",
+            "cta_quote": "Get Quote",
+            "trust_oem": "Genuine OEM Parts",
+            "trust_logistics": "Worldwide Logistics",
+            "trust_support": "24/7 Technical Support"
+        },
+        "features": {
+            "label": "WHY CHOOSE US",
+            "title": "Built Different",
+            "subtitle": "We're not just a parts supplier. We're your strategic partner in keeping heavy machinery running at peak performance.",
+            "oem_title": "OEM Genuine Parts",
+            "oem_desc": "Certified by original equipment manufacturers, guaranteeing exact fit and performance.",
+            "delivery_title": "Express Delivery",
+            "delivery_desc": "Critical parts delivered across the Middle East within 24 hours to minimize downtime.",
+            "support_title": "Technical Support",
+            "support_desc": "Seasoned engineers help you identify the right component—first time, every time.",
+            "install_title": "Expert Installation",
+            "install_desc": "Certified technicians available for on-site installation and maintenance.",
+            "logistics_title": "Global Logistics",
+            "logistics_desc": "Strategic freight partnerships ensure safe and timely deliveries worldwide.",
+            "qa_title": "Quality Assurance",
+            "qa_desc": "Rigorous inspection protocols and comprehensive warranties back every product.",
+            "learn_more": "Learn More"
+        },
+        "cta": {
+            "label": "READY TO OPTIMIZE?",
+            "title_prefix": "Powering Your ",
+            "title_accent": "Infrastructure",
+            "title_suffix": " Evolution",
+            "subtitle": "From critical engine components to heavy-duty undercarriage systems, we provide the industrial-grade parts that keep the Kingdom moving.",
+            "cta_consult": "Get Expert Consultation",
+            "cta_catalog": "Browse Full Catalog",
+            "oem_title": "OEM Certified",
+            "oem_desc": "Genuine parts guaranteed for performance.",
+            "logistics_title": "Fast Logistics",
+            "logistics_desc": "Rapid delivery across Saudi Arabia.",
+            "support_title": "Expert Support",
+            "support_desc": "Dedicated technical assistance 24/7.",
+            "response_time": "24 HR",
+            "response_label": "Inquiry Response"
+        },
+        "brands": {
+            "label": "SUPPORTING THE WORLD'S LEADING FLEETS"
+        },
+        "stats": {
+            "label": "OUR IMPACT",
+            "title": "Numbers That Speak",
+            "trust_note": "Trusted by construction leaders, mining operations, and industrial facilities worldwide.",
+            "experience": "Years of Excellence",
+            "experience_detail": "Serving the Middle East since 2009",
+            "clients": "Satisfied Clients",
+            "clients_detail": "Across construction & mining sectors",
+            "products": "Parts Available",
+            "products_detail": "Genuine OEM & aftermarket inventory",
+            "delivery": "On-Time Delivery",
+            "delivery_detail": "Minimizing operational downtime"
+        }
     }
 }

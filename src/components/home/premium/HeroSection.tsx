@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
 import { useRef } from "react";
 import Link from "next/link";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { ArrowRight, ChevronDown, MessageCircle, ShieldCheck, Globe, Clock } from "lucide-react";
+import { ArrowRight, ChevronDown, ShieldCheck, Globe, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function HeroSection() {
+    const { t } = useTranslation();
     const containerRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(containerRef, { once: true, margin: "0px" });
 
@@ -17,9 +19,9 @@ export function HeroSection() {
     const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
 
     const trustSignals = [
-        { icon: ShieldCheck, text: "Genuine OEM Parts" },
-        { icon: Globe, text: "Worldwide Logistics" },
-        { icon: Clock, text: "24/7 Technical Support" },
+        { icon: ShieldCheck, text: t('home.hero.trust_oem') },
+        { icon: Globe, text: t('home.hero.trust_logistics') },
+        { icon: Clock, text: t('home.hero.trust_support') },
     ];
 
     return (
@@ -43,7 +45,7 @@ export function HeroSection() {
                 <div className="absolute inset-0 gradient-hero-overlay" />
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 gradient-accent-glow" />
             </motion.div>
-
+            +
             {/* Content */}
             <div className="container-premium relative z-10">
                 <div className="max-w-4xl">
@@ -55,7 +57,7 @@ export function HeroSection() {
                         className="flex items-center gap-3 mb-8"
                     >
                         <div className="w-12 h-px bg-gold/50" />
-                        <span className="micro-label">SINCE 2009 — PREMIUM EQUIPMENT PARTS</span>
+                        <span className="micro-label uppercase">{t('home.hero.label')}</span>
                     </motion.div>
 
                     {/* Headline */}
@@ -66,8 +68,9 @@ export function HeroSection() {
                         className="text-6xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter mb-10"
                         style={{ fontFamily: 'var(--font-display)' }}
                     >
-                        Engineered for<br />
-                        <span className="text-gradient-gold">performance.</span>
+                        {t('home.hero.title').split('.')[0]}
+                        <br />
+                        <span className="text-gradient-gold">{t('home.hero.title').split('.')[1] || 'performance'}.</span>
                     </motion.h1>
 
                     {/* Subheadline */}
@@ -77,8 +80,7 @@ export function HeroSection() {
                         transition={{ duration: 0.8, delay: 0.3 }}
                         className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed"
                     >
-                        Genuine OEM and aftermarket spare parts for the world's toughest machines.
-                        Your equipment's reliability starts here.
+                        {t('home.hero.subtitle')}
                     </motion.p>
 
                     {/* CTAs */}
@@ -89,15 +91,15 @@ export function HeroSection() {
                         className="flex flex-wrap gap-6 items-center mb-16"
                     >
                         <Link href="/products" className="btn-primary px-10 py-5 text-base">
-                            Explore Catalog
-                            <ArrowRight className="w-5 h-5 ml-2" />
+                            {t('home.hero.cta_explore')}
+                            <ArrowRight className="w-5 h-5 ml-2 rtl:rotate-180 transition-transform" />
                         </Link>
                         <Link href="/contact" className="btn-secondary px-10 py-5 text-base">
-                            Get Quote
+                            {t('home.hero.cta_quote')}
                         </Link>
                     </motion.div>
 
-                    {/* Minimal Trust Indicator - Replaces the heavy Stats box */}
+                    {/* Trust Indicators */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={isInView ? { opacity: 1 } : {}}

@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-
-const stats = [
-    { value: 15, suffix: "+", label: "YEARS OF EXCELLENCE", detail: "Serving the Middle East since 2009" },
-    { value: 1000, suffix: "+", label: "SATISFIED CLIENTS", detail: "Across construction & mining sectors" },
-    { value: 720, suffix: "+", label: "PARTS AVAILABLE", detail: "Genuine OEM & aftermarket inventory" },
-    { value: 98, suffix: "%", label: "ON-TIME DELIVERY", detail: "Minimizing operational downtime" },
-];
+import { useTranslation } from "react-i18next";
 
 function Counter({ value, suffix, inView }: { value: number; suffix: string; inView: boolean }) {
     const [count, setCount] = useState(0);
@@ -41,8 +35,16 @@ function Counter({ value, suffix, inView }: { value: number; suffix: string; inV
 }
 
 export function StatsSection() {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+
+    const stats = [
+        { value: 15, suffix: "+", label: t('home.stats.experience'), detail: t('home.stats.experience_detail') },
+        { value: 1000, suffix: "+", label: t('home.stats.clients'), detail: t('home.stats.clients_detail') },
+        { value: 720, suffix: "+", label: t('home.stats.products'), detail: t('home.stats.products_detail') },
+        { value: 98, suffix: "%", label: t('home.stats.delivery'), detail: t('home.stats.delivery_detail') },
+    ];
 
     return (
         <section
@@ -63,23 +65,23 @@ export function StatsSection() {
                     />
 
                     <div className="relative z-10">
-                        {/* Section Header - Centered with more breathing room */}
+                        {/* Section Header */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={isInView ? { opacity: 1, y: 0 } : {}}
                             transition={{ duration: 0.6 }}
                             className="text-center mb-24 max-w-3xl mx-auto"
                         >
-                            <span className="micro-label mb-6 block tracking-[0.3em]">OUR IMPACT</span>
-                            <h2 className="heading-md mb-6">Numbers That Speak</h2>
+                            <span className="micro-label mb-6 block tracking-[0.3em] uppercase">{t('home.stats.label')}</span>
+                            <h2 className="heading-md mb-6">{t('home.stats.title')}</h2>
                             <div className="w-16 h-1 bg-gold/40 mx-auto rounded-full" />
                         </motion.div>
 
-                        {/* Stats Grid - 4 Columns with clear separation */}
+                        {/* Stats Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
                             {stats.map((stat, index) => (
                                 <motion.div
-                                    key={stat.label}
+                                    key={index}
                                     initial={{ opacity: 0, y: 30 }}
                                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                                     transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
@@ -91,7 +93,7 @@ export function StatsSection() {
                                         inView={isInView}
                                     />
                                     <div className="space-y-3">
-                                        <div className="text-xs font-black text-white/40 tracking-[0.25em] group-hover:text-gold/60 transition-colors">
+                                        <div className="text-xs font-black text-white/40 tracking-[0.25em] group-hover:text-gold/60 transition-colors uppercase">
                                             {stat.label}
                                         </div>
                                         <p className="text-sm text-white/30 max-w-[180px] mx-auto leading-relaxed font-medium">
@@ -110,7 +112,7 @@ export function StatsSection() {
                             className="mt-24 pt-12 border-t border-white/5 text-center"
                         >
                             <p className="text-sm text-white/20 font-bold tracking-widest uppercase">
-                                Trusted by construction leaders, mining operations, and industrial facilities worldwide.
+                                {t('home.stats.trust_note')}
                             </p>
                         </motion.div>
                     </div>
