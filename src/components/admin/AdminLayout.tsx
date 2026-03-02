@@ -57,6 +57,7 @@ const navigation = [
     { name: 'News', href: '/admin/news', icon: FileText },
     { name: 'Inventory', href: '/admin/inventory', icon: Box },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+    { name: 'Quote Requests', href: '/admin/quotes', icon: FileText },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Shipping', href: '/admin/shipping', icon: Truck },
@@ -142,6 +143,21 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
             }
         } catch (error) {
             console.error('Error marking all as read:', error);
+        }
+    };
+
+    const handleNotificationClick = (notif: any) => {
+        if (!notif.isRead) {
+            markAsRead(notif._id);
+        }
+        setShowNotifications(false);
+
+        switch (notif.type) {
+            case 'order': router.push('/admin/orders'); break;
+            case 'user': router.push('/admin/users'); break;
+            case 'inventory': router.push('/admin/inventory'); break;
+            case 'quote': router.push('/admin/quotes'); break;
+            default: break;
         }
     };
 
@@ -326,7 +342,8 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
                                                         notifications.map((notif) => (
                                                             <div
                                                                 key={notif._id}
-                                                                className={`p-5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors relative group ${!notif.isRead ? 'bg-gold/[0.02]' : ''}`}
+                                                                onClick={() => handleNotificationClick(notif)}
+                                                                className={`p-5 border-b border-white/[0.03] hover:bg-white/[0.04] transition-colors relative group cursor-pointer ${!notif.isRead ? 'bg-gold/[0.02]' : ''}`}
                                                             >
                                                                 <div className="flex gap-4">
                                                                     <div className={`mt-1 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${notif.type === 'order' ? 'bg-emerald-500/10 text-emerald-500' :

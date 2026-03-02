@@ -13,6 +13,7 @@ import { FeaturedArticlesSection } from "@/components/home/premium/FeaturedArtic
 import { FAQSection } from "@/components/home/premium/FAQSection";
 import { StatsSection } from "@/components/home/premium/StatsSection";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
+import { PromoBannerStrip } from "@/components/home/PromoBannerStrip";
 
 import { AnimatedConnector, FloatingParticles } from "@/components/effects/SceneEffects";
 
@@ -77,6 +78,8 @@ export default function Home() {
                     <div key={sectionId}>
                         {index > 0 && <AnimatedConnector />}
                         <Component />
+                        {/* Promo banners appear directly after the hero */}
+                        {sectionId === 'hero' && <PromoBannerStrip />}
                     </div>
                 );
             })}

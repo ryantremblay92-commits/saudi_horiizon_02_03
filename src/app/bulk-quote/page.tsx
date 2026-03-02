@@ -48,10 +48,12 @@ export default function BulkQuotePage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            const token = localStorage.getItem('accessToken');
             const response = await fetch('/api/quotes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(formData),
             });

@@ -5,7 +5,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { StatusBadge } from '@/components/admin/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     Search,
@@ -14,14 +13,18 @@ import {
     Truck,
     X,
     Package,
-    CheckCircle,
     XCircle,
     Calendar,
-    ChevronRight,
     DollarSign,
     Clock,
     User,
-    ShieldCheck
+    ShieldCheck,
+    RefreshCw,
+    Flag,
+    AlertTriangle,
+    Loader2,
+    ChevronRight,
+    RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,8 +36,27 @@ interface Order {
     totalAmount: number;
     status: string;
     shippingAddress?: any;
+    adminNote?: string;
     createdAt: string;
 }
+
+// Status config: color, icon, label
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: any }> = {
+    pending: { label: 'Pending', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', Icon: Clock },
+    processing: { label: 'Processing', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', Icon: Loader2 },
+    shipped: { label: 'Shipped', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', Icon: Truck },
+    delivered: { label: 'Delivered', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', Icon: ShieldCheck },
+    cancelled: { label: 'Cancelled', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', Icon: XCircle },
+    refunded: { label: 'Refunded', color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', Icon: RotateCcw },
+    flagged: { label: 'Flagged', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', Icon: Flag },
+};
+
+// Fulfillment flow: what comes next
+const NEXT_STATUS: Record<string, string> = {
+    pending: 'processing',
+    processing: 'shipped',
+    shipped: 'delivered',
+};
 
 export default function AdminOrdersPage() {
     const { isInitialized } = useAuth();
@@ -45,15 +67,13 @@ export default function AdminOrdersPage() {
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
     const [mounted, setMounted] = useState(false);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    // Refund/flag modal state
+    const [actionModal, setActionModal] = useState<{ type: 'refund' | 'flag'; orderId: string } | null>(null);
+    const [actionNote, setActionNote] = useState('');
+    const [actionLoading, setActionLoading] = useState(false);
 
-    useEffect(() => {
-        if (isInitialized) {
-            loadOrders();
-        }
-    }, [isInitialized]);
+    useEffect(() => { setMounted(true); }, []);
+    useEffect(() => { if (isInitialized) loadOrders(); }, [isInitialized]);
 
     const getHeaders = (): HeadersInit => {
         const token = localStorage.getItem('accessToken');
@@ -68,92 +88,69 @@ export default function AdminOrdersPage() {
             setLoading(true);
             const token = localStorage.getItem('accessToken');
             const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
-
             const response = await fetch('/api/orders?admin=true', { headers });
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.message || 'Failed to load orders');
-            }
+            if (!response.ok) throw new Error('Failed to load orders');
             const data = await response.json();
             setOrders(data.orders || []);
         } catch (err: any) {
-            console.error('Failed to load orders:', err);
             toast.error('Failed to load orders');
         } finally {
             setLoading(false);
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'SAR',
-            minimumFractionDigits: 0
-        }).format(amount).replace('SAR', 'SAR ');
-    };
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 })
+            .format(amount).replace('SAR', 'SAR ');
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
-    };
 
-    const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    const updateOrderStatus = async (orderId: string, newStatus: string, note?: string) => {
         try {
             const response = await fetch(`/api/orders/${orderId}`, {
                 method: 'PATCH',
                 headers: getHeaders(),
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ status: newStatus, ...(note ? { note } : {}) })
             });
-
-            if (!response.ok) {
-                const data = await response.json().catch(() => ({}));
-                throw new Error(data.message || 'Failed to update order status');
-            }
-
-            toast.success(`Protocol update: Order marked as ${newStatus}`);
+            if (!response.ok) throw new Error('Failed to update status');
+            toast.success(`Order marked as ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
             loadOrders();
             if (viewOrder?._id === orderId) {
-                setViewOrder(prev => prev ? { ...prev, status: newStatus } : null);
+                setViewOrder(prev => prev ? { ...prev, status: newStatus, adminNote: note || prev.adminNote } : null);
             }
         } catch (err: any) {
             toast.error(err.message || 'Failed to update status');
         }
     };
 
+    const handleActionSubmit = async () => {
+        if (!actionModal) return;
+        setActionLoading(true);
+        const newStatus = actionModal.type === 'refund' ? 'refunded' : 'flagged';
+        await updateOrderStatus(actionModal.orderId, newStatus, actionNote);
+        setActionLoading(false);
+        setActionModal(null);
+        setActionNote('');
+    };
+
     const exportOrders = () => {
-        if (filteredOrders.length === 0) {
-            toast.error('Buffer empty: Nothing to export');
-            return;
-        }
-
+        if (filteredOrders.length === 0) { toast.error('No orders to export'); return; }
         const headers = ['Order ID', 'Customer', 'Items', 'Total', 'Status', 'Date'];
-        const rows = filteredOrders.map(order => [
-            order._id,
-            order.user?.email || 'Guest',
-            order.items?.length || 0,
-            order.totalAmount || 0,
-            order.status,
-            new Date(order.createdAt).toISOString()
+        const rows = filteredOrders.map(o => [
+            o._id, o.user?.email || 'Guest', o.items?.length || 0,
+            o.totalAmount || 0, o.status, new Date(o.createdAt).toISOString()
         ]);
-
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `shi_orders_manifest_${new Date().toISOString().split('T')[0]}.csv`);
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('Manifest exported successfully');
+        const a = document.createElement('a');
+        a.href = url; a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click(); URL.revokeObjectURL(url);
+        toast.success('Orders exported');
     };
 
     const filteredOrders = orders.filter(order => {
@@ -163,195 +160,161 @@ export default function AdminOrdersPage() {
         return matchesSearch && matchesStatus;
     });
 
-    const getNextStatus = (current: string): string | null => {
-        const flow: Record<string, string> = {
-            'pending': 'shipped',
-            'shipped': 'delivered'
-        };
-        return flow[current] || null;
-    };
+    // KPI cards to show (primary statuses)
+    const kpiStatuses = ['pending', 'processing', 'shipped', 'delivered'];
 
     return (
-        <AdminLayout
-            title="Order Management"
-            description="Manage and track customer orders"
-            onRefresh={loadOrders}
-        >
-            {/* KPI Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {['pending', 'shipped', 'delivered', 'cancelled'].map((status, index) => {
-                    const count = orders.filter(o => o.status === status).length;
-                    const colors: Record<string, string> = {
-                        pending: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-                        shipped: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-                        delivered: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-                        cancelled: 'text-red-400 bg-red-500/10 border-red-500/20'
-                    };
-                    const icons: Record<string, any> = {
-                        pending: Clock,
-                        shipped: Truck,
-                        delivered: ShieldCheck,
-                        cancelled: XCircle
-                    };
-                    const Icon = icons[status];
+        <AdminLayout title="Order Management" description="Manage and track customer orders" onRefresh={loadOrders}>
 
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {kpiStatuses.map((status, index) => {
+                    const count = orders.filter(o => o.status === status).length;
+                    const cfg = STATUS_CONFIG[status];
+                    const Icon = cfg.Icon;
+                    const isActive = statusFilter === status;
                     return (
                         <motion.div
                             key={status}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
-                            className={`glass-premium p-6 rounded-[2rem] border transition-all cursor-pointer group hover:scale-[1.02] active:scale-95 ${statusFilter === status ? colors[status] : 'border-white/5 bg-white/[0.02]'}`}
+                            transition={{ delay: index * 0.08 }}
+                            onClick={() => setStatusFilter(isActive ? 'all' : status)}
+                            className={`bg-[#0A1017] border rounded-2xl p-5 cursor-pointer transition-all hover:border-white/[0.08] ${isActive ? `${cfg.border} ${cfg.bg}` : 'border-white/[0.03]'}`}
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${statusFilter === status ? 'bg-current/10 border-current/20' : 'bg-white/5 border-white/10'}`}>
-                                    <Icon className={`w-6 h-6 ${statusFilter === status ? colors[status].split(' ')[0] : 'text-white/20'}`} />
+                            <div className="flex items-center justify-between mb-3">
+                                <div className={`p-2 rounded-xl border ${isActive ? `${cfg.bg} ${cfg.border}` : 'bg-white/[0.03] border-white/[0.05]'}`}>
+                                    <Icon className={`w-4 h-4 ${isActive ? cfg.color : 'text-white/20'} ${status === 'processing' && count > 0 ? 'animate-spin' : ''}`} style={status === 'processing' && count > 0 ? { animationDuration: '2s' } : {}} />
                                 </div>
-                                {statusFilter === status && (
-                                    <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                                )}
+                                {isActive && <div className={`w-1.5 h-1.5 rounded-full ${cfg.color.replace('text-', 'bg-')} animate-pulse`} />}
                             </div>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{status}</p>
-                            <h4 className="text-3xl font-black text-white font-display">{count}</h4>
+                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">{cfg.label}</p>
+                            <p className={`text-2xl font-bold ${isActive ? cfg.color : 'text-white'}`}>{count}</p>
                         </motion.div>
                     );
                 })}
             </div>
 
             {/* Controls */}
-            <div className="flex flex-col lg:flex-row gap-4 mb-8">
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
                 <div className="relative flex-1 group">
-                    <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
+                    <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/20 group-focus-within:text-gold transition-colors" />
                     <Input
-                        placeholder="Search by ID or customer email..."
+                        placeholder="Search by order ID or customer email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-14 bg-white/[0.03] border-white/5 text-white rounded-[1.5rem] h-14 focus:ring-gold/20 focus:border-gold/40 transition-all font-medium"
+                        className="pl-12 bg-white/[0.03] border-white/[0.04] text-white rounded-xl h-12 focus:border-gold/30 transition-all text-sm"
                     />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
+                    {/* Status filter pills */}
+                    {['flagged', 'refunded', 'cancelled'].map(s => {
+                        const cfg = STATUS_CONFIG[s];
+                        return (
+                            <button
+                                key={s}
+                                onClick={() => setStatusFilter(statusFilter === s ? 'all' : s)}
+                                className={`h-12 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${statusFilter === s ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'bg-white/[0.03] border-white/[0.04] text-slate-500 hover:text-white'}`}
+                            >
+                                {cfg.label}
+                            </button>
+                        );
+                    })}
                     <Button
                         variant="ghost"
-                        className="h-14 px-8 border border-white/5 bg-white/[0.03] text-white/60 hover:text-white rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px]"
+                        className="h-12 px-5 border border-white/[0.04] bg-white/[0.03] text-slate-500 hover:text-white rounded-xl font-bold uppercase tracking-widest text-[10px]"
                         onClick={exportOrders}
                     >
                         <Download className="h-4 w-4 mr-2" />
-                        Export Orders
+                        Export
                     </Button>
                 </div>
             </div>
 
-            {/* Table Container */}
-            <div className="glass-premium rounded-[2.5rem] border border-white/5 bg-white/[0.01] overflow-hidden shadow-2xl">
+            {/* Table */}
+            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl overflow-hidden">
                 {loading ? (
-                    <div className="p-32 text-center">
-                        <div className="relative w-16 h-16 mx-auto mb-8">
-                            <div className="absolute inset-0 border-4 border-gold/10 rounded-full"></div>
-                            <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
+                    <div className="p-20 text-center">
+                        <div className="relative w-12 h-12 mx-auto mb-6">
+                            <div className="absolute inset-0 border-2 border-white/5 rounded-full" />
+                            <div className="absolute inset-0 border-2 border-gold border-t-transparent rounded-full animate-spin" />
                         </div>
-                        <p className="text-white/30 font-black uppercase tracking-[0.3em] animate-pulse">Loading orders...</p>
+                        <p className="text-slate-600 text-xs font-semibold uppercase tracking-widest">Loading orders...</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-white/[0.03] border-b border-white/5">
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Order ID</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Customer</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Items</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Total</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Status</th>
-                                    <th className="px-8 py-7 text-left text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Order Date</th>
-                                    <th className="px-8 py-7 text-right text-[10px] font-black text-white/40 uppercase tracking-[0.2em] font-display">Actions</th>
+                                <tr className="border-b border-white/[0.04]">
+                                    {['Order ID', 'Customer', 'Items', 'Total', 'Status', 'Date', 'Actions'].map((h, i) => (
+                                        <th key={h} className={`px-6 py-5 text-[9px] font-bold text-slate-600 uppercase tracking-widest ${i === 6 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                    ))}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {filteredOrders.length > 0 ? (
-                                    filteredOrders.map((order) => (
-                                        <tr key={order._id} className="hover:bg-white/[0.03] transition-colors group">
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-1.5 h-6 bg-gold/40 rounded-full group-hover:bg-gold transition-colors" />
-                                                    <span className="text-white font-mono text-sm font-black tracking-tighter group-hover:text-gold transition-colors">
-                                                        #{order._id.slice(-8).toUpperCase()}
-                                                    </span>
+                            <tbody className="divide-y divide-white/[0.03]">
+                                {filteredOrders.length > 0 ? filteredOrders.map((order) => {
+                                    const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                                    const Icon = cfg.Icon;
+                                    const nextStatus = NEXT_STATUS[order.status];
+                                    const nextCfg = nextStatus ? STATUS_CONFIG[nextStatus] : null;
+                                    return (
+                                        <tr key={order._id} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-1 h-5 rounded-full ${cfg.color.replace('text-', 'bg-')} opacity-60`} />
+                                                    <span className="text-white font-mono text-xs font-bold">#{order._id.slice(-8).toUpperCase()}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
-                                                        <User className="w-4 h-4 text-white/20" />
+                                            <td className="px-6 py-5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-center">
+                                                        <User className="w-3.5 h-3.5 text-white/20" />
                                                     </div>
-                                                    <span className="text-white/60 font-bold text-sm tracking-tight">{order.user?.email || 'Guest Terminal'}</span>
+                                                    <span className="text-slate-400 text-xs font-medium">{order.user?.email || 'Guest'}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <Badge variant="outline" className="bg-white/5 border-white/5 text-white/40 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                                    {order.items?.length || 0} Units
-                                                </Badge>
+                                            <td className="px-6 py-5">
+                                                <span className="text-xs text-slate-500 font-semibold">{order.items?.length || 0} item{order.items?.length !== 1 ? 's' : ''}</span>
                                             </td>
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <span className="text-white font-black font-display text-lg">
-                                                    {mounted ? formatCurrency(order.totalAmount || 0) : '---'}
-                                                </span>
+                                            <td className="px-6 py-5">
+                                                <span className="text-sm font-bold text-gold">{mounted ? formatCurrency(order.totalAmount || 0) : '---'}</span>
                                             </td>
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <select
-                                                    value={order.status}
-                                                    onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                                                    className="bg-navy/80 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-gold/30 cursor-pointer hover:border-gold/30 transition-all appearance-none text-center min-w-[120px]"
-                                                >
-                                                    <option value="pending">Pending</option>
-                                                    <option value="shipped">Shipped</option>
-                                                    <option value="delivered">Delivered</option>
-                                                    <option value="cancelled">Cancelled</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-8 py-7 whitespace-nowrap">
-                                                <div className="flex flex-col">
-                                                    <span className="text-white/40 text-[11px] font-bold tracking-tight">
-                                                        {formatDate(order.createdAt).split('at')[0]}
-                                                    </span>
-                                                    <span className="text-[10px] text-white/20 font-black uppercase tracking-widest">
-                                                        {formatDate(order.createdAt).split('at')[1]}
-                                                    </span>
+                                            <td className="px-6 py-5">
+                                                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${cfg.bg} ${cfg.border} border`}>
+                                                    <Icon className={`w-3 h-3 ${cfg.color} ${order.status === 'processing' ? 'animate-spin' : ''}`} style={order.status === 'processing' ? { animationDuration: '2s' } : {}} />
+                                                    <span className={`text-[10px] font-bold uppercase tracking-widest ${cfg.color}`}>{cfg.label}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-7 whitespace-nowrap text-right">
-                                                <div className="flex items-center justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="w-12 h-12 rounded-2xl text-white/20 hover:text-white hover:bg-white/5"
-                                                        onClick={() => setViewOrder(order)}
-                                                    >
-                                                        <Eye className="h-5 w-5" />
+                                            <td className="px-6 py-5">
+                                                <span className="text-xs text-slate-600">{formatDate(order.createdAt)}</span>
+                                            </td>
+                                            <td className="px-6 py-5 text-right">
+                                                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg text-slate-600 hover:text-white hover:bg-white/5" onClick={() => setViewOrder(order)}>
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                    {getNextStatus(order.status) && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="w-12 h-12 rounded-2xl text-white/20 hover:text-blue-400 hover:bg-blue-500/10"
-                                                            onClick={() => updateOrderStatus(order._id, getNextStatus(order.status)!)}
+                                                    {nextCfg && (
+                                                        <button
+                                                            onClick={() => updateOrderStatus(order._id, nextStatus)}
+                                                            title={`Mark as ${nextCfg.label}`}
+                                                            className={`h-8 px-3 rounded-lg ${nextCfg.bg} ${nextCfg.border} border ${nextCfg.color} text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all hover:opacity-80`}
                                                         >
-                                                            <Truck className="h-5 w-5" />
-                                                        </Button>
+                                                            <ChevronRight className="w-3 h-3" />
+                                                            {nextCfg.label}
+                                                        </button>
                                                     )}
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
+                                    );
+                                }) : (
                                     <tr>
-                                        <td colSpan={7} className="px-8 py-32 text-center">
-                                            <div className="max-w-xs mx-auto">
-                                                <div className="w-20 h-20 rounded-[2rem] bg-white/5 flex items-center justify-center mx-auto mb-6">
-                                                    <Package className="w-10 h-10 text-white/10" />
-                                                </div>
-                                                <h5 className="text-white font-black font-display uppercase tracking-widest mb-2">No orders found</h5>
-                                                <p className="text-white/30 text-xs font-bold leading-relaxed">Try adjusting your search or filters.</p>
+                                        <td colSpan={7} className="px-6 py-24 text-center">
+                                            <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center mx-auto mb-4">
+                                                <Package className="w-6 h-6 text-white/10" />
                                             </div>
+                                            <p className="text-slate-600 text-xs font-semibold uppercase tracking-widest">No orders found</p>
+                                            <p className="text-slate-700 text-xs mt-1">Try adjusting your search or filters</p>
                                         </td>
                                     </tr>
                                 )}
@@ -361,120 +324,245 @@ export default function AdminOrdersPage() {
                 )}
             </div>
 
-            {/* Modal */}
+            {/* Order Detail Modal */}
             <AnimatePresence>
                 {viewOrder && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-navy/80 backdrop-blur-xl z-50 flex items-center justify-center p-4"
                         onClick={() => setViewOrder(null)}
                     >
                         <motion.div
-                            initial={{ scale: 0.95, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: 20 }}
-                            className="bg-gray-900 border border-white/10 rounded-[3rem] max-w-2xl w-full p-10 max-h-[90vh] overflow-y-auto shadow-[0_0_100px_rgba(0,0,0,0.5)] custom-scrollbar"
+                            initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                            className="bg-[#0D1620] border border-white/[0.06] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="flex items-center justify-between mb-10">
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-white/[0.05] flex items-start justify-between">
                                 <div>
-                                    <h3 className="text-3xl font-black text-white font-display uppercase tracking-tight">Order Details</h3>
-                                    <p className="text-gold text-xs font-black uppercase tracking-[0.3em] mt-2">Order #{viewOrder._id.slice(-8).toUpperCase()}</p>
+                                    <h3 className="text-base font-bold text-white">Order Details</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">#{viewOrder._id.slice(-8).toUpperCase()} · {formatDate(viewOrder.createdAt)}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => setViewOrder(null)} className="w-14 h-14 rounded-3xl bg-white/5 text-white/40 hover:text-white">
-                                    <X className="h-6 w-6" />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                                <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Order Status</p>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gold/10 flex items-center justify-center border border-gold/20">
-                                            <Clock className="w-6 h-6 text-gold" />
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-black uppercase tracking-widest text-sm">{viewOrder.status}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
-                                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Order Total</p>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                                            <DollarSign className="w-6 h-6 text-emerald-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-black font-display text-2xl">{formatCurrency(viewOrder.totalAmount || 0)}</p>
-                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Total Amount Paid</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Items Table */}
-                            <div className="mb-10">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Order Items</p>
-                                <div className="space-y-3">
-                                    {viewOrder.items?.map((item, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.05] transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-navy flex items-center justify-center border border-white/5">
-                                                    <Package className="w-5 h-5 text-white/10 group-hover:text-gold transition-colors" />
-                                                </div>
-                                                <div>
-                                                    <p className="text-white font-bold text-sm tracking-tight">{item.name || 'Product'}</p>
-                                                    <p className="text-[10px] text-white/30 font-black tracking-widest">QTY: {item.quantity}</p>
-                                                </div>
+                                <div className="flex items-center gap-3">
+                                    {/* Status badge */}
+                                    {(() => {
+                                        const cfg = STATUS_CONFIG[viewOrder.status] || STATUS_CONFIG.pending;
+                                        const Icon = cfg.Icon;
+                                        return (
+                                            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${cfg.bg} ${cfg.border} border`}>
+                                                <Icon className={`w-3 h-3 ${cfg.color}`} />
+                                                <span className={`text-[10px] font-bold uppercase ${cfg.color}`}>{cfg.label}</span>
                                             </div>
-                                            <span className="text-white font-black font-display">{formatCurrency(item.price * item.quantity)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Logistics Address */}
-                            <div className="mb-10">
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4 pl-2">Shipping Address</p>
-                                <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
-                                            <Truck className="w-5 h-5 text-blue-400" />
-                                        </div>
-                                        <p className="text-white font-bold text-sm leading-relaxed tracking-tight">
-                                            {typeof viewOrder.shippingAddress === 'string'
-                                                ? viewOrder.shippingAddress
-                                                : JSON.stringify(viewOrder.shippingAddress, null, 2)
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Protocol Actions */}
-                            {viewOrder.status !== 'delivered' && viewOrder.status !== 'cancelled' && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {getNextStatus(viewOrder.status) && (
-                                        <Button
-                                            className="h-16 bg-gold hover:bg-white text-navy font-black uppercase tracking-widest rounded-2xl transition-all shadow-2xl shadow-gold/20 flex items-center justify-center gap-3"
-                                            onClick={() => updateOrderStatus(viewOrder._id, getNextStatus(viewOrder.status)!)}
-                                        >
-                                            <Truck className="w-5 h-5" />
-                                            Mark as {getNextStatus(viewOrder.status)}
-                                        </Button>
-                                    )}
-                                    <Button
-                                        variant="outline"
-                                        className="h-16 border-white/5 bg-white/5 text-white/40 font-black uppercase tracking-widest rounded-2xl hover:bg-red-500/10 hover:text-red-400 transition-all flex items-center justify-center gap-3"
-                                        onClick={() => updateOrderStatus(viewOrder._id, 'cancelled')}
-                                    >
-                                        <XCircle className="w-5 h-5" />
-                                        Cancel Order
+                                        );
+                                    })()}
+                                    <Button variant="ghost" size="icon" onClick={() => setViewOrder(null)} className="w-8 h-8 rounded-lg bg-white/[0.03] text-slate-600 hover:text-white">
+                                        <X className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            )}
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                {/* Summary row */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4">
+                                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Customer</p>
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-4 h-4 text-slate-600" />
+                                            <span className="text-sm text-slate-300 font-medium">{viewOrder.user?.email || 'Guest'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4">
+                                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Order Total</p>
+                                        <p className="text-xl font-bold text-gold">{formatCurrency(viewOrder.totalAmount || 0)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Status pipeline */}
+                                <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4">
+                                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-4">Fulfillment Pipeline</p>
+                                    <div className="flex items-center gap-2">
+                                        {['pending', 'processing', 'shipped', 'delivered'].map((s, idx, arr) => {
+                                            const cfg = STATUS_CONFIG[s];
+                                            const Icon = cfg.Icon;
+                                            const statusOrder = ['pending', 'processing', 'shipped', 'delivered'];
+                                            const currentIdx = statusOrder.indexOf(viewOrder.status);
+                                            const thisIdx = statusOrder.indexOf(s);
+                                            const isDone = thisIdx < currentIdx;
+                                            const isCurrent = thisIdx === currentIdx;
+                                            return (
+                                                <div key={s} className="flex items-center gap-2 flex-1">
+                                                    <div className={`flex flex-col items-center gap-1 flex-1 ${isCurrent ? cfg.color : isDone ? 'text-white/40' : 'text-white/10'}`}>
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${isCurrent ? `${cfg.bg} ${cfg.border}` : isDone ? 'bg-white/5 border-white/10' : 'bg-transparent border-white/5'}`}>
+                                                            <Icon className={`w-4 h-4 ${isCurrent ? cfg.color : isDone ? 'text-white/40' : 'text-white/10'}`} />
+                                                        </div>
+                                                        <span className={`text-[8px] font-bold uppercase tracking-wider ${isCurrent ? cfg.color : isDone ? 'text-white/30' : 'text-white/10'}`}>{cfg.label}</span>
+                                                    </div>
+                                                    {idx < arr.length - 1 && (
+                                                        <div className={`h-px flex-1 mb-4 ${isDone ? 'bg-white/20' : 'bg-white/5'}`} />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Items */}
+                                <div>
+                                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-3">Order Items</p>
+                                    <div className="space-y-2">
+                                        {viewOrder.items?.map((item, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-white/[0.03] flex items-center justify-center">
+                                                        <Package className="w-4 h-4 text-white/20" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-white font-medium">{item.name || 'Product'}</p>
+                                                        <p className="text-[10px] text-slate-600">Qty: {item.quantity}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-sm font-bold text-white">{formatCurrency(item.price * item.quantity)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Shipping */}
+                                {viewOrder.shippingAddress && (
+                                    <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4">
+                                        <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-2">Shipping Address</p>
+                                        <div className="flex items-start gap-3">
+                                            <Truck className="w-4 h-4 text-slate-600 mt-0.5 shrink-0" />
+                                            <p className="text-sm text-slate-400 leading-relaxed">
+                                                {typeof viewOrder.shippingAddress === 'string'
+                                                    ? viewOrder.shippingAddress
+                                                    : [
+                                                        viewOrder.shippingAddress.fullName,
+                                                        viewOrder.shippingAddress.address,
+                                                        viewOrder.shippingAddress.city,
+                                                        viewOrder.shippingAddress.country
+                                                    ].filter(Boolean).join(', ')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Admin note if exists */}
+                                {viewOrder.adminNote && (
+                                    <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-4">
+                                        <p className="text-[9px] font-bold text-orange-400/70 uppercase tracking-widest mb-1">Admin Note</p>
+                                        <p className="text-sm text-orange-200/70">{viewOrder.adminNote}</p>
+                                    </div>
+                                )}
+
+                                {/* Action buttons */}
+                                <div className="pt-2 border-t border-white/[0.04]">
+                                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-3">Actions</p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {/* Advance fulfillment */}
+                                        {NEXT_STATUS[viewOrder.status] && (
+                                            <Button
+                                                className="h-10 px-5 bg-gold hover:bg-white text-navy font-bold rounded-xl text-xs uppercase tracking-widest gap-2"
+                                                onClick={() => updateOrderStatus(viewOrder._id, NEXT_STATUS[viewOrder.status])}
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                                Mark as {STATUS_CONFIG[NEXT_STATUS[viewOrder.status]]?.label}
+                                            </Button>
+                                        )}
+
+                                        {/* Refund — only for delivered */}
+                                        {viewOrder.status === 'delivered' && (
+                                            <Button
+                                                variant="outline"
+                                                className="h-10 px-5 bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20 font-bold rounded-xl text-xs uppercase tracking-widest gap-2"
+                                                onClick={() => setActionModal({ type: 'refund', orderId: viewOrder._id })}
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                                Issue Refund
+                                            </Button>
+                                        )}
+
+                                        {/* Flag — for any active order */}
+                                        {!['cancelled', 'refunded', 'flagged', 'delivered'].includes(viewOrder.status) && (
+                                            <Button
+                                                variant="outline"
+                                                className="h-10 px-5 bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 font-bold rounded-xl text-xs uppercase tracking-widest gap-2"
+                                                onClick={() => setActionModal({ type: 'flag', orderId: viewOrder._id })}
+                                            >
+                                                <Flag className="w-4 h-4" />
+                                                Flag for Review
+                                            </Button>
+                                        )}
+
+                                        {/* Cancel */}
+                                        {!['delivered', 'cancelled', 'refunded'].includes(viewOrder.status) && (
+                                            <Button
+                                                variant="outline"
+                                                className="h-10 px-5 bg-white/[0.02] border-white/[0.06] text-slate-500 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 font-bold rounded-xl text-xs uppercase tracking-widest gap-2 transition-all"
+                                                onClick={() => updateOrderStatus(viewOrder._id, 'cancelled')}
+                                            >
+                                                <XCircle className="w-4 h-4" />
+                                                Cancel Order
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Refund / Flag confirmation modal */}
+            <AnimatePresence>
+                {actionModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+                        onClick={() => !actionLoading && setActionModal(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
+                            className="bg-[#0D1620] border border-white/[0.08] rounded-2xl w-full max-w-md p-6 shadow-2xl"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className={`w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center border ${actionModal.type === 'refund' ? 'bg-orange-500/10 border-orange-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
+                                {actionModal.type === 'refund'
+                                    ? <RotateCcw className="w-6 h-6 text-orange-400" />
+                                    : <Flag className="w-6 h-6 text-rose-400" />}
+                            </div>
+                            <h4 className="text-center text-base font-bold text-white mb-1">
+                                {actionModal.type === 'refund' ? 'Issue Refund' : 'Flag for Review'}
+                            </h4>
+                            <p className="text-center text-xs text-slate-500 mb-5">
+                                {actionModal.type === 'refund'
+                                    ? 'This will mark the order as refunded. Add a reason below.'
+                                    : 'This will flag the order for manual review. Add a note below.'}
+                            </p>
+                            <textarea
+                                value={actionNote}
+                                onChange={e => setActionNote(e.target.value)}
+                                placeholder={actionModal.type === 'refund' ? 'Reason for refund (e.g. damaged item, customer request)...' : 'Note for review (e.g. suspicious activity, payment issue)...'}
+                                rows={3}
+                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-sm text-white placeholder:text-slate-700 focus:outline-none focus:border-white/[0.12] resize-none"
+                            />
+                            <div className="flex gap-3 mt-4">
+                                <Button
+                                    variant="ghost"
+                                    className="flex-1 h-10 rounded-xl border border-white/[0.05] text-slate-500 hover:text-white text-xs font-bold"
+                                    onClick={() => !actionLoading && setActionModal(null)}
+                                    disabled={actionLoading}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    className={`flex-1 h-10 rounded-xl text-xs font-bold uppercase tracking-widest ${actionModal.type === 'refund' ? 'bg-orange-500 hover:bg-orange-400 text-white' : 'bg-rose-500 hover:bg-rose-400 text-white'}`}
+                                    onClick={handleActionSubmit}
+                                    disabled={actionLoading}
+                                >
+                                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : actionModal.type === 'refund' ? 'Confirm Refund' : 'Flag Order'}
+                                </Button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

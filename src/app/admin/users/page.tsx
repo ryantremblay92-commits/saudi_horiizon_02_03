@@ -287,14 +287,14 @@ export default function AdminUsersPage() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                        className="glass-premium p-6 rounded-[2rem] border border-white/5 bg-white/[0.02] flex items-center gap-5"
+                        className="bg-[#0A1017] border border-white/[0.03] p-5 rounded-2xl flex items-center gap-4 hover:border-white/[0.08] transition-all"
                     >
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 bg-white/5`}>
-                            <kpi.icon className={`w-7 h-7 ${kpi.color}`} />
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border border-white/[0.05] bg-white/[0.03]`}>
+                            <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{kpi.label}</p>
-                            <h4 className="text-3xl font-black text-white font-display leading-none">{kpi.value}</h4>
+                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">{kpi.label}</p>
+                            <h4 className="text-2xl font-bold text-white leading-none">{kpi.value}</h4>
                         </div>
                     </motion.div>
                 ))}
@@ -353,7 +353,7 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Users Table */}
-            <div className="glass-premium rounded-[2.5rem] border border-white/5 bg-white/[0.01] overflow-hidden shadow-2xl">
+            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl overflow-hidden">
                 {loading ? (
                     <div className="p-32 text-center">
                         <div className="relative w-16 h-16 mx-auto mb-8">

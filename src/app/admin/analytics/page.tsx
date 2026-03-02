@@ -131,64 +131,127 @@ export default function AdminAnalyticsPage() {
 
     const formatNumber = (num: number) => new Intl.NumberFormat('en-US').format(num);
 
-    const BarChartSVG = ({ data, maxVal, color = "#C5A059" }: { data: Array<{ label: string; value: number }>; maxVal: number; color?: string }) => {
-        if (!data || data.length === 0) return (
-            <div className="h-64 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl">
-                <BarChart3 className="w-8 h-8 text-white/5 mb-2" />
+    const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string; value: number } | null>(null);
+
+    const LineChartSVG = ({ data, color = '#C5A059' }: { data: Array<{ label: string; value: number }>; color?: string }) => {
+        if (!data || data.length < 2) return (
+            <div className="h-52 flex flex-col items-center justify-center border border-dashed border-white/[0.06] rounded-2xl w-full">
+                <TrendingUp className="w-8 h-8 text-white/5 mb-2" />
                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Not enough data</p>
             </div>
         );
 
-        const height = 160;
-        const padding = 20;
-        const barGap = 12;
-        const barWidth = 32;
-        const width = data.length * (barWidth + barGap) + padding * 2;
+        const W = 520, H = 160, PAD = { top: 12, right: 16, bottom: 28, left: 50 };
+        const innerW = W - PAD.left - PAD.right;
+        const innerH = H - PAD.top - PAD.bottom;
+        const maxV = Math.max(...data.map(d => d.value)) || 1;
+        const minV = Math.min(...data.map(d => d.value));
+        const range = maxV - minV || 1;
+
+        const px = (i: number) => PAD.left + (i / (data.length - 1)) * innerW;
+        const py = (v: number) => PAD.top + innerH - ((v - minV) / range) * innerH;
+
+        // Smooth cubic bezier path
+        const pts = data.map((d, i) => ({ x: px(i), y: py(d.value) }));
+        let pathD = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 1; i < pts.length; i++) {
+            const cpX = (pts[i - 1].x + pts[i].x) / 2;
+            pathD += ` C ${cpX} ${pts[i - 1].y}, ${cpX} ${pts[i].y}, ${pts[i].x} ${pts[i].y}`;
+        }
+        // Area path (close at bottom)
+        const areaD = pathD + ` L ${pts[pts.length - 1].x} ${PAD.top + innerH} L ${pts[0].x} ${PAD.top + innerH} Z`;
+
+        const gradId = 'lineAreaGrad';
+        const fmtVal = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(v).replace('SAR', 'SAR ');
 
         return (
-            <div className="overflow-x-auto pb-4 scrollbar-hide">
-                <svg width={width} height={height + 40} className="overflow-visible">
+            <div className="relative w-full select-none">
+                <svg
+                    viewBox={`0 0 ${W} ${H}`}
+                    className="w-full overflow-visible"
+                    onMouseLeave={() => setTooltip(null)}
+                >
                     <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={color} stopOpacity="1" />
-                            <stop offset="100%" stopColor={color} stopOpacity="0.2" />
+                        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+                            <stop offset="100%" stopColor={color} stopOpacity="0" />
                         </linearGradient>
-                        <filter id="barGlow">
-                            <feGaussianBlur stdDeviation="2" result="blur" />
-                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                        </filter>
                     </defs>
-                    {data.map((d, i) => {
-                        const h = maxVal > 0 ? (d.value / maxVal) * height : 0;
-                        const x = padding + i * (barWidth + barGap);
-                        const y = height - h + 10;
 
+                    {/* Grid lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+                        const y = PAD.top + innerH * t;
+                        const v = maxV - t * range;
                         return (
-                            <g key={i} className="group cursor-help">
-                                <motion.rect
-                                    initial={{ height: 0, y: height + 10 }}
-                                    animate={{ height: h, y: y }}
-                                    transition={{ duration: 0.8, delay: i * 0.05, ease: "easeOut" }}
-                                    x={x}
-                                    width={barWidth}
-                                    fill="url(#barGradient)"
-                                    rx="6"
-                                    filter="url(#barGlow)"
-                                    className="opacity-70 group-hover:opacity-100 transition-opacity"
-                                />
-                                <text
-                                    x={x + barWidth / 2}
-                                    y={height + 30}
-                                    textAnchor="middle"
-                                    className="text-[8px] font-black fill-white/20 uppercase tracking-tighter"
-                                >
-                                    {d.label.split('-').pop()}
+                            <g key={i}>
+                                <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                                <text x={PAD.left - 6} y={y + 4} textAnchor="end" className="text-[9px]" fill="rgba(255,255,255,0.2)" fontSize="9">
+                                    {v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v.toFixed(0)}
                                 </text>
-                                <title>{d.label}: {d.value}</title>
                             </g>
                         );
                     })}
+
+                    {/* Area fill */}
+                    <path d={areaD} fill={`url(#${gradId})`} />
+
+                    {/* Line */}
+                    <motion.path
+                        d={pathD}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{ duration: 1.2, ease: 'easeInOut' }}
+                    />
+
+                    {/* Invisible hover zones + dots */}
+                    {pts.map((pt, i) => (
+                        <g key={i}>
+                            {/* Hover ghost column */}
+                            <rect
+                                x={pt.x - (innerW / (data.length - 1)) / 2}
+                                y={PAD.top}
+                                width={innerW / (data.length - 1)}
+                                height={innerH}
+                                fill="transparent"
+                                onMouseEnter={() => setTooltip({ x: pt.x, y: pt.y, label: data[i].label, value: data[i].value })}
+                            />
+                            {/* Dot — only show hovered */}
+                            {tooltip?.label === data[i].label && (
+                                <>
+                                    <circle cx={pt.x} cy={pt.y} r={5} fill={color} stroke="#0A1017" strokeWidth="2" />
+                                    <circle cx={pt.x} cy={pt.y} r={3} fill="white" />
+                                </>
+                            )}
+                            {/* X axis labels */}
+                            <text x={pt.x} y={H - 2} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="9">
+                                {data[i].label.split('-').slice(-2).join('/')}
+                            </text>
+                        </g>
+                    ))}
                 </svg>
+
+                {/* Tooltip */}
+                {tooltip && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="absolute pointer-events-none"
+                        style={{
+                            left: `${(tooltip.x / W) * 100}%`,
+                            top: `${(tooltip.y / H) * 100}%`,
+                            transform: 'translate(-50%, -130%)'
+                        }}
+                    >
+                        <div className="bg-[#111921] border border-white/10 rounded-xl px-3 py-2 shadow-xl">
+                            <p className="text-[9px] text-slate-500 font-bold whitespace-nowrap">{tooltip.label}</p>
+                            <p className="text-sm font-bold text-gold whitespace-nowrap">{fmtVal(tooltip.value)}</p>
+                        </div>
+                    </motion.div>
+                )}
             </div>
         );
     };
@@ -223,7 +286,7 @@ export default function AdminAnalyticsPage() {
                 </div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32 border border-dashed border-white/10 rounded-[3rem]">
+                    <div className="flex flex-col items-center justify-center py-32 border border-dashed border-white/[0.06] rounded-2xl">
                         <div className="relative w-24 h-24 mb-6">
                             <div className="absolute inset-0 border-4 border-gold/10 rounded-full"></div>
                             <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin"></div>
@@ -238,13 +301,12 @@ export default function AdminAnalyticsPage() {
                         className="space-y-10"
                     >
                         {/* Key Metrics */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <StatBox
                                 label="Total Sales"
                                 value={mounted ? formatCurrency(salesData?.summary.totalRevenue || 0) : '---'}
-                                sub={`From ${salesData?.summary.totalOrders} orders`}
+                                sub={`From ${salesData?.summary.totalOrders || 0} orders`}
                                 icon={TrendingUp}
-                                trend="+18.4%"
                                 color="text-emerald-400"
                             />
                             <StatBox
@@ -252,7 +314,6 @@ export default function AdminAnalyticsPage() {
                                 value={formatNumber(userData?.activeUsers30Days || 0)}
                                 sub="Users active this month"
                                 icon={Users}
-                                trend="+11%"
                                 color="text-gold"
                                 isNumber
                             />
@@ -261,7 +322,6 @@ export default function AdminAnalyticsPage() {
                                 value={formatNumber(inventoryData?.outOfStockCount || 0)}
                                 sub="Items needing restock"
                                 icon={AlertTriangle}
-                                trend="+2 units"
                                 color="text-red-500"
                                 isNumber
                             />
@@ -270,44 +330,42 @@ export default function AdminAnalyticsPage() {
                                 value={mounted ? formatNumber(inventoryData?.summary.totalStock || 0) : '---'}
                                 sub="Total items in warehouse"
                                 icon={Box}
-                                trend="-0.5%"
                                 color="text-blue-400"
                                 isNumber
                             />
                         </div>
 
                         {/* Performance Analysis */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Trend Visualization */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-10 flex flex-col">
+                            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl p-7 flex flex-col">
                                 <div className="flex items-center justify-between mb-10">
                                     <div>
-                                        <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Sales Trend</h3>
-                                        <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-1">Revenue over time</p>
+                                        <h3 className="text-sm font-bold text-white tracking-tight">Sales Trend</h3>
+                                        <p className="text-[10px] text-slate-500 font-medium mt-0.5">Revenue over time</p>
                                     </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-                                        <BarChart3 className="w-6 h-6 text-gold" />
+                                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                                        <TrendingUp className="w-5 h-5 text-gold" />
                                     </div>
                                 </div>
-                                <div className="flex-1 min-h-[250px] flex items-end justify-center">
-                                    <BarChartSVG
+                                <div className="flex-1 min-h-[200px] pt-2">
+                                    <LineChartSVG
                                         data={salesData?.salesTrend.map(d => ({ label: d._id, value: d.sales })) || []}
-                                        maxVal={Math.max(...(salesData?.salesTrend.map(d => d.sales) || [0]))}
                                         color="#C5A059"
                                     />
                                 </div>
-                                <div className="mt-8 pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
-                                    <span>Real-time Data</span>
+                                <div className="mt-4 pt-4 border-t border-white/[0.04] flex items-center justify-between text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
+                                    <span>Real-time</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span>Sync Active</span>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-emerald-500">Sync Active</span>
                                     </div>
                                     <span>Verified</span>
                                 </div>
                             </div>
 
                             {/* Product Performance Rankings */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-10">
+                            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl p-7">
                                 <div className="flex items-center justify-between mb-10">
                                     <div>
                                         <h3 className="text-2xl font-black text-white font-display uppercase tracking-tight">Top Products</h3>
@@ -321,7 +379,7 @@ export default function AdminAnalyticsPage() {
 
                                 <div className="space-y-6">
                                     {(salesData?.topProducts || []).slice(0, 5).map((product, idx) => (
-                                        <div key={idx} className="group flex items-center justify-between p-5 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-gold/30 transition-all cursor-default">
+                                        <div key={idx} className="group flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] hover:border-gold/20 transition-all cursor-default">
                                             <div className="flex items-center gap-5">
                                                 <div className="w-12 h-12 rounded-2xl bg-navy flex items-center justify-center border border-white/10 group-hover:border-gold/30 transition-all">
                                                     <span className="text-xs font-black text-gold font-display">{idx + 1}</span>
@@ -350,16 +408,16 @@ export default function AdminAnalyticsPage() {
                         </div>
 
                         {/* Distribution & Alerts */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Inventory Alerts */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
+                            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl p-6">
                                 <div className="flex items-center justify-between mb-8">
                                     <h3 className="text-lg font-black text-white font-display uppercase tracking-tight">Stock Alerts</h3>
                                     <StatusBadge status={inventoryData?.outOfStockCount === 0 ? 'active' : 'pending'} />
                                 </div>
                                 <div className="space-y-4">
                                     {inventoryData?.lowStockProducts.slice(0, 5).map((item, i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all group">
+                                        <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] transition-all group">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20 group-hover:border-red-500 transition-all">
                                                     <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -381,8 +439,8 @@ export default function AdminAnalyticsPage() {
                             </div>
 
                             {/* Activity Summary */}
-                            <div className="glass-premium rounded-[3rem] border border-white/5 p-8">
-                                <h3 className="text-lg font-black text-white font-display uppercase tracking-tight mb-8">Quick Statistics</h3>
+                            <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl p-6">
+                                <h3 className="text-sm font-bold text-white tracking-tight mb-6">Quick Statistics</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     {[
                                         { label: 'Total Revenue', val: formatCurrency(salesData?.summary.totalRevenue || 0), color: 'text-emerald-400' },
@@ -390,7 +448,7 @@ export default function AdminAnalyticsPage() {
                                         { label: 'Total Customers', val: formatNumber(userData?.totalUsers || 0), color: 'text-white' },
                                         { label: 'Sign-up Growth', val: (userData?.growthRate || '0') + '%', color: 'text-blue-400' }
                                     ].map((box, i) => (
-                                        <div key={i} className="bg-white/[0.03] border border-white/5 rounded-[2.5rem] p-6 flex flex-col justify-center items-center hover:bg-white/[0.06] transition-all group">
+                                        <div key={i} className="bg-white/[0.02] border border-white/[0.04] rounded-xl p-4 flex flex-col justify-center items-center hover:bg-white/[0.05] transition-all group">
                                             <span className={`text-xl font-black font-display ${box.color} group-hover:scale-110 transition-transform`}>{box.val}</span>
                                             <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mt-1 text-center">{box.label}</span>
                                         </div>
@@ -406,26 +464,28 @@ export default function AdminAnalyticsPage() {
 }
 
 function StatBox({ label, value, sub, icon: Icon, trend, color, isNumber = false }: any) {
+    const hasData = trend && !['—', '-'].includes(trend);
+    const isPositive = hasData && trend.startsWith('+');
     return (
-        <div className="glass-premium p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group hover:scale-[1.02] transition-all">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-white/10 transition-colors" />
+        <div className="bg-[#0A1017] border border-white/[0.03] p-6 rounded-2xl hover:border-white/[0.08] transition-all relative overflow-hidden group">
             <div className="relative z-10 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-gold/30 transition-all">
-                        <Icon className={`w-6 h-6 ${color}`} />
+                <div className="flex items-start justify-between mb-5">
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                        <Icon className={`w-5 h-5 ${color}`} />
                     </div>
-                    <div className="flex flex-col items-end">
-                        <div className={`flex items-center gap-1 text-[10px] font-black ${trend.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {trend.startsWith('+') ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    {hasData ? (
+                        <div className={`flex items-center gap-1 text-[10px] font-bold ${isPositive ? 'text-emerald-500' : 'text-red-400'}`}>
+                            {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                             {trend}
                         </div>
-                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-0.5">VS PREV</span>
-                    </div>
+                    ) : (
+                        <span className="text-[9px] text-slate-600 font-medium">&mdash;</span>
+                    )}
                 </div>
                 <div>
-                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{label}</p>
-                    <h3 className={`font-black text-white font-display tracking-tight group-hover:text-gold transition-colors ${isNumber ? 'text-3xl' : 'text-2xl'}`}>{value}</h3>
-                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-[0.2em] mt-2 italic">{sub}</p>
+                    <p className="text-xs font-semibold text-slate-500 mb-1">{label}</p>
+                    <h3 className={`font-bold text-white tracking-tight group-hover:text-gold transition-colors ${isNumber ? 'text-2xl' : 'text-xl'}`}>{value}</h3>
+                    <p className="text-[10px] text-slate-600 mt-1 font-medium">{sub}</p>
                 </div>
             </div>
         </div>

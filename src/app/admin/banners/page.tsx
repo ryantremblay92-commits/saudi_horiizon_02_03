@@ -117,7 +117,7 @@ export default function AdminBannersPage() {
     return (
         <AdminLayout title="Banner Management" description="Manage promotional banners and advertisements" onRefresh={fetchBanners}>
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-32 border border-dashed border-white/10 rounded-[3rem]">
+                <div className="flex flex-col items-center justify-center py-32 bg-[#0A1017] border border-white/[0.03] rounded-2xl">
                     <div className="relative w-20 h-20 mb-6">
                         <div className="absolute inset-0 border-4 border-gold/10 rounded-full" />
                         <div className="absolute inset-0 border-4 border-gold border-t-transparent rounded-full animate-spin" />
@@ -150,7 +150,7 @@ export default function AdminBannersPage() {
 
                     {/* Banner Grid */}
                     {banners.length === 0 ? (
-                        <div className="glass-premium rounded-[3rem] border border-dashed border-white/10 flex flex-col items-center justify-center py-32 gap-4">
+                        <div className="bg-[#0A1017] border border-dashed border-white/[0.06] rounded-2xl flex flex-col items-center justify-center py-32 gap-4">
                             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
                                 <Layers className="w-8 h-8 text-white/20" />
                             </div>
@@ -167,7 +167,7 @@ export default function AdminBannersPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.06 }}
-                                    className={`group glass-premium rounded-[2.5rem] border overflow-hidden transition-all hover:scale-[1.02] ${banner.isActive ? 'border-white/10 hover:border-gold/20' : 'border-white/5 opacity-60'}`}
+                                    className={`group bg-[#0A1017] border rounded-2xl overflow-hidden transition-all hover:border-white/10 ${banner.isActive ? 'border-white/[0.06] hover:border-gold/20' : 'border-white/[0.03] opacity-60'}`}
                                 >
                                     {/* Image Preview */}
                                     <div className="relative h-44 bg-white/5 overflow-hidden">
@@ -260,7 +260,7 @@ export default function AdminBannersPage() {
             <AnimatePresence>
                 {showModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-6" onClick={() => setShowModal(false)}>
-                        <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-premium border border-white/10 rounded-[3rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0D1620] border border-white/[0.06] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
                             <div className="p-10">
                                 <div className="flex items-center justify-between mb-8">
                                     <div>

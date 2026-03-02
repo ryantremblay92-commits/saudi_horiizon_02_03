@@ -1,41 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/db/mongodb';
+import User from '@/lib/db/models/User';
+import crypto from 'crypto';
 
-// Simple token storage (in production, use database)
-const resetTokens = new Map();
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
-        const { token, password } = await request.json();
+        await connectDB();
+        const { token, password } = await req.json();
 
         if (!token || !password) {
-            return NextResponse.json(
-                { message: 'Token and password are required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ message: 'Token and password are required' }, { status: 400 });
         }
 
-        // Validate token
-        const tokenData = resetTokens.get(token);
-        if (!tokenData || Date.now() > tokenData.expiresAt) {
-            return NextResponse.json(
-                { message: 'Invalid or expired token' },
-                { status: 400 }
-            );
-        }
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-        // In production, update user password in database
-        console.log(`Password reset for: ${tokenData.email}`);
-
-        // Remove used token
-        resetTokens.delete(token);
-
-        return NextResponse.json({
-            message: 'Password reset successful'
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
         });
+
+        if (!user) {
+            return NextResponse.json({ message: 'Invalid or expired reset token' }, { status: 400 });
+        }
+
+        // Set new password (saved hook handles hashing)
+        user.password = password;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        return NextResponse.json({ message: 'Password has been reset successfully' });
     } catch (error) {
-        return NextResponse.json(
-            { message: 'Internal server error' },
-            { status: 500 }
-        );
+        console.error('Reset password error:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

@@ -1,46 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
+import connectDB from '@/lib/db/mongodb';
+import User from '@/lib/db/models/User';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from '@/lib/notifications/userNotifications';
 
-// Simple email simulation for demo
-const resetTokens = new Map();
-
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
-        const { email } = await request.json();
+        await connectDB();
+        const { email } = await req.json();
 
         if (!email) {
-            return NextResponse.json(
-                { message: 'Email is required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ message: 'Email is required' }, { status: 400 });
         }
 
-        // Simulate user lookup
-        const userExists = email.includes('@'); // Simple validation
-        if (!userExists) {
-            return NextResponse.json(
-                { message: 'User not found' },
-                { status: 404 }
-            );
+        const user = await User.findOne({ email });
+
+        // For security, don't reveal if a user exists or not
+        if (!user || user.oauthProvider) {
+            return NextResponse.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
         }
 
-        // Generate reset token
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+        // Generate token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-        resetTokens.set(token, { email, expiresAt });
+        // Set expiry (1 hour)
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = new Date(Date.now() + 3600000);
 
-        // In production, send email with reset link
-        console.log(`Password reset email sent to: ${email}`);
-        console.log(`Reset link: /reset-password/${token}`);
+        await user.save();
 
-        return NextResponse.json({
-            message: 'Password reset email sent',
-            token // For demo purposes only
-        });
+        const resetLink = `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+
+        await sendPasswordResetEmail(user.email, resetLink, user.profile?.name || 'User');
+
+        return NextResponse.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
     } catch (error) {
-        return NextResponse.json(
-            { message: 'Internal server error' },
-            { status: 500 }
-        );
+        console.error('Forgot password error:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

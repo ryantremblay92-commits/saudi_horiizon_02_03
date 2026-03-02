@@ -29,10 +29,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
             if (isAuthenticated) {
                 try {
                     const apiItems = await getWishlist();
-                    setWishlistItems(apiItems);
+                    // Normalize: API may return undefined, null, or a non-array
+                    setWishlistItems(Array.isArray(apiItems) ? apiItems : []);
                 } catch (error) {
                     console.error('Failed to load wishlist from API:', error);
-                    // Fallback to localStorage if API fails
                     loadFromLocal();
                 }
             } else {
@@ -120,7 +120,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
             removeFromWishlist,
             isInWishlist,
             clearWishlist,
-            wishlistCount: wishlistItems.length,
+            wishlistCount: Array.isArray(wishlistItems) ? wishlistItems.length : 0,
         }}>
             {children}
         </WishlistContext.Provider>

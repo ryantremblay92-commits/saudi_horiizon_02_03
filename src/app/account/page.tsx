@@ -15,6 +15,7 @@ import { useWishlist } from '@/contexts/WishlistContext';
 
 const accountLinks = [
     { icon: <ShoppingBag className="w-5 h-5" />, title: 'Orders', description: 'View and track your orders', href: '/account/orders' },
+    { icon: <FileText className="w-5 h-5" />, title: 'My Quotes', description: 'B2B bulk quote requests', href: '/account/quotes' },
     { icon: <Heart className="w-5 h-5" />, title: 'Wishlist', description: 'Your saved products', href: '/account/wishlist' },
     { icon: <Undo2 className="w-5 h-5" />, title: 'Returns', description: 'Track return requests', href: '/account/returns' },
     { icon: <MapPin className="w-5 h-5" />, title: 'Addresses', description: 'Manage shipping addresses', href: '/account/addresses' },

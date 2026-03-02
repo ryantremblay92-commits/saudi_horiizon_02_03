@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,8 +25,26 @@ import {
     Package,
     Layers,
     Save,
-    AlertCircle
+    AlertCircle,
+    Check,
+    Copy,
+    ChevronDown,
+    MoreHorizontal,
+    ExternalLink
 } from 'lucide-react';
+import {
+    Tabs,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 
 interface Product {
@@ -43,7 +62,7 @@ interface Product {
     isActive: boolean; // Added for UI sync, mapping to inStock if needed
 }
 
-export default function AdminProductsPage() {
+function AdminProductsPageInner() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -66,11 +85,24 @@ export default function AdminProductsPage() {
         image: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState('all');
+    const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+    const [brandFilter, setBrandFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState('all');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         loadProducts();
     }, []);
+
+    // Auto-open add form when ?add=1 is in the URL
+    useEffect(() => {
+        if (!loading && searchParams.get('add') === '1') {
+            openAddForm();
+        }
+    }, [loading, searchParams]);
 
     const loadProducts = async () => {
         try {
@@ -223,11 +255,45 @@ export default function AdminProductsPage() {
         }
     };
 
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.brand?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            product.brand?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesBrand = brandFilter === 'all' || product.brand === brandFilter;
+        const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+
+        let matchesTab = true;
+        if (activeTab === 'in-stock') matchesTab = product.stock > 0;
+        if (activeTab === 'out-of-stock') matchesTab = product.stock === 0;
+        if (activeTab === 'low-stock') matchesTab = product.stock > 0 && product.stock < 10;
+        if (activeTab === 'active') matchesTab = product.isActive !== false; // handle null/undefined as active
+
+        return matchesSearch && matchesBrand && matchesCategory && matchesTab;
+    });
+
+    const uniqueBrands = Array.from(new Set(products.map(p => p.brand).filter(Boolean)));
+    const uniqueCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+
+    const toggleProductStatus = async (product: Product) => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`/api/products/${product._id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...product, inStock: !product.inStock }) // Using inStock as isActive proxy for now
+            });
+            if (res.ok) {
+                toast.success('Status updated');
+                loadProducts();
+            }
+        } catch (error) {
+            toast.error('Failed to update status');
+        }
+    };
 
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
     const paginatedProducts = filteredProducts.slice(
@@ -257,9 +323,12 @@ export default function AdminProductsPage() {
         >
             {/* Stats Header */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="glass rounded-3xl p-6 border border-white/5 bg-white/[0.02]">
+                <div
+                    className={`glass rounded-3xl p-6 border transition-all cursor-pointer hover:scale-[1.02] ${activeTab === 'all' ? 'border-gold bg-gold/5' : 'border-white/5 bg-white/[0.02]'}`}
+                    onClick={() => setActiveTab('all')}
+                >
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gold/10 flex items-center justify-center border border-gold/20">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${activeTab === 'all' ? 'bg-gold/20 border-gold' : 'bg-gold/10 border-gold/20'}`}>
                             <Box className="w-6 h-6 text-gold" />
                         </div>
                         <div>
@@ -268,9 +337,12 @@ export default function AdminProductsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="glass rounded-3xl p-6 border border-white/5 bg-white/[0.02]">
+                <div
+                    className={`glass rounded-3xl p-6 border transition-all cursor-pointer hover:scale-[1.02] ${activeTab === 'in-stock' ? 'border-blue-500 bg-blue-500/5' : 'border-white/5 bg-white/[0.02]'}`}
+                    onClick={() => setActiveTab('in-stock')}
+                >
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${activeTab === 'in-stock' ? 'bg-blue-500/20 border-blue-500' : 'bg-blue-500/10 border-blue-500/20'}`}>
                             <Package className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
@@ -281,9 +353,12 @@ export default function AdminProductsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="glass rounded-3xl p-6 border border-white/5 bg-white/[0.02]">
+                <div
+                    className={`glass rounded-3xl p-6 border transition-all cursor-pointer hover:scale-[1.02] ${activeTab === 'low-stock' ? 'border-red-500 bg-red-500/5' : 'border-white/5 bg-white/[0.02]'}`}
+                    onClick={() => setActiveTab('low-stock')}
+                >
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${activeTab === 'low-stock' ? 'bg-red-500/20 border-red-500' : 'bg-red-500/10 border-red-500/20'}`}>
                             <AlertCircle className="w-6 h-6 text-red-400" />
                         </div>
                         <div>
@@ -296,26 +371,84 @@ export default function AdminProductsPage() {
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
-                    <Input
-                        placeholder="Search products by name, SKU or brand..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-12 bg-white/[0.03] border-white/5 text-white rounded-2xl h-14 focus:ring-gold/20 focus:border-gold/40 transition-all font-medium"
-                    />
+            {/* Tabs & Filters */}
+            <div className="flex flex-col gap-6 mb-8">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-white/[0.03] border border-white/5 p-1 rounded-2xl inline-flex">
+                        <TabsList className="bg-transparent h-10 gap-2">
+                            <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-gold data-[state=active]:text-navy px-6 text-[10px] font-black uppercase tracking-widest">All</TabsTrigger>
+                            <TabsTrigger value="active" className="rounded-xl data-[state=active]:bg-emerald-500 data-[state=active]:text-white px-6 text-[10px] font-black uppercase tracking-widest">Live</TabsTrigger>
+                            <TabsTrigger value="out-of-stock" className="rounded-xl data-[state=active]:bg-red-500 data-[state=active]:text-white px-6 text-[10px] font-black uppercase tracking-widest">Out of Stock</TabsTrigger>
+                            <TabsTrigger value="low-stock" className="rounded-xl data-[state=active]:bg-orange-500 data-[state=active]:text-white px-6 text-[10px] font-black uppercase tracking-widest">Low Stock</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+
+                    <div className="flex items-center gap-3">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-12 px-6 border-white/5 bg-white/[0.03] text-white/60 hover:text-white rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                                    <Tag className="h-3.5 w-3.5 mr-2" />
+                                    Brand: {brandFilter === 'all' ? 'All' : brandFilter}
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="bg-gray-900 border-white/10 text-white min-w-[200px] rounded-xl">
+                                <DropdownMenuItem onClick={() => setBrandFilter('all')} className="hover:bg-white/5 cursor-pointer text-xs font-bold uppercase tracking-widest p-3">All Brands</DropdownMenuItem>
+                                {uniqueBrands.map(brand => (
+                                    brand && <DropdownMenuItem key={brand} onClick={() => setBrandFilter(brand)} className="hover:bg-white/5 cursor-pointer text-xs font-bold uppercase tracking-widest p-3">{brand}</DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-12 px-6 border-white/5 bg-white/[0.03] text-white/60 hover:text-white rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                                    <Layers className="h-3.5 w-3.5 mr-2" />
+                                    Category: {categoryFilter === 'all' ? 'All' : categoryFilter}
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="bg-gray-900 border-white/10 text-white min-w-[200px] rounded-xl">
+                                <DropdownMenuItem onClick={() => setCategoryFilter('all')} className="hover:bg-white/5 cursor-pointer text-xs font-bold uppercase tracking-widest p-3">All Categories</DropdownMenuItem>
+                                {uniqueCategories.map(cat => (
+                                    cat && <DropdownMenuItem key={cat} onClick={() => setCategoryFilter(cat)} className="hover:bg-white/5 cursor-pointer text-xs font-bold uppercase tracking-widest p-3">{cat}</DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" className="h-14 px-6 border-white/5 bg-white/[0.03] text-white/60 hover:text-white rounded-2xl font-bold uppercase tracking-widest text-xs">
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filter
-                    </Button>
-                    <Button className="h-14 px-8 bg-gold hover:bg-white text-navy font-black rounded-2xl transition-all shadow-xl shadow-gold/10" onClick={openAddForm}>
-                        <Plus className="h-5 w-5 mr-2" />
-                        ADD PRODUCT
-                    </Button>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/20 group-focus-within:text-gold transition-colors" />
+                        <Input
+                            placeholder="Search catalog by name, model or SKU..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-16 bg-white/[0.03] border-white/5 text-white rounded-[1.25rem] h-16 focus:ring-gold/20 focus:border-gold/30 transition-all font-medium text-base shadow-inner"
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        {selectedProducts.length > 0 && (
+                            <Button
+                                variant="destructive"
+                                className="h-16 px-8 rounded-[1.25rem] font-black uppercase text-xs tracking-widest shadow-2xl animate-in fade-in slide-in-from-right-4"
+                                onClick={() => {
+                                    if (confirm(`Delete ${selectedProducts.length} items?`)) {
+                                        // Bulk delete logic would go here
+                                        toast.info(`Bulk delete of ${selectedProducts.length} items requested`);
+                                    }
+                                }}
+                            >
+                                <Trash2 className="w-5 h-5 mr-3" />
+                                Delete ({selectedProducts.length})
+                            </Button>
+                        )}
+                        <Button className="h-16 px-10 bg-gold hover:bg-white text-navy font-black rounded-[1.25rem] transition-all shadow-2xl shadow-gold/10 group" onClick={openAddForm}>
+                            <Plus className="h-6 w-6 mr-3 group-hover:rotate-90 transition-transform" />
+                            ADD PRODUCT
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -331,12 +464,24 @@ export default function AdminProductsPage() {
                         <table className="w-full">
                             <thead className="bg-white/[0.03] border-b border-white/5">
                                 <tr>
+                                    <th className="px-8 py-6 text-left w-10">
+                                        <Checkbox
+                                            checked={selectedProducts.length === paginatedProducts.length && paginatedProducts.length > 0}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedProducts(paginatedProducts.map(p => p._id));
+                                                } else {
+                                                    setSelectedProducts([]);
+                                                }
+                                            }}
+                                            className="border-white/20 data-[state=checked]:bg-gold data-[state=checked]:text-navy"
+                                        />
+                                    </th>
                                     <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[300px]">Product</th>
                                     <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[150px]">SKU</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[120px]">Brand</th>
                                     <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[140px]">Price</th>
-                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[180px]">Category</th>
                                     <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[120px]">Stock</th>
+                                    <th className="px-8 py-6 text-left text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display min-w-[100px]">Status</th>
                                     <th className="px-8 py-6 text-right text-[10px] font-black text-white/20 uppercase tracking-[0.2em] font-display w-[120px]">Actions</th>
                                 </tr>
                             </thead>
@@ -344,6 +489,19 @@ export default function AdminProductsPage() {
                                 {paginatedProducts.length > 0 ? (
                                     paginatedProducts.map((product) => (
                                         <tr key={product._id} className="hover:bg-white/[0.03] transition-colors group">
+                                            <td className="px-8 py-6">
+                                                <Checkbox
+                                                    checked={selectedProducts.includes(product._id)}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setSelectedProducts(prev => [...prev, product._id]);
+                                                        } else {
+                                                            setSelectedProducts(prev => prev.filter(id => id !== product._id));
+                                                        }
+                                                    }}
+                                                    className="border-white/20 data-[state=checked]:bg-gold data-[state=checked]:text-navy"
+                                                />
+                                            </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center">
                                                     <div className="w-14 h-14 rounded-xl bg-[#060B12] overflow-hidden border border-white/5 shrink-0 shadow-lg group-hover:border-gold/20 transition-colors">
@@ -359,28 +517,30 @@ export default function AdminProductsPage() {
                                                     </div>
                                                     <div className="ml-5 flex flex-col justify-center min-w-0">
                                                         <p className="text-white font-bold font-display text-sm group-hover:text-gold transition-colors truncate">{product.name}</p>
-                                                        <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mt-1">{product._id.slice(-8)}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-white/20 text-[10px] font-black uppercase tracking-widest">{product.brand || 'No Brand'}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-white/10" />
+                                                            <span className="text-white/20 text-[10px] font-black uppercase tracking-widest">{product.category || 'General'}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="text-white/40 font-mono text-xs font-medium tabular-nums">{product.sku}</span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className="text-white/60 font-bold text-[10px] uppercase tracking-[0.15em]">{product.brand || '---'}</span>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] text-white/20 font-black uppercase tracking-widest mb-0.5">Price</span>
-                                                    <span className="text-gold font-black font-display text-base tabular-nums">
-                                                        SAR {product.price?.toLocaleString()}
-                                                    </span>
+                                                <div
+                                                    className="flex items-center gap-2 group/sku cursor-pointer"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(product.sku);
+                                                        toast.success('SKU copied');
+                                                    }}
+                                                >
+                                                    <span className="text-white/40 font-mono text-xs font-medium tabular-nums group-hover/sku:text-gold transition-colors">{product.sku}</span>
+                                                    <Copy className="w-3 h-3 text-white/0 group-hover/sku:text-white/20 transition-all" />
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 group-hover:border-gold/10 transition-colors">
-                                                    <span className="text-white/40 text-[9px] font-black uppercase tracking-widest">
-                                                        {product.category || 'GENERAL'}
+                                                <div className="flex flex-col">
+                                                    <span className="text-gold font-black font-display text-base tabular-nums">
+                                                        SAR {product.price?.toLocaleString()}
                                                     </span>
                                                 </div>
                                             </td>
@@ -392,10 +552,22 @@ export default function AdminProductsPage() {
                                                     <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest">Available</span>
                                                 </div>
                                             </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-3">
+                                                    <Switch
+                                                        checked={product.inStock}
+                                                        onCheckedChange={() => toggleProductStatus(product)}
+                                                        className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-white/5"
+                                                    />
+                                                    <Badge className={`text-[8px] font-black uppercase tracking-tighter px-2 h-5 rounded-md border-none ${product.inStock ? 'bg-emerald-500/10 text-emerald-500' : 'bg-white/5 text-white/20'}`}>
+                                                        {product.inStock ? 'LIVE' : 'HIDDEN'}
+                                                    </Badge>
+                                                </div>
+                                            </td>
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                    <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl text-white/20 hover:text-white hover:bg-white/5">
-                                                        <Eye className="h-4 w-4" />
+                                                    <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl text-white/20 hover:text-white hover:bg-white/5" onClick={() => window.open(`/product/${product._id}`, '_blank')}>
+                                                        <ExternalLink className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl text-white/20 hover:text-gold hover:bg-gold/10" onClick={() => openEditForm(product)}>
                                                         <Edit className="h-4 w-4" />
@@ -711,5 +883,13 @@ export default function AdminProductsPage() {
                 </div>
             )}
         </AdminLayout>
+    );
+}
+
+export default function AdminProductsPage() {
+    return (
+        <Suspense fallback={null}>
+            <AdminProductsPageInner />
+        </Suspense>
     );
 }

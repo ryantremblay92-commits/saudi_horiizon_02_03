@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { UserPlus, Lock, Mail, User, Phone, ArrowRight, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -26,7 +29,7 @@ export default function RegisterPage() {
         setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            setError('Passwords do not match.');
             setLoading(false);
             return;
         }
@@ -47,131 +50,115 @@ export default function RegisterPage() {
 
             if (response.ok) {
                 document.cookie = `auth-token=${data.token}; path=/; max-age=86400`;
+                toast.success('Account created!', { description: 'Welcome to Saudi Horizon.' });
                 router.push('/');
             } else {
-                setError(data.message || 'Registration failed');
+                setError(data.message || 'Registration failed. Please try again.');
             }
         } catch (err) {
-            setError('An error occurred during registration');
+            setError('Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const fields = [
+        { id: 'name', label: 'Full Name', type: 'text', placeholder: 'John Smith', icon: User },
+        { id: 'email', label: 'Email Address', type: 'email', placeholder: 'you@example.com', icon: Mail },
+        { id: 'phone', label: 'Phone Number', type: 'tel', placeholder: '+966 5X XXX XXXX (optional)', icon: Phone },
+        { id: 'password', label: 'Password', type: 'password', placeholder: 'At least 8 characters', icon: Lock },
+        { id: 'confirmPassword', label: 'Confirm Password', type: 'password', placeholder: 'Repeat your password', icon: Lock },
+    ];
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Create your account
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Or{' '}
-                        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                            sign in to your existing account
-                        </Link>
-                    </p>
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-navy relative overflow-hidden font-display py-12">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gold/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" />
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="rounded-md bg-red-50 p-4">
-                            <div className="text-sm text-red-700">{error}</div>
-                        </div>
-                    )}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md w-full relative z-10 px-6"
+            >
+                <div className="glass-premium p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gold/50 to-transparent opacity-50" />
 
-                    <div className="space-y-4">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                Full Name
-                            </label>
-                            <input
-                                id="name"
-                                name="name"
-                                type="text"
-                                required
-                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Full Name"
-                                value={formData.name}
-                                onChange={handleChange}
-                            />
+                    {/* Header */}
+                    <div className="text-center mb-10">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/[0.03] border border-white/10 mb-6 relative group-hover:border-gold/30 transition-all duration-500">
+                            <UserPlus className="w-10 h-10 text-gold drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+                            <div className="absolute -inset-2 bg-gold/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
-
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email Address
-                            </label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Email address"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                                Phone Number
-                            </label>
-                            <input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Phone Number (optional)"
-                                value={formData.phone}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Password"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                                Confirm Password
-                            </label>
-                            <input
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                type="password"
-                                required
-                                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                                placeholder="Confirm Password"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                            />
-                        </div>
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Create Account</h2>
+                        <p className="text-sm text-white/40 font-medium">Fill in your details to get started</p>
                     </div>
 
-                    <div>
+                    <form className="space-y-5" onSubmit={handleSubmit}>
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-3"
+                                >
+                                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                    <p className="text-xs font-bold text-red-200">{error}</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {fields.map(({ id, label, type, placeholder, icon: Icon }) => (
+                            <div key={id} className="space-y-2">
+                                <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-2">{label}</label>
+                                <div className="relative group/field">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within/field:text-gold transition-colors">
+                                        <Icon className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        id={id}
+                                        name={id}
+                                        type={type}
+                                        required={id !== 'phone'}
+                                        className="w-full bg-white/[0.03] border border-white/10 text-white rounded-2xl pl-12 pr-6 py-4 text-sm font-medium focus:outline-none focus:border-gold/50 focus:bg-white/[0.06] transition-all placeholder:text-white/20"
+                                        placeholder={placeholder}
+                                        value={formData[id as keyof typeof formData]}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            className={`w-full group relative flex items-center justify-center gap-3 py-5 rounded-3xl text-sm font-black uppercase tracking-[0.2em] transition-all overflow-hidden mt-2 ${loading
+                                ? 'bg-white/10 text-white/40 border border-white/10 cursor-not-allowed'
+                                : 'bg-gold text-navy border border-gold shadow-[0_0_30px_rgba(255,215,0,0.2)] hover:shadow-[0_0_50px_rgba(255,215,0,0.3)] hover:-translate-y-1 active:translate-y-0'
+                                }`}
                         >
-                            {loading ? 'Creating account...' : 'Create account'}
+                            <div className="relative z-10 flex items-center gap-3">
+                                {loading ? 'Creating account...' : 'Create Account'}
+                                {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                            </div>
+                            {!loading && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            )}
                         </button>
+                    </form>
+
+                    <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                        <p className="text-sm text-white/30 font-medium">
+                            Already have an account?{' '}
+                            <Link href="/login" className="text-gold hover:text-gold/80 font-bold transition-colors">
+                                Sign in
+                            </Link>
+                        </p>
                     </div>
-                </form>
-            </div>
+                </div>
+            </motion.div>
         </div>
     );
 }

@@ -52,6 +52,8 @@ export interface IUser extends Document {
     paymentMethods?: IPaymentMethod[];
     wishlist?: string[];
     notificationPreferences?: INotificationPreferences;
+    resetPasswordToken?: string | null;
+    resetPasswordExpires?: Date | null;
     createdAt: Date;
     updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
@@ -117,6 +119,7 @@ const userSchema = new Schema<IUser>(
         refreshToken: {
             type: String,
             default: null,
+            sparse: true,
         },
         oauthProvider: {
             type: String,
@@ -153,6 +156,14 @@ const userSchema = new Schema<IUser>(
                 newProducts: true,
                 priceAlerts: true,
             },
+        },
+        resetPasswordToken: {
+            type: String,
+            default: null,
+        },
+        resetPasswordExpires: {
+            type: Date,
+            default: null,
         },
     },
     {

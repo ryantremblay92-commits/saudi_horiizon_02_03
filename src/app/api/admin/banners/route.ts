@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
         const banners = await Banner.find(query).sort({ createdAt: -1 });
 
-        return NextResponse.json(banners);
+        return NextResponse.json({ banners });
     } catch (error: unknown) {
         console.error('Error fetching banners:', error);
         return NextResponse.json(

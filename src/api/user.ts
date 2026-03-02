@@ -206,10 +206,14 @@ export const createReturnRequest = async (data: Omit<ReturnRequest, '_id' | 'sta
 export const getWishlist = async (): Promise<string[]> => {
     try {
         const response = await api.get('/api/users/wishlist');
-        return response.data; // Expecting array of product IDs
+        const data = response.data;
+        // API may return a bare array or { wishlist: [...] }
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.wishlist)) return data.wishlist;
+        return [];
     } catch (error) {
         console.error('Error fetching wishlist:', error);
-        return []; // Fallback to empty
+        return [];
     }
 };
 

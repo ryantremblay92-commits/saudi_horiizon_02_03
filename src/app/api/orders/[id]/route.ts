@@ -38,9 +38,9 @@ export async function PATCH(
 
         const { id } = await context.params;
         const body = await request.json();
-        const { status } = body;
+        const { status, note } = body;
 
-        const validStatuses = ['pending', 'shipped', 'delivered', 'cancelled'];
+        const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'flagged'];
         if (!validStatuses.includes(status)) {
             return NextResponse.json(
                 { message: 'Invalid status' },
@@ -48,9 +48,12 @@ export async function PATCH(
             );
         }
 
+        const updateFields: Record<string, any> = { status };
+        if (note) updateFields.adminNote = note;
+
         const order = await Order.findByIdAndUpdate(
             id,
-            { status },
+            updateFields,
             { new: true }
         );
 

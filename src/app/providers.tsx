@@ -7,6 +7,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { ComparisonProvider } from "@/contexts/ComparisonContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import ChatWidget from "@/components/ChatWidget";
+import { PopupBanner } from "@/components/home/PopupBanner";
 import { useEffect, useState } from "react";
 import { CookiesProvider } from "react-cookie";
 import { I18nextProvider } from "react-i18next";
@@ -69,6 +70,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                                     {children}
                                     <Toaster />
                                     <ChatWidget />
+                                    <PopupBanner />
                                 </ThemeProvider>
                             </ChatProvider>
                         </WishlistProvider>

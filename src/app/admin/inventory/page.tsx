@@ -170,9 +170,9 @@ export default function AdminInventoryPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className={`glass-premium p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group hover:border-${stat.color.split('-')[1]}/30 transition-all`}
+                            className={`bg-[#0A1017] border border-white/[0.03] p-5 rounded-2xl relative overflow-hidden group hover:border-white/[0.08] transition-all`}
                         >
-                            <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full blur-3xl -mr-12 -mt-12 transition-all group-hover:scale-150`} />
+                            <div className={`absolute top-0 right-0 w-16 h-16 ${stat.bg} rounded-full blur-2xl -mr-8 -mt-8 opacity-50`} />
                             <div className="relative z-10 flex flex-col justify-between h-full">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center border border-white/10 group-hover:border-${stat.color.split('-')[1]}/30 transition-all`}>
@@ -190,7 +190,7 @@ export default function AdminInventoryPage() {
                 </div>
 
                 {/* Control Center */}
-                <div className="glass-premium rounded-[3rem] border border-white/5 p-8 mb-10">
+                <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl p-6 mb-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="relative flex-1 max-w-xl">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
@@ -232,7 +232,7 @@ export default function AdminInventoryPage() {
                 </div>
 
                 {/* Inventory Matrix Table */}
-                <div className="glass-premium rounded-[3rem] border border-white/5 overflow-hidden">
+                <div className="bg-[#0A1017] border border-white/[0.03] rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full border-separate border-spacing-0">
                             <thead>
