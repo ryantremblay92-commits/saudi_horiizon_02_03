@@ -68,9 +68,9 @@ export function HeroSection() {
                         className="text-6xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tighter mb-10"
                         style={{ fontFamily: 'var(--font-display)' }}
                     >
-                        {t('home.hero.title').split('.')[0]}
+                        {t('home.hero.title_main')}
                         <br />
-                        <span className="text-gradient-gold">{t('home.hero.title').split('.')[1] || 'performance'}.</span>
+                        <span className="text-gradient-gold">{t('home.hero.title_accent')}.</span>
                     </motion.h1>
 
                     {/* Subheadline */}

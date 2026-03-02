@@ -9,6 +9,8 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import ChatWidget from "@/components/ChatWidget";
 import { useEffect, useState } from "react";
 import { CookiesProvider } from "react-cookie";
+import { I18nextProvider } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     const [isI18nReady, setIsI18nReady] = useState(false);
@@ -29,24 +31,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        // Dynamic import of i18n to avoid SSR issues
-        import("@/lib/i18n").then((i18nModule) => {
-            const i18n = i18nModule.default || i18nModule;
-            if (i18n && i18n.dir) {
-                setDir(i18n.dir());
-                setLang(i18n.language || "en");
+        // Ensure i18n is ready and sync state
+        if (i18n && i18n.dir) {
+            setDir(i18n.dir());
+            setLang(i18n.language || "en");
 
-                // Listen for later language changes
-                const handleLangChange = (lng: string) => {
-                    setLang(lng);
-                    setDir(i18n.dir(lng));
-                };
-                i18n.on('languageChanged', handleLangChange);
-            }
+            const handleLangChange = (lng: string) => {
+                setLang(lng);
+                setDir(i18n.dir(lng));
+                // Update document attributes directly for immediate feedback
+                if (typeof document !== 'undefined') {
+                    document.dir = i18n.dir(lng);
+                    document.documentElement.lang = lng;
+                }
+            };
+            i18n.on('languageChanged', handleLangChange);
             setIsI18nReady(true);
-        }).catch(() => {
-            setIsI18nReady(true);
-        });
+        }
     }, []);
 
     useEffect(() => {
@@ -58,20 +59,22 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     }, [isI18nReady, dir, lang]);
 
     return (
-        <CookiesProvider>
-            <ComparisonProvider>
-                <WishlistProvider>
-                    <AuthProvider>
-                        <ChatProvider>
-                            <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-                                {children}
-                                <Toaster />
-                                <ChatWidget />
-                            </ThemeProvider>
-                        </ChatProvider>
-                    </AuthProvider>
-                </WishlistProvider>
-            </ComparisonProvider>
-        </CookiesProvider>
+        <I18nextProvider i18n={i18n}>
+            <CookiesProvider>
+                <ComparisonProvider>
+                    <WishlistProvider>
+                        <AuthProvider>
+                            <ChatProvider>
+                                <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+                                    {children}
+                                    <Toaster />
+                                    <ChatWidget />
+                                </ThemeProvider>
+                            </ChatProvider>
+                        </AuthProvider>
+                    </WishlistProvider>
+                </ComparisonProvider>
+            </CookiesProvider>
+        </I18nextProvider>
     );
 }

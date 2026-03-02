@@ -94,7 +94,8 @@
     "home": {
         "hero": {
             "label": "SINCE 2009 — PREMIUM EQUIPMENT PARTS",
-            "title": "Engineered for performance.",
+            "title_main": "Engineered for",
+            "title_accent": "Performance",
             "subtitle": "Genuine OEM and aftermarket spare parts for the world's toughest machines. Your equipment's reliability starts here.",
             "cta_explore": "Explore Catalog",
             "cta_quote": "Get Quote",

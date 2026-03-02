@@ -1,3 +1,5 @@
+'use client';
+
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
@@ -13,6 +15,8 @@ i18n
             ar: { translation: ar },
         },
         fallbackLng: "en",
+        supportedLngs: ["en", "ar"],
+        defaultNS: "translation",
         detection: {
             order: ['localStorage', 'cookie', 'htmlTag', 'path', 'subdomain'],
             caches: ['localStorage', 'cookie'],
@@ -20,9 +24,12 @@ i18n
         interpolation: {
             escapeValue: false,
         },
+        react: {
+            useSuspense: false,
+        }
     });
 
-// Set HTML attributes on change
+// Set HTML attributes on change for SSR/hydration consistency
 i18n.on('languageChanged', (lng) => {
     if (typeof document !== 'undefined') {
         document.dir = i18n.dir(lng);
