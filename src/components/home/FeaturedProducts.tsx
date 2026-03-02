@@ -31,6 +31,32 @@ export default function FeaturedProducts() {
 
     const fetchFeaturedProducts = async () => {
         try {
+            // First try to load admin-configured featured products
+            const configRes = await fetch('/api/admin/homepage');
+            if (configRes.ok) {
+                const config = await configRes.json();
+                if (config.featuredProductIds && config.featuredProductIds.length > 0) {
+                    // Fetch all products and filter by the configured IDs
+                    const limit = config.featuredProductsCount || 8;
+                    const response = await fetch('/api/products?limit=500');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const allProds = data.products || [];
+                        // Preserve admin-configured order
+                        const ordered = config.featuredProductIds
+                            .map((id: string) => allProds.find((p: Product) => p._id === id))
+                            .filter(Boolean)
+                            .slice(0, limit);
+                        if (ordered.length > 0) {
+                            setProducts(ordered);
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Fallback: fetch latest products
             const response = await fetch('/api/products?limit=8');
             if (!response.ok) throw new Error('Failed to fetch products');
             const data = await response.json();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongodb';
 import Product from '@/lib/db/models/Product';
 import { verifyAdminToken } from '@/lib/auth/adminAuth';
+import { notifyLowStock } from '@/lib/notifications/adminNotifications';
 import fs from 'fs';
 import path from 'path';
 
@@ -94,6 +95,11 @@ export async function PATCH(
                 { error: 'Product not found' },
                 { status: 404 }
             );
+        }
+
+        // Check for low stock and notify admin if needed
+        if (product.stock < 10) {
+            await notifyLowStock(product.name, product.stock);
         }
 
         return NextResponse.json(product);

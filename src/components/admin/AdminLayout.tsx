@@ -27,14 +27,17 @@ import {
     ShieldAlert,
     Globe,
     Zap,
-    ArrowRight
+    ArrowRight,
+    Home,
+    Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -47,6 +50,7 @@ interface AdminLayoutProps {
 
 const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Homepage', href: '/admin/homepage', icon: Home },
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { name: 'Cookie Consent', href: '/admin/cookie-consent', icon: Cookie },
     { name: 'Banners', href: '/admin/banners', icon: Image },
@@ -62,6 +66,13 @@ const navigation = [
 export function AdminLayout({ children, title, description, onRefresh, onExport, actions }: AdminLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [clockTime, setClockTime] = useState('');
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    const pathname = usePathname();
+    const router = useRouter();
+    const { user, logout, isInitialized } = useAuth();
 
     useEffect(() => {
         const tick = () => setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -69,9 +80,70 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
     }, []);
-    const pathname = usePathname();
-    const router = useRouter();
-    const { user, logout } = useAuth();
+
+    const fetchNotifications = async () => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch('/api/admin/notifications?limit=10', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setNotifications(data.notifications || []);
+                setUnreadCount(data.unreadCount || 0);
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (isInitialized && user) {
+            fetchNotifications();
+            // Poll for notifications every 30 seconds
+            const id = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(id);
+        }
+    }, [isInitialized, user]);
+
+    const markAsRead = async (id: string) => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch(`/api/admin/notifications/${id}/read`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const res = await fetch('/api/admin/notifications/read-all', {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                setUnreadCount(0);
+                toast.success('All notifications marked as read');
+            }
+        } catch (error) {
+            console.error('Error marking all as read:', error);
+        }
+    };
 
     // Update current navigation based on pathname
     const currentNav = navigation.map(item => ({
@@ -94,7 +166,7 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
             )}
 
             {/* Desktop sidebar */}
-            <aside className="hidden md:flex w-72 flex-col bg-[#0A1017] border-r border-white-[0.05] flex-shrink-0 z-20 relative shadow-2xl">
+            <aside className="hidden md:flex w-72 flex-col bg-[#0A1017] border-r border-white/5 flex-shrink-0 z-20 relative shadow-2xl">
                 <div className="flex flex-col h-full relative z-10">
                     {/* Brand Section */}
                     <div className="flex items-center h-20 px-8 border-b border-white/[0.03] flex-shrink-0">
@@ -161,7 +233,7 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
             </aside>
 
             {/* Main content */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative" onClick={() => setShowNotifications(false)}>
                 {/* Header */}
                 <header className="sticky top-0 z-40 bg-[#060B12]/80 backdrop-blur-xl border-b border-white/[0.03]">
                     <div className="flex h-20 items-center justify-between px-8">
@@ -170,7 +242,10 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
                                 variant="ghost"
                                 size="icon"
                                 className="md:hidden mr-4 text-slate-300 hover:text-white"
-                                onClick={() => setSidebarOpen(true)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSidebarOpen(true);
+                                }}
                             >
                                 <Menu className="h-6 w-6" />
                             </Button>
@@ -207,12 +282,106 @@ export function AdminLayout({ children, title, description, onRefresh, onExport,
 
                             {/* Notifications & Status */}
                             <div className="flex items-center gap-6 border-l border-white/[0.05] pl-6">
-                                <Button variant="ghost" size="icon" className="relative text-slate-400 hover:text-white transition-colors">
-                                    <Bell className="h-5 w-5" />
-                                    <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-[10px] font-black text-white flex items-center justify-center rounded-full border-2 border-[#060B12]">
-                                        3
-                                    </span>
-                                </Button>
+                                <div className="relative">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={`relative text-slate-400 hover:text-white transition-colors ${showNotifications ? 'text-gold' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowNotifications(!showNotifications);
+                                        }}
+                                    >
+                                        <Bell className="h-5 w-5" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-[10px] font-black text-white flex items-center justify-center rounded-full border-2 border-[#060B12]">
+                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </Button>
+
+                                    {/* Notifications Dropdown */}
+                                    <AnimatePresence>
+                                        {showNotifications && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                className="absolute right-0 mt-4 w-80 bg-[#0A1017] border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <div className="p-6 border-b border-white/[0.05] flex items-center justify-between">
+                                                    <h3 className="text-xs font-black text-white uppercase tracking-widest">Notifications</h3>
+                                                    {unreadCount > 0 && (
+                                                        <button
+                                                            onClick={markAllAsRead}
+                                                            className="text-[9px] font-black text-gold uppercase tracking-widest hover:text-white transition-colors"
+                                                        >
+                                                            Mark all read
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                    {notifications.length > 0 ? (
+                                                        notifications.map((notif) => (
+                                                            <div
+                                                                key={notif._id}
+                                                                className={`p-5 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors relative group ${!notif.isRead ? 'bg-gold/[0.02]' : ''}`}
+                                                            >
+                                                                <div className="flex gap-4">
+                                                                    <div className={`mt-1 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${notif.type === 'order' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                                        notif.type === 'user' ? 'bg-blue-500/10 text-blue-500' :
+                                                                            notif.type === 'inventory' ? 'bg-amber-500/10 text-amber-500' :
+                                                                                'bg-gold/10 text-gold'
+                                                                        }`}>
+                                                                        {notif.type === 'order' ? <ShoppingCart className="w-4 h-4" /> :
+                                                                            notif.type === 'user' ? <Users className="w-4 h-4" /> :
+                                                                                notif.type === 'inventory' ? <Box className="w-4 h-4" /> :
+                                                                                    <Bell className="w-4 h-4" />}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-start justify-between">
+                                                                            <p className={`text-xs font-bold leading-snug tracking-tight ${!notif.isRead ? 'text-white' : 'text-slate-400'}`}>
+                                                                                {notif.title}
+                                                                            </p>
+                                                                            {!notif.isRead && (
+                                                                                <button
+                                                                                    onClick={() => markAsRead(notif._id)}
+                                                                                    className="p-1 opacity-0 group-hover:opacity-100 text-gold hover:text-white transition-all transform scale-90 group-hover:scale-100"
+                                                                                >
+                                                                                    <Check className="w-3 h-3" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{notif.message}</p>
+                                                                        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-wider mt-2">
+                                                                            {new Date(notif.createdAt).toLocaleDateString()} at {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                {!notif.isRead && (
+                                                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold" />
+                                                                )}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="py-12 flex flex-col items-center justify-center opacity-30">
+                                                            <Bell className="w-8 h-8 mb-3" />
+                                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">No notifications</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <Link
+                                                    href="/admin/notifications"
+                                                    className="block p-4 text-center text-[10px] font-black text-slate-500 bg-black/20 hover:text-white transition-colors uppercase tracking-[0.3em]"
+                                                    onClick={() => setShowNotifications(false)}
+                                                >
+                                                    View All Activity
+                                                </Link>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
                                 <div className="hidden lg:flex flex-col items-end">
                                     <span className="text-[9px] text-slate-600 uppercase tracking-[0.3em] font-black">System Status</span>

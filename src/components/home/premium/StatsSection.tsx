@@ -39,11 +39,25 @@ export function StatsSection() {
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
+    // Dynamic stats from admin config
+    const [dynamicStats, setDynamicStats] = useState<{ yearsExperience: number; satisfiedClients: number; partsAvailable: number; onTimeDelivery: number } | null>(null);
+
+    useEffect(() => {
+        fetch('/api/admin/homepage')
+            .then(res => res.ok ? res.json() : null)
+            .then(config => {
+                if (config?.stats) {
+                    setDynamicStats(config.stats);
+                }
+            })
+            .catch(() => { });
+    }, []);
+
     const stats = [
-        { value: 15, suffix: "+", label: t('home.stats.experience'), detail: t('home.stats.experience_detail') },
-        { value: 1000, suffix: "+", label: t('home.stats.clients'), detail: t('home.stats.clients_detail') },
-        { value: 720, suffix: "+", label: t('home.stats.products'), detail: t('home.stats.products_detail') },
-        { value: 98, suffix: "%", label: t('home.stats.delivery'), detail: t('home.stats.delivery_detail') },
+        { value: dynamicStats?.yearsExperience ?? 15, suffix: "+", label: t('home.stats.experience'), detail: t('home.stats.experience_detail') },
+        { value: dynamicStats?.satisfiedClients ?? 1000, suffix: "+", label: t('home.stats.clients'), detail: t('home.stats.clients_detail') },
+        { value: dynamicStats?.partsAvailable ?? 720, suffix: "+", label: t('home.stats.products'), detail: t('home.stats.products_detail') },
+        { value: dynamicStats?.onTimeDelivery ?? 98, suffix: "%", label: t('home.stats.delivery'), detail: t('home.stats.delivery_detail') },
     ];
 
     return (

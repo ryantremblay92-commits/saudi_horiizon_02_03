@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongodb';
 import User from '@/lib/db/models/User';
+import { notifyNewUser } from '@/lib/notifications/adminNotifications';
 
 export async function GET(request: NextRequest) {
     try {
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
         };
 
         const user = await User.create(userData);
+
+        // Create notification for admin
+        await notifyNewUser(name, email);
 
         // Return user without password
         const userResponse = {

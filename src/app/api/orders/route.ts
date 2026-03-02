@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongodb';
 import Order from '@/lib/db/models/Order';
+import { notifyNewOrder } from '@/lib/notifications/adminNotifications';
 
 export async function POST(request: NextRequest) {
     try {
@@ -25,6 +26,13 @@ export async function POST(request: NextRequest) {
             shippingAddress,
             status: 'pending'
         });
+
+        // Create admin notification for new order
+        await notifyNewOrder(
+            order._id.toString(),
+            totalAmount,
+            shippingAddress?.email || undefined
+        );
 
         return NextResponse.json(order, { status: 201 });
     } catch (error: unknown) {

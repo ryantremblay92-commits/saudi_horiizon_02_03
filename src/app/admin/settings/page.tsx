@@ -7,20 +7,13 @@ import {
     Save,
     Globe,
     Bell,
-    Shield,
-    Store,
     Search,
-    FileText,
-    MapPin,
     Loader2,
     ChevronRight,
     Settings,
-    Lock,
-    ToggleLeft,
     ToggleRight,
     CheckCircle2,
     AlertCircle,
-    Clock,
     Zap,
     Activity
 } from 'lucide-react';
@@ -31,23 +24,12 @@ export default function AdminSettingsPage() {
     const { isInitialized } = useAuth();
     const [initialLoading, setInitialLoading] = useState(true);
     const [savingSection, setSavingSection] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState('store');
+    const [activeTab, setActiveTab] = useState('seo');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
-
-    const [storeInfo, setStoreInfo] = useState({
-        name: 'Saudi Horizon',
-        tagline: 'Premium Heavy Equipment Parts Supplier',
-        email: 'info@saudihorizon.com',
-        phone: '+966 11 123 4567',
-        whatsapp: '+966 50 123 4567',
-        address: 'Riyadh, Saudi Arabia',
-        businessHours: 'Sun-Thu: 8:00 AM - 6:00 PM',
-        description: 'Leading supplier of genuine heavy equipment parts for Caterpillar, Komatsu, Volvo, and more.'
-    });
 
     const [seo, setSeo] = useState({
         metaTitle: 'Saudi Horizon - Heavy Equipment Parts Supplier',
@@ -56,42 +38,12 @@ export default function AdminSettingsPage() {
         ogImage: '/images/og-image.jpg'
     });
 
-    const [content, setContent] = useState({
-        heroTitle: 'Premium Heavy Equipment Parts',
-        heroSubtitle: 'Genuine parts for Caterpillar, Komatsu, Volvo & more',
-        heroCta: 'Request a Quote',
-        feature1Title: 'Genuine Parts',
-        feature1Desc: '100% authentic OEM parts',
-        feature2Title: 'Fast Delivery',
-        feature2Desc: 'Across Saudi Arabia',
-        feature3Title: 'Expert Support',
-        feature3Desc: 'Technical expertise',
-        footerAbout: 'Saudi Horizon is a leading supplier of heavy equipment parts in the Middle East.',
-        footerContact: 'Contact us: info@saudihorizon.com'
-    });
-
-    const [general, setGeneral] = useState({
-        appName: 'Saudi Horizon',
-        appUrl: 'https://saudihorizon.com',
-        supportEmail: 'support@saudihorizon.com',
-        currency: 'SAR',
-        timezone: 'Asia/Riyadh',
-        language: 'en'
-    });
-
     const [notifications, setNotifications] = useState({
         orderNotifications: true,
         lowStockAlerts: true,
         newUserRegistrations: false,
         quoteRequests: true,
         marketingEmails: false
-    });
-
-    const [security, setSecurity] = useState({
-        twoFactorAuth: false,
-        sessionTimeout: '30 minutes',
-        passwordPolicy: true,
-        loginAttemptsLockout: '5 attempts'
     });
 
     const getHeaders = (): HeadersInit => {
@@ -115,12 +67,8 @@ export default function AdminSettingsPage() {
             if (!response.ok) throw new Error('Failed to load');
             const data = await response.json();
             const s = data.settings || {};
-            if (s.store) setStoreInfo(prev => ({ ...prev, ...s.store }));
             if (s.seo) setSeo(prev => ({ ...prev, ...s.seo }));
-            if (s.content) setContent(prev => ({ ...prev, ...s.content }));
-            if (s.general) setGeneral(prev => ({ ...prev, ...s.general }));
             if (s.notifications) setNotifications(prev => ({ ...prev, ...s.notifications }));
-            if (s.security) setSecurity(prev => ({ ...prev, ...s.security }));
         } catch (err) {
             console.error('Error loading settings:', err);
         } finally {
@@ -149,12 +97,8 @@ export default function AdminSettingsPage() {
     };
 
     const tabs = [
-        { id: 'store', label: 'Store Profile', icon: Store },
         { id: 'seo', label: 'SEO Settings', icon: Search },
-        { id: 'content', label: 'Page Content', icon: FileText },
-        { id: 'general', label: 'General Config', icon: Globe },
         { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'security', label: 'Security', icon: Shield },
     ];
 
     const FieldRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -204,10 +148,6 @@ export default function AdminSettingsPage() {
                     <div className="flex items-center gap-3 px-5 border-r border-white/10">
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Status: Online</span>
-                    </div>
-                    <div className="flex items-center gap-3 px-5 border-r border-white/10">
-                        <Lock className="w-4 h-4 text-gold" />
-                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Security: Active</span>
                     </div>
                     <div className="flex items-center gap-3 px-5 border-r border-white/10 hidden md:flex">
                         <Activity className="w-4 h-4 text-blue-400" />
@@ -264,47 +204,6 @@ export default function AdminSettingsPage() {
                                 {/* Decorative elements */}
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
                                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
-                                {activeTab === 'store' && (
-                                    <div className="space-y-10">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-                                            <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Store Profile</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Public Store Information</p>
-                                            </div>
-                                            <SaveButton section="store" data={storeInfo} />
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <FieldRow label="Store Name">
-                                                <input className={inputClass} value={storeInfo.name} onChange={e => setStoreInfo({ ...storeInfo, name: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Store Tagline">
-                                                <input className={inputClass} value={storeInfo.tagline} onChange={e => setStoreInfo({ ...storeInfo, tagline: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Store Email">
-                                                <input type="email" className={inputClass} value={storeInfo.email} onChange={e => setStoreInfo({ ...storeInfo, email: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Store Phone">
-                                                <input className={inputClass} value={storeInfo.phone} onChange={e => setStoreInfo({ ...storeInfo, phone: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="WhatsApp Number">
-                                                <input className={inputClass} value={storeInfo.whatsapp} onChange={e => setStoreInfo({ ...storeInfo, whatsapp: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Business Hours">
-                                                <input className={inputClass} value={storeInfo.businessHours} onChange={e => setStoreInfo({ ...storeInfo, businessHours: e.target.value })} />
-                                            </FieldRow>
-                                            <div className="md:col-span-2">
-                                                <FieldRow label="Store Address">
-                                                    <input className={inputClass} value={storeInfo.address} onChange={e => setStoreInfo({ ...storeInfo, address: e.target.value })} />
-                                                </FieldRow>
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <FieldRow label="Store Description">
-                                                    <textarea className={`${inputClass} resize-none`} rows={4} value={storeInfo.description} onChange={e => setStoreInfo({ ...storeInfo, description: e.target.value })} />
-                                                </FieldRow>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
 
                                 {activeTab === 'seo' && (
                                     <div className="space-y-10">
@@ -338,87 +237,6 @@ export default function AdminSettingsPage() {
                                                         {seo.ogImage ? <img src={seo.ogImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Globe className="w-5 h-5 text-white/10" /></div>}
                                                     </div>
                                                 </div>
-                                            </FieldRow>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'content' && (
-                                    <div className="space-y-10">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-                                            <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Page Content</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Manage Website Text and Content</p>
-                                            </div>
-                                            <SaveButton section="content" data={content} />
-                                        </div>
-                                        <div className="space-y-12">
-                                            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] relative overflow-hidden group/hero">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 blur-3xl rounded-full" />
-                                                <p className="text-[10px] font-black text-gold uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                                                    <Zap className="w-3 h-3" />
-                                                    Hero Section Content
-                                                </p>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <FieldRow label="Hero Title">
-                                                        <input className={inputClass} value={content.heroTitle} onChange={e => setContent({ ...content, heroTitle: e.target.value })} />
-                                                    </FieldRow>
-                                                    <FieldRow label="CTA Button Text">
-                                                        <input className={inputClass} value={content.heroCta} onChange={e => setContent({ ...content, heroCta: e.target.value })} />
-                                                    </FieldRow>
-                                                    <div className="md:col-span-2">
-                                                        <FieldRow label="Hero Subtitle">
-                                                            <textarea className={`${inputClass} resize-none`} rows={3} value={content.heroSubtitle} onChange={e => setContent({ ...content, heroSubtitle: e.target.value })} />
-                                                        </FieldRow>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem]">
-                                                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-6">Feature Sections</p>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                    {[1, 2, 3].map(n => (
-                                                        <div key={n} className="space-y-4 p-6 bg-white/[0.02] rounded-3xl border border-white/5 group/node hover:border-white/10 transition-all">
-                                                            <p className="text-[10px] font-black text-white/10 uppercase tracking-widest flex items-center justify-between">
-                                                                Section 0{n}
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover/node:bg-blue-400 transition-colors" />
-                                                            </p>
-                                                            <input className={`${inputClass} px-4 py-3`} placeholder="Section Title" value={(content as any)[`feature${n}Title`]} onChange={e => setContent({ ...content, [`feature${n}Title`]: e.target.value } as any)} />
-                                                            <textarea className={`${inputClass} px-4 py-3 resize-none text-xs`} rows={3} placeholder="Section Description" value={(content as any)[`feature${n}Desc`]} onChange={e => setContent({ ...content, [`feature${n}Desc`]: e.target.value } as any)} />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'general' && (
-                                    <div className="space-y-10">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-                                            <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">General Configuration</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">App and System Settings</p>
-                                            </div>
-                                            <SaveButton section="general" data={general} />
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <FieldRow label="System Identity">
-                                                <input className={inputClass} value={general.appName} onChange={e => setGeneral({ ...general, appName: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Deployment URL">
-                                                <input className={inputClass} value={general.appUrl} onChange={e => setGeneral({ ...general, appUrl: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Support Channel">
-                                                <input type="email" className={inputClass} value={general.supportEmail} onChange={e => setGeneral({ ...general, supportEmail: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Base Currency Code">
-                                                <input className={inputClass} value={general.currency} onChange={e => setGeneral({ ...general, currency: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Mainframe Time Zone">
-                                                <input className={inputClass} value={general.timezone} onChange={e => setGeneral({ ...general, timezone: e.target.value })} />
-                                            </FieldRow>
-                                            <FieldRow label="Primary System Language">
-                                                <input className={inputClass} value={general.language} onChange={e => setGeneral({ ...general, language: e.target.value })} />
                                             </FieldRow>
                                         </div>
                                     </div>
@@ -460,82 +278,6 @@ export default function AdminSettingsPage() {
                                                     {notifications[item.key] && <div className="absolute inset-0 bg-gold/5 blur-2xl pointer-events-none" />}
                                                 </div>
                                             ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeTab === 'security' && (
-                                    <div className="space-y-10">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-                                            <div>
-                                                <h2 className="text-3xl font-black text-white font-display uppercase tracking-tight">Security</h2>
-                                                <p className="text-gold text-[10px] font-black uppercase tracking-[0.3em] mt-2">Authentication and Access Control</p>
-                                            </div>
-                                            <SaveButton section="security" data={security} />
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
-                                                <div className="relative z-10">
-                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Two-Factor Authentication (2FA)</p>
-                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Require 2FA on all administrative access attempts</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setSecurity(prev => ({ ...prev, twoFactorAuth: !prev.twoFactorAuth }))}
-                                                    className={`relative w-16 h-8 rounded-full transition-all z-10 ${security.twoFactorAuth ? 'bg-gold shadow-[0_0_20px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`}
-                                                >
-                                                    <span className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-white transition-all shadow-md ${security.twoFactorAuth ? 'translate-x-8' : 'translate-x-0'}`} />
-                                                </button>
-                                                {security.twoFactorAuth && <div className="absolute inset-0 bg-gold/5 blur-3xl pointer-events-none" />}
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
-                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
-                                                        <Clock className="w-3 h-3" />
-                                                        Session Timeout
-                                                    </p>
-                                                    <select
-                                                        value={security.sessionTimeout}
-                                                        onChange={e => setSecurity({ ...security, sessionTimeout: e.target.value })}
-                                                        className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
-                                                    >
-                                                        <option value="15 minutes">15 minutes</option>
-                                                        <option value="30 minutes">30 minutes</option>
-                                                        <option value="1 hour">1 hour</option>
-                                                        <option value="4 hours">4 hours</option>
-                                                    </select>
-                                                </div>
-
-                                                <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
-                                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-2">
-                                                        <Lock className="w-3 h-3" />
-                                                        Account Lockout Threshold
-                                                    </p>
-                                                    <select
-                                                        value={security.loginAttemptsLockout}
-                                                        onChange={e => setSecurity({ ...security, loginAttemptsLockout: e.target.value })}
-                                                        className="w-full bg-white/5 border border-white/10 text-white rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-gold/50 transition-all"
-                                                    >
-                                                        <option value="3 attempts">3 failed attempts</option>
-                                                        <option value="5 attempts">5 failed attempts</option>
-                                                        <option value="10 attempts">10 failed attempts</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 flex items-center justify-between group hover:border-gold/20 transition-all relative overflow-hidden">
-                                                <div className="relative z-10">
-                                                    <p className="text-sm font-black text-white uppercase tracking-tight">Password Complexity Policy</p>
-                                                    <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Enforce high-complexity password constraints</p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setSecurity(prev => ({ ...prev, passwordPolicy: !prev.passwordPolicy }))}
-                                                    className={`relative w-16 h-8 rounded-full transition-all z-10 ${security.passwordPolicy ? 'bg-gold shadow-[0_0_20px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`}
-                                                >
-                                                    <span className={`absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-white transition-all shadow-md ${security.passwordPolicy ? 'translate-x-8' : 'translate-x-0'}`} />
-                                                </button>
-                                                {security.passwordPolicy && <div className="absolute inset-0 bg-gold/5 blur-3xl pointer-events-none" />}
-                                            </div>
                                         </div>
                                     </div>
                                 )}
