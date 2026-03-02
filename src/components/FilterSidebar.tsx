@@ -110,153 +110,120 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="glass border-0 shadow-2xl">
-        <CardHeader className="border-b border-white/10 pb-4">
-          <CardTitle className="text-xl font-display font-bold text-gold tracking-wide">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Search */}
-          <div className="space-y-2">
-            <Label htmlFor="search" className="text-slate-300 font-medium">Search</Label>
-            <Input
-              id="search"
-              placeholder="Search by name, SKU..."
-              value={filters.search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="text-sm bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-gold/50 focus:ring-gold/20"
-            />
+    <div className="space-y-6">
+      {/* Price Range */}
+      <div className="space-y-5 px-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] font-mono">
+            Scale (USD)
+          </span>
+          <span className="text-[10px] font-black text-gold font-mono shadow-gold/20 drop-shadow-[0_0_8px_rgba(197,160,89,0.3)]">
+            ${filters.priceRange[0]} - ${filters.priceRange[1]}
+          </span>
+        </div>
+        <Slider
+          value={[filters.priceRange[0], filters.priceRange[1]]}
+          onValueChange={handlePriceChange}
+          min={0}
+          max={5000}
+          step={50}
+          className="[&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:bg-gold [&_[role=slider]]:border-none [&_[role=slider]]:rounded-none [&_[role=slider]]:rotate-45"
+        />
+      </div>
+
+      <div className="h-px bg-white/5" />
+
+      {/* Categories */}
+      <Collapsible defaultOpen className="space-y-4">
+        <CollapsibleTrigger className="flex items-center justify-between w-full font-black text-[10px] text-white/40 uppercase tracking-[0.2em] hover:text-gold transition-colors font-mono group">
+          Categories
+          <div className="flex items-center gap-2">
+            <span className="bg-white/5 px-1.5 py-0.5 rounded text-[8px]">{availableCategories.length}</span>
+            <ChevronDown className="w-3 h-3 group-data-[state=open]:rotate-180 transition-transform" />
           </div>
-
-          {/* Advanced Filters Divider */}
-          {(onEquipmentChange || onAvailabilityChange) && (
-            <div className="border-t border-white/10 pt-4 space-y-4">
-              <h3 className="text-sm font-bold text-gold font-display uppercase tracking-wider">Advanced Filters</h3>
-
-              {/* Equipment Compatibility Filter */}
-              {onEquipmentChange && onEquipmentClear && (
-                <CompatibilityFilter
-                  selectedEquipment={selectedEquipment}
-                  onClear={onEquipmentClear}
-                  onChangeEquipment={onEquipmentChange}
-                  compatibleOnly={false}
-                  onCompatibleOnlyChange={() => { }}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-3.5 max-h-72 overflow-y-auto custom-scrollbar pr-2 pt-2">
+          {availableCategories.length > 0 ? (
+            availableCategories.map((category) => (
+              <div key={category} className="flex items-center gap-3 group cursor-pointer hover:translate-x-1 transition-transform duration-300">
+                <Checkbox
+                  id={`category-${category}`}
+                  checked={filters.categories.includes(category)}
+                  onCheckedChange={(checked) =>
+                    handleCategoryChange(category, checked as boolean)
+                  }
+                  className="border-white/20 data-[state=checked]:bg-gold data-[state=checked]:border-gold h-4 w-4 transition-all"
                 />
-              )}
-
-              {/* Availability Filter */}
-              {onAvailabilityChange && (
-                <AvailabilityFilter
-                  selectedStatus={availabilityStatus}
-                  onStatusChange={onAvailabilityChange}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Price Range */}
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger className="flex items-center justify-between w-full font-bold text-white hover:text-gold transition-colors font-display">
-              Price Range
-              <ChevronDown className="w-4 h-4" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4 space-y-4">
-              <Slider
-                value={[filters.priceRange[0], filters.priceRange[1]]}
-                onValueChange={handlePriceChange}
-                min={0}
-                max={5000}
-                step={50}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm">
-                <span>${filters.priceRange[0]}</span>
-                <span>${filters.priceRange[1]}</span>
+                <Label
+                  htmlFor={`category-${category}`}
+                  className="text-[11px] font-bold text-white/70 group-hover:text-gold cursor-pointer transition-colors leading-none tracking-wide whitespace-nowrap"
+                  title={category}
+                >
+                  {category}
+                </Label>
+                <div className="flex-1" />
+                <span className="text-[9px] font-black font-mono text-white/20 group-hover:text-gold/60 transition-colors">
+                  ({productCounts.categories[category] || 0})
+                </span>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Categories */}
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger className="flex items-center justify-between w-full font-bold text-white hover:text-gold transition-colors font-display">
-              Categories ({availableCategories.length})
-              <ChevronDown className="w-4 h-4" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4 space-y-2 max-h-48 overflow-y-auto">
-              {availableCategories.length > 0 ? (
-                availableCategories.map((category) => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`category-${category}`}
-                      checked={filters.categories.includes(category)}
-                      onCheckedChange={(checked) =>
-                        handleCategoryChange(category, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={`category-${category}`} className="text-sm cursor-pointer flex-1">
-                      {category}
-                    </Label>
-                    <span className="text-xs text-muted-foreground">
-                      ({productCounts.categories[category] || 0})
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading categories...</p>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Brands */}
-          <Collapsible defaultOpen>
-            <CollapsibleTrigger className="flex items-center justify-between w-full font-bold text-white hover:text-gold transition-colors font-display">
-              Brands ({availableBrands.length})
-              <ChevronDown className="w-4 h-4" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4 space-y-2 max-h-48 overflow-y-auto">
-              {availableBrands.length > 0 ? (
-                availableBrands.map((brand) => (
-                  <div key={brand} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`brand-${brand}`}
-                      checked={filters.brands.includes(brand)}
-                      onCheckedChange={(checked) =>
-                        handleBrandChange(brand, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={`brand-${brand}`} className="text-sm cursor-pointer flex-1">
-                      {brand}
-                    </Label>
-                    <span className="text-xs text-muted-foreground">
-                      ({productCounts.brands[brand] || 0})
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading brands...</p>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Active Filters Summary */}
-          {(filters.brands.length > 0 || filters.categories.length > 0) && (
-            <div className="pt-2">
-              <p className="text-sm text-muted-foreground">
-                {filters.brands.length + filters.categories.length} filter(s) active
-              </p>
-            </div>
+            ))
+          ) : (
+            <p className="text-[10px] text-white/20 uppercase tracking-widest animate-pulse">Initializing...</p>
           )}
+        </CollapsibleContent>
+      </Collapsible>
 
-          {/* Clear Filters */}
-          <Button
-            variant="outline"
-            className="w-full glass border-white/10 hover:bg-white/10 hover:text-white transition-all text-slate-300"
-            onClick={handleClearFilters}
-          >
-            Clear All Filters
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="h-px bg-white/5" />
+
+      {/* Brands */}
+      <Collapsible defaultOpen className="space-y-4">
+        <CollapsibleTrigger className="flex items-center justify-between w-full font-black text-[10px] text-white/40 uppercase tracking-[0.2em] hover:text-gold transition-colors font-mono group">
+          Brands
+          <div className="flex items-center gap-2">
+            <span className="bg-white/5 px-1.5 py-0.5 rounded text-[8px]">{availableBrands.length}</span>
+            <ChevronDown className="w-3 h-3 group-data-[state=open]:rotate-180 transition-transform" />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-3.5 max-h-72 overflow-y-auto custom-scrollbar pr-2 pt-2">
+          {availableBrands.length > 0 ? (
+            availableBrands.map((brand) => (
+              <div key={brand} className="flex items-center gap-3 group cursor-pointer hover:translate-x-1 transition-transform duration-300">
+                <Checkbox
+                  id={`brand-${brand}`}
+                  checked={filters.brands.includes(brand) || false}
+                  onCheckedChange={(checked) =>
+                    handleBrandChange(brand, checked as boolean)
+                  }
+                  className="border-white/20 data-[state=checked]:bg-gold data-[state=checked]:border-gold h-4 w-4 transition-all"
+                />
+                <Label
+                  htmlFor={`brand-${brand}`}
+                  className="text-[11px] font-bold text-white/70 group-hover:text-gold cursor-pointer transition-colors leading-none tracking-wide whitespace-nowrap"
+                  title={brand}
+                >
+                  {brand}
+                </Label>
+                <div className="flex-1" />
+                <span className="text-[9px] font-black font-mono text-white/20 group-hover:text-gold/60 transition-colors">
+                  ({productCounts.brands[brand] || 0})
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-[10px] text-white/20 uppercase tracking-widest animate-pulse">Initializing...</p>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Clear Filters */}
+      <Button
+        variant="ghost"
+        className="w-full h-11 text-[9px] font-black text-white/40 hover:text-gold hover:bg-gold/5 transition-all duration-500 text-center border border-white/5 hover:border-gold/30 rounded-xl uppercase tracking-[0.2em] group"
+        onClick={handleClearFilters}
+      >
+        <span className="group-hover:translate-x-1 transition-transform inline-block">Reset Filter System</span>
+      </Button>
     </div>
   );
 };
+
