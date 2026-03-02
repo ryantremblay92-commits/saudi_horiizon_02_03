@@ -121,6 +121,10 @@ body {
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.55);
   }
+
+  .font-arabic {
+    font-family: var(--font-cairo), system-ui, sans-serif !important;
+  }
 }
 
 /* Links */

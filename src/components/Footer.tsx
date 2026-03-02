@@ -7,19 +7,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getCategories, Category } from "@/api/categories";
-
-const quickLinks = [
-  { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
-  { label: "Products", href: "/products" },
-  { label: "Categories", href: "/categories" },
-  { label: "Support", href: "/help" },
-  { label: "Contact", href: "/contact" },
-  { label: "Blog", href: "/news" },
-];
+import { useTranslation } from 'react-i18next';
 
 export function Footer() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -43,7 +35,7 @@ export function Footer() {
     if (email) {
       setSubscribed(true);
       setEmail("");
-      toast.success("Thank you for subscribing to our newsletter!");
+      toast.success(t('footer.newsletter_success') || "Thank you for subscribing to our newsletter!");
     }
   };
 
@@ -55,11 +47,19 @@ export function Footer() {
     { icon: Youtube, href: "#", label: "YouTube" },
   ];
 
+  const quickLinks = [
+    { label: t('nav.home'), href: "/" },
+    { label: t('nav.about'), href: "/about" },
+    { label: t('nav.products'), href: "/products" },
+    { label: t('nav.categories'), href: "/categories" },
+    { label: t('nav.contact'), href: "/contact" },
+  ];
+
   // Use top 6 categories for the footer
   const footerCategories = categories.slice(0, 6);
 
   return (
-    <footer ref={footerRef} className="bg-charcoal pt-24 pb-8 border-t border-white/5 relative z-10">
+    <footer ref={footerRef} className="bg-charcoal pt-24 pb-8 border-t border-white/5 relative z-10 font-sans">
       <div className="container-premium">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
           {/* Brand Column */}
@@ -70,14 +70,13 @@ export function Footer() {
             className="lg:col-span-1"
           >
             <Link href="/" className="inline-block mb-6">
-              <span className="text-2xl font-bold tracking-wider text-white font-display">
+              <span className="text-2xl font-bold tracking-wider text-white font-display uppercase">
                 SAUDI <span className="text-gold">HORIZON</span>
               </span>
-              <p className="text-[10px] text-white/40 tracking-[0.2em] mt-1">شركة الأفق السعودية</p>
+              <p className="text-[10px] text-white/40 tracking-[0.2em] mt-1 font-arabic">شركة الأفق السعودية</p>
             </Link>
             <p className="text-body-md text-white/60 mb-8 leading-relaxed">
-              Your trusted partner for all heavy equipment spare parts.
-              ANC brand specialist for engine, turbocharger, electrical, and hydraulic parts.
+              {t('footer.description')}
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
@@ -102,7 +101,7 @@ export function Footer() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <h4 className="text-lg font-bold mb-8 text-white">Company</h4>
+            <h4 className="text-lg font-bold mb-8 text-white">{t('footer.company_title')}</h4>
             <ul className="space-y-4">
               {quickLinks.map((link) => (
                 <li key={link.label}>
@@ -124,7 +123,7 @@ export function Footer() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h4 className="text-lg font-bold mb-8 text-white">Our Products</h4>
+            <h4 className="text-lg font-bold mb-8 text-white">{t('footer.products_title')}</h4>
             <ul className="space-y-4">
               {footerCategories.length > 0 ? (
                 footerCategories.map((category) => (
@@ -142,7 +141,6 @@ export function Footer() {
                 <>
                   <li><Link href="/products" className="text-body-md text-white/60 hover:text-gold transition-colors">Engine Parts</Link></li>
                   <li><Link href="/products" className="text-body-md text-white/60 hover:text-gold transition-colors">Hydraulic Systems</Link></li>
-                  <li><Link href="/products" className="text-body-md text-white/60 hover:text-gold transition-colors">Transmission</Link></li>
                 </>
               )}
             </ul>
@@ -154,7 +152,7 @@ export function Footer() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <h4 className="text-lg font-bold mb-8 text-white">Get In Touch</h4>
+            <h4 className="text-lg font-bold mb-8 text-white">{t('footer.contact_title')}</h4>
 
             {/* Contact Info */}
             <div className="space-y-5 mb-10">
@@ -162,20 +160,20 @@ export function Footer() {
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-gold/10 transition-colors">
                   <Phone className="w-5 h-5 text-gold" />
                 </div>
-                <span>+966 57 019 6677</span>
+                <span dir="ltr">+966 57 019 6677</span>
               </a>
               <a href="mailto:salehma@saudihorizon.online" className="flex items-center gap-4 text-body-md text-white/60 hover:text-gold transition-colors group">
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-gold/10 transition-colors">
                   <Mail className="w-5 h-5 text-gold" />
                 </div>
-                <span>salehma@saudihorizon.online</span>
+                <span className="break-all">salehma@saudihorizon.online</span>
               </a>
               <div className="flex items-start gap-4 text-body-md text-white/60">
                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
                   <MapPin className="w-5 h-5 text-gold" />
                 </div>
                 <span className="leading-relaxed">
-                  Al-Noor Mall, Omar bin Al-Khattab Street, Riyadh, KSA
+                  {t('footer.address')}
                 </span>
               </div>
             </div>
@@ -183,11 +181,11 @@ export function Footer() {
             {/* Newsletter */}
             <div>
               <p className="text-body-sm text-white/60 mb-5 leading-relaxed">
-                Stay updated with our latest stock arrivals.
+                {t('footer.newsletter_text')}
               </p>
               {subscribed ? (
                 <div className="p-4 rounded-lg bg-gold/10 border border-gold/20">
-                  <p className="text-gold font-semibold text-sm">Welcome to our inner circle!</p>
+                  <p className="text-gold font-semibold text-sm">Welcome!</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubscribe} className="flex relative group">
@@ -195,7 +193,7 @@ export function Footer() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Engineering your inbox..."
+                    placeholder={t('footer.newsletter_placeholder') || "Email..."}
                     className="flex-1 bg-white/5 border border-white/10 px-5 py-4 rounded-lg text-white placeholder:text-white/30 focus:outline-none focus:border-gold transition-all text-body-md pr-14"
                     required
                   />
@@ -213,27 +211,49 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-4">
-            <p className="text-body-sm text-white/30">
-              © 2026 Saudi Horizon Co.
-            </p>
-            <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
-            <p className="text-[10px] text-white/20 tracking-widest hidden md:block">PROFESSIONAL INDUSTRIAL SOLUTIONS</p>
+        <div className="pt-10 border-t border-white/10 flex flex-col lg:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <p className="text-body-sm text-white/30 truncate">
+                © 2026 Saudi Horizon Co.
+              </p>
+              <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+              <p className="text-[10px] text-white/20 tracking-widest hidden md:block uppercase">{t('footer.industrial_note')}</p>
+            </div>
+            {/* Added CR and VAT info for compliance */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+              <span className="flex items-center gap-2">{t('footer.cr_label')}: <span className="text-white/40">1010XXXXXX</span></span>
+              <span className="flex items-center gap-2">{t('footer.vat_label')}: <span className="text-white/40">300XXXXXXXXXXXX</span></span>
+              <span className="flex items-center gap-2">{t('footer.licensed_in')} <span className="text-white/40">Saudi Arabia</span></span>
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-8">
-            <Link href="/privacy" className="text-body-sm text-white/40 hover:text-gold transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-body-sm text-white/40 hover:text-gold transition-colors">
-              Terms of Service
-            </Link>
-            <Link href="/cookie-policy" className="text-body-sm text-white/40 hover:text-gold transition-colors">
-              Cookie Policy
-            </Link>
-            <Link href="/contact" className="text-body-sm text-white/40 hover:text-gold transition-colors">
-              Support
-            </Link>
+
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            {/* Trust Logos */}
+            <div className="flex items-center gap-4 py-2 px-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[8px] font-black text-white/20 uppercase tracking-widest mr-2">{t('footer.secure_payments')}</div>
+              <div className="flex gap-4">
+                <span className="text-[10px] font-black text-white/40">mada</span>
+                <span className="text-[10px] font-black text-white/40 italic">HyperPay</span>
+                <span className="text-[10px] font-black text-white/40">VISA</span>
+                <span className="text-[10px] font-black text-white/40">MC</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-6">
+              <Link href="/privacy" className="text-body-sm text-white/40 hover:text-gold transition-colors">
+                {t('nav.privacy')}
+              </Link>
+              <Link href="/terms" className="text-body-sm text-white/40 hover:text-gold transition-colors">
+                {t('nav.terms')}
+              </Link>
+              <Link href="/returns" className="text-body-sm text-white/40 hover:text-gold transition-colors">
+                {t('nav.returns')}
+              </Link>
+              <Link href="/shipping" className="text-body-sm text-white/40 hover:text-gold transition-colors">
+                {t('nav.shipping')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

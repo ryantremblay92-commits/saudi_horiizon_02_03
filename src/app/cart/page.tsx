@@ -10,7 +10,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { getCart, removeFromCart, updateCartItem, clearCart, CartItem } from '@/api/cart';
 import { toast } from 'sonner';
 import { FloatingParticles, AnimatedConnector } from "@/components/effects/SceneEffects";
-import StripeApplePay from '@/components/cart/StripeApplePay';
+
 import { useSearchParams } from 'next/navigation';
 
 function CartContent() {
@@ -27,8 +27,8 @@ function CartContent() {
         setCartItems(items);
 
         if (isSuccess) {
-            toast.success('PROCUREMENT SUCCESSFUL', {
-                description: 'Your industrial order has been synchronized with our logistics terminal.',
+            toast.success('Order Placed Successfully!', {
+                description: 'Your order has been confirmed. You will receive a confirmation email shortly.',
             });
             clearCart();
             setCartItems([]);
@@ -40,8 +40,8 @@ function CartContent() {
     const handleRemoveItem = (itemId: string) => {
         removeFromCart(itemId);
         setCartItems(getCart());
-        toast.success('COMPONENT DECOMMISSIONED', {
-            description: 'Item has been removed from your procurement list',
+        toast.success('Item Removed', {
+            description: 'Item has been removed from your cart',
         });
     };
 
@@ -55,8 +55,8 @@ function CartContent() {
     const handleClearCart = () => {
         clearCart();
         setCartItems([]);
-        toast.success('BASKET PURGED', {
-            description: 'All procurement items have been cleared',
+        toast.success('Cart Cleared', {
+            description: 'All items have been removed from your cart',
         });
     };
 
@@ -98,7 +98,7 @@ function CartContent() {
                             </BreadcrumbItem>
                             <BreadcrumbSeparator className="text-slate-600" />
                             <BreadcrumbItem>
-                                <BreadcrumbPage className="text-gold uppercase text-[10px] tracking-[0.2em] font-bold underline underline-offset-4 decoration-gold/30">PROCUREMENT BASKET</BreadcrumbPage>
+                                <BreadcrumbPage className="text-gold uppercase text-[10px] tracking-[0.2em] font-bold underline underline-offset-4 decoration-gold/30">SHOPPING CART</BreadcrumbPage>
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
@@ -111,9 +111,9 @@ function CartContent() {
                         animate={{ opacity: 1, x: 0 }}
                         className="max-w-xl"
                     >
-                        <span className="micro-label mb-4 block">ACTIVE PROCUREMENT</span>
+                        <span className="micro-label mb-4 block">YOUR CART</span>
                         <h1 className="text-5xl font-black mb-4 tracking-tighter" style={{ fontFamily: 'var(--font-display)' }}>
-                            Review your <span className="text-gradient-gold">Inventory items.</span>
+                            Review your <span className="text-gradient-gold">Cart.</span>
                         </h1>
                         <p className="text-white/40 text-sm font-bold uppercase tracking-[0.2em]">
                             Total Items: <span className="text-gold">{cartItems.length}</span> | Status: <span className="text-emerald-500">READY FOR ORDER</span>
@@ -173,7 +173,7 @@ function CartContent() {
                                                         </div>
                                                     </div>
                                                     <div className="text-right w-full md:w-auto">
-                                                        <p className="text-2xl font-black text-gold">${item.price.toLocaleString()}</p>
+                                                        <p className="text-2xl font-black text-gold">SAR {item.price.toLocaleString()}</p>
                                                         <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-1">Unit Price</p>
                                                     </div>
                                                 </div>
@@ -209,7 +209,7 @@ function CartContent() {
                                                         className="text-[10px] font-black text-red-400/60 hover:text-red-400 uppercase tracking-[0.2em] hover:bg-red-500/5 group"
                                                     >
                                                         <Trash2 className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
-                                                        Decommission Item
+                                                        Remove Item
                                                     </Button>
                                                 </div>
                                             </div>
@@ -225,7 +225,7 @@ function CartContent() {
                                     className="text-[10px] font-black text-white/20 hover:text-red-400/80 uppercase tracking-[0.3em] group"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2 group-hover:shake" />
-                                    Purge Entire Basket
+                                    Clear Cart
                                 </Button>
                             </motion.div>
                         </motion.div>
@@ -250,27 +250,27 @@ function CartContent() {
                                                 <span className="text-lg font-black text-white">{cartItems.reduce((a, b) => a + b.quantity, 0)} Units</span>
                                             </div>
                                             <div className="flex justify-between items-center group">
-                                                <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-white/60 transition-colors">Net Weight Est.</span>
-                                                <span className="text-lg font-black text-white">450.00 KG</span>
+                                                <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] group-hover:text-white/60 transition-colors">Shipping</span>
+                                                <span className="text-lg font-black text-white">Calculated at checkout</span>
                                             </div>
                                             <div className="h-px bg-white/5" />
                                             <div className="flex justify-between items-center group">
                                                 <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Subtotal</span>
-                                                <span className="text-lg font-black text-white">${subtotal.toLocaleString()}</span>
+                                                <span className="text-lg font-black text-white">SAR {subtotal.toLocaleString()}</span>
                                             </div>
                                             <div className="flex justify-between items-center group">
                                                 <div className="flex flex-col">
                                                     <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">VAT (15%)</span>
                                                     <span className="text-[8px] text-white/20 uppercase tracking-widest mt-1">Region Standard</span>
                                                 </div>
-                                                <span className="text-lg font-black text-white">${tax.toLocaleString()}</span>
+                                                <span className="text-lg font-black text-white">SAR {tax.toLocaleString()}</span>
                                             </div>
 
                                             <div className="pt-8 border-t border-white/10 mt-8">
                                                 <div className="flex justify-between items-end mb-8 text-3xl font-black text-white">
                                                     <span className="text-[11px] font-black text-gold uppercase tracking-[0.4em] mb-2 block">GRAND TOTAL</span>
                                                     <span className="text-gradient-gold" style={{ fontFamily: 'var(--font-display)' }}>
-                                                        ${total.toLocaleString()}
+                                                        SAR {total.toLocaleString()}
                                                     </span>
                                                 </div>
 
@@ -279,18 +279,11 @@ function CartContent() {
                                                     onClick={() => router.push('/checkout')}
                                                 >
                                                     <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:animate-shimmer" />
-                                                    PROCEED TO PROCUREMENT
+                                                    PROCEED TO CHECKOUT
                                                     <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                                                 </Button>
 
-                                                <div className="mt-8">
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className="h-px bg-white/5 flex-1" />
-                                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.3em]">OR SECURE PAY</span>
-                                                        <div className="h-px bg-white/5 flex-1" />
-                                                    </div>
-                                                    <StripeApplePay cartItems={cartItems} />
-                                                </div>
+
 
                                                 <Button
                                                     variant="outline"
@@ -298,7 +291,7 @@ function CartContent() {
                                                     onClick={() => router.push('/products')}
                                                 >
                                                     <ShoppingCart className="mr-3 w-4 h-4" />
-                                                    Continue Specification
+                                                    Continue Shopping
                                                 </Button>
                                             </div>
                                         </div>
@@ -307,11 +300,11 @@ function CartContent() {
                                         <div className="mt-10 grid grid-cols-2 gap-4 pt-8 border-t border-white/5">
                                             <div className="flex items-center gap-3">
                                                 <ShieldCheck className="w-5 h-5 text-gold/40" />
-                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">OEM SECURE</span>
+                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">SECURE PAYMENT</span>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <Truck className="w-5 h-5 text-gold/40" />
-                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">EXPRESS FREIGHT</span>
+                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">FAST SHIPPING</span>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -332,19 +325,19 @@ function CartContent() {
                                 <div className="absolute inset-0 bg-gold/5 rounded-full blur-xl group-hover:blur-2xl transition-all" />
                                 <Package className="w-12 h-12 text-white/20 group-hover:text-gold/40 transition-colors" />
                             </div>
-                            <span className="micro-label mb-6 block">SYSTEM ALERT: INVENTORY EMPTY</span>
+                            <span className="micro-label mb-6 block">YOUR CART IS EMPTY</span>
                             <h2 className="text-4xl font-black mb-6 text-white tracking-tighter" style={{ fontFamily: 'var(--font-display)' }}>
-                                Your PROCUREMENT basket is <span className="text-white/20">Empty.</span>
+                                Your cart is <span className="text-white/20">Empty.</span>
                             </h2>
                             <p className="text-white/40 mb-12 leading-relaxed uppercase text-[10px] tracking-[0.25em] font-bold">
-                                No industrial components have been staged for acquisition. Access the master catalog to begin your technical specification.
+                                You haven't added any items yet. Browse our catalog to find quality spare parts for your equipment.
                             </p>
                             <Button
                                 onClick={() => router.push('/products')}
                                 className="h-16 px-12 rounded-2xl bg-gold text-navy font-black uppercase tracking-[0.2em] shadow-[0_15px_30px_rgba(197,160,89,0.3)] hover:scale-105 transition-transform"
                             >
                                 <ShoppingCart className="mr-3 w-5 h-5" />
-                                OPEN MASTER CATALOG
+                                BROWSE PRODUCTS
                             </Button>
                         </div>
                     </motion.div>
@@ -363,7 +356,7 @@ function CartContent() {
                             </div>
                             <div>
                                 <h3 className="text-2xl font-black text-white mb-2" style={{ fontFamily: 'var(--font-display)' }}>Expert Technical Support</h3>
-                                <p className="text-white/40 uppercase tracking-[0.2em] text-[10px] font-black">24/7 Priority assistance for industrial logistics</p>
+                                <p className="text-white/40 uppercase tracking-[0.2em] text-[10px] font-black">24/7 Priority assistance for orders & shipping</p>
                             </div>
                         </div>
                         <div className="flex gap-4">

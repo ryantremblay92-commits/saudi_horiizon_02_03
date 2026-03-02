@@ -15,7 +15,7 @@ export default function CheckoutSuccessPage() {
     const [orderNumber, setOrderNumber] = React.useState('');
 
     React.useEffect(() => {
-        setOrderNumber(`AUTH-${Date.now().toString().slice(-8).toUpperCase()}`);
+        setOrderNumber(`ORD-${Date.now().toString().slice(-8).toUpperCase()}`);
     }, []);
 
     return (
@@ -42,12 +42,12 @@ export default function CheckoutSuccessPage() {
                         <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full" />
                     </div>
 
-                    <span className="micro-label mb-4 block">TRANSACTION AUTHORIZED</span>
+                    <span className="micro-label mb-4 block">PAYMENT SUCCESSFUL</span>
                     <h1 className="text-5xl md:text-6xl font-black mb-4 tracking-tighter" style={{ fontFamily: 'var(--font-display)' }}>
-                        Procurement <span className="text-gradient-gold">Confirmed.</span>
+                        Order <span className="text-gradient-gold">Confirmed.</span>
                     </h1>
                     <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] max-w-lg mx-auto leading-relaxed">
-                        Technical synchronization successful. Your industrial components have been reserved and staged for express dispatch.
+                        Your order has been placed successfully. We'll send a confirmation to your email with tracking details.
                     </p>
                 </motion.div>
 
@@ -62,7 +62,7 @@ export default function CheckoutSuccessPage() {
                     <Card className="card-premium rounded-[2.5rem] border-white/5 bg-navy/40 backdrop-blur-xl overflow-hidden">
                         <CardContent className="p-8 md:p-10">
                             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">PROCUREMENT REFERENCE ID</span>
+                                <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">ORDER REFERENCE</span>
                                 <div className="px-6 py-3 bg-gold/10 border border-gold/20 rounded-xl">
                                     <span className="font-mono text-xl font-black text-gold tracking-wider">{orderNumber}</span>
                                 </div>
@@ -77,8 +77,8 @@ export default function CheckoutSuccessPage() {
                                             <Mail className="w-5 h-5 text-gold/60" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Documentation Exported</p>
-                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">A digital confirmation has been dispatched to your corporate email.</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Confirmation Email Sent</p>
+                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">A confirmation email has been sent to your email address.</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-4 group">
@@ -86,8 +86,8 @@ export default function CheckoutSuccessPage() {
                                             <ShieldCheck className="w-5 h-5 text-gold/60" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Quality Verification</p>
-                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">Components are undergoing final OEM certification checks.</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Quality Assured</p>
+                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">All items are inspected for quality before shipping.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -97,8 +97,8 @@ export default function CheckoutSuccessPage() {
                                             <Truck className="w-5 h-5 text-gold/60" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Logistics Ready</p>
-                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">Standard cargo dispatch estimated within 24-48 business hours.</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Shipping Soon</p>
+                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">Your order will be shipped within 24-48 business hours.</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-4 group">
@@ -106,8 +106,8 @@ export default function CheckoutSuccessPage() {
                                             <MapPin className="w-5 h-5 text-gold/60" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Live Tracking</p>
-                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">Real-time GPS telemetry will be activated upon facility exit.</p>
+                                            <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Order Tracking</p>
+                                            <p className="text-[9px] text-white/30 uppercase tracking-widest leading-relaxed font-bold">You'll receive a tracking link once your order ships.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -119,14 +119,14 @@ export default function CheckoutSuccessPage() {
                         <CardContent className="p-8 md:p-10">
                             <h2 className="text-2xl font-black mb-10 text-white tracking-tight flex items-center gap-4" style={{ fontFamily: 'var(--font-display)' }}>
                                 <div className="w-2 h-8 bg-gold rounded-full" />
-                                Logistics Workflow
+                                Delivery Steps
                             </h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                                 {[
-                                    { step: '01', title: 'Inventory Sync', icon: Box, desc: 'Central database update and physical stock allocation.' },
-                                    { step: '02', title: 'Tactical Packing', icon: Zap, desc: 'Industrial-grade protection and logistics labeling.' },
-                                    { step: '03', title: 'Facility Exit', icon: Truck, desc: 'Handoff to primary freight carriers for final transit.' },
+                                    { step: '01', title: 'Order Confirmed', icon: Box, desc: 'Your order is confirmed and payment has been received.' },
+                                    { step: '02', title: 'Packed & Ready', icon: Zap, desc: 'Items are carefully packed with protective packaging.' },
+                                    { step: '03', title: 'Shipped', icon: Truck, desc: 'Your order is on its way to the delivery address.' },
                                 ].map((phase, idx) => (
                                     <div key={idx} className="relative group">
                                         <div className="flex items-center gap-4 mb-4">
@@ -149,25 +149,25 @@ export default function CheckoutSuccessPage() {
                             onClick={() => router.push('/products')}
                         >
                             <ShoppingBag className="w-4 h-4 mr-3" />
-                            Return to Parts Catalog
+                            Return to Products
                         </Button>
                         <Button
                             className="h-18 rounded-2xl bg-gold text-navy font-black uppercase tracking-[0.3em] text-[10px] shadow-[0_15px_40px_rgba(197,160,89,0.2)] group"
                             onClick={() => router.push('/')}
                         >
-                            Back to Command Center
+                            Back to Home
                             <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform" />
                         </Button>
                     </div>
 
                     <div className="mt-12 text-center">
-                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Need Technical Procurement Assistance?</p>
+                        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-4">Need Help With Your Order?</p>
                         <Button
                             variant="ghost"
                             onClick={() => router.push('/contact')}
                             className="text-gold hover:text-white uppercase text-[10px] font-black tracking-widest p-0 underline-offset-8 decoration-gold/30 underline h-auto"
                         >
-                            Contact Logistics Engineering
+                            Contact Customer Support
                         </Button>
                     </div>
                 </motion.div>

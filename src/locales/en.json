@@ -10,10 +10,85 @@
         "login": "Login",
         "logout": "Logout",
         "brands": "Brands",
-        "services": "Services"
+        "services": "Services",
+        "categories": "Categories",
+        "orders": "Orders",
+        "installation": "Installation Services",
+        "warranty": "Warranty",
+        "bulk_quote": "Bulk Quote",
+        "maintenance": "Maintenance",
+        "parts_lookup": "Parts Lookup",
+        "privacy": "Privacy Policy",
+        "terms": "Terms & Conditions",
+        "tax_info": "Tax Information",
+        "shipping": "Shipping & Logistics",
+        "returns": "Return Policy"
     },
     "common": {
         "language": "Language",
-        "brand": "Saudi Horizon"
+        "brand": "Saudi Horizon",
+        "cr_number": "CR Number",
+        "vat_number": "VAT Number",
+        "licensed_in": "Licensed in Saudi Arabia"
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "subtitle": "Your privacy and data security is our top priority",
+        "last_updated": "Last Updated: March 2026",
+        "intro": "Saudi Horizon for Heavy Equipment Solutions is committed to protecting your personal data in accordance with the Saudi Personal Data Protection Law (PDPL).",
+        "section1_title": "1. Information We Collect",
+        "section1_content": "We collect only information necessary to process your orders and provide technical support, including name, contact number, address, and vehicle/equipment details.",
+        "section2_title": "2. How We Use Your Info",
+        "section2_content": "Your information is used for completing purchases, tracking shipments, issuing tax invoices, and providing customized quotes for your industrial needs.",
+        "section3_title": "3. Data Security",
+        "section3_content": "We use advanced encryption technologies. No sensitive payment data is stored on our servers; it is processed via HyperPay, approved by the Saudi Central Bank (SAMA)."
+    },
+    "terms": {
+        "title": "Terms & Conditions",
+        "subtitle": "Legal agreement for using Saudi Horizon services",
+        "last_updated": "Last Updated: March 2026",
+        "section1_title": "1. Introduction",
+        "section1_content": "By using the Saudi Horizon website, you agree to these Terms and Conditions. These services are intended for heavy equipment parts and OEM components.",
+        "section2_title": "2. Orders & Pricing",
+        "section2_content": "All prices shown are subject to 15% VAT and are updated periodically based on the global availability of parts (ANC, Volvo, CAT, etc.).",
+        "section3_title": "3. Electronic Payments",
+        "section3_content": "Payments are accepted via mada, Visa, Mastercard, Apple Pay, and installments via Tabby/Tamara, as per SAMA regulations."
+    },
+    "returns": {
+        "title": "Returns & Refunds",
+        "subtitle": "Your rights are protected under Saudi E-Commerce regulations",
+        "last_updated": "Last Updated: March 2026",
+        "section1_title": "1. Right to Return (7 Days)",
+        "section1_content": "Under Saudi E-Commerce Law, consumers have the right to return and receive a refund within 7 days of receipt, provided the product is in its original condition.",
+        "section2_title": "2. Non-Returnable Items",
+        "section2_content": "Returns do not include parts that have been installed, electrical parts, or parts imported specifically for the customer's request.",
+        "section3_title": "3. Refund Process",
+        "section3_content": "Refunds are processed to the original payment method within 7-14 business days after inspecting the returned product."
+    },
+    "shipping": {
+        "title": "Shipping & Logistics",
+        "subtitle": "Fast delivery to all KSA regions and GCC countries",
+        "last_updated": "Last Updated: March 2026",
+        "section1_title": "1. Coverage Area",
+        "section1_content": "We ship to all cities across Saudi Arabia (Riyadh, Jeddah, Dammam, etc.) and GCC countries via certified logistics partners.",
+        "section2_title": "2. Delivery Time",
+        "section2_content": "Delivery within Riyadh takes 24-48 hours, while other KSA cities take 3-5 business days.",
+        "section3_title": "3. Shipping Costs",
+        "section3_content": "Costs are calculated based on weight (engines, turbos, hydraulic parts) and destination. Final costs appear at checkout."
+    },
+    "footer": {
+        "description": "Your trusted partner for all heavy equipment spare parts. ANC brand specialist for engine, turbocharger, electrical, and hydraulic parts.",
+        "company_title": "Company",
+        "products_title": "Our Products",
+        "contact_title": "Get In Touch",
+        "address": "Al-Noor Mall, Omar bin Al-Khattab Street, Riyadh, KSA",
+        "newsletter_text": "Stay updated with our latest stock arrivals.",
+        "newsletter_placeholder": "Engineering your inbox...",
+        "newsletter_success": "Thank you for subscribing to our newsletter!",
+        "industrial_note": "PROFESSIONAL INDUSTRIAL SOLUTIONS",
+        "cr_label": "CR",
+        "vat_label": "VAT",
+        "licensed_in": "Licensed in",
+        "secure_payments": "Secure Payments"
     }
 }

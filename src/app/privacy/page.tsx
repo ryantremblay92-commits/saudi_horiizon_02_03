@@ -3,25 +3,26 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Eye, Lock, Mail, Phone, MapPin, UserCheck, Globe } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Shield, Eye, Lock, Mail, Phone, MapPin, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { useTranslation } from 'react-i18next';
 
 export default function PrivacyPage() {
     const router = useRouter();
+    const { t } = useTranslation();
 
     return (
-        <div className="min-h-screen bg-navy text-white pt-32 pb-20">
+        <div className="min-h-screen bg-navy text-white pt-32 pb-20 font-sans">
             <div className="container mx-auto px-4">
                 <Breadcrumb className="mb-10">
                     <BreadcrumbList>
                         <BreadcrumbItem>
-                            <BreadcrumbLink onClick={() => router.push('/')}>Home</BreadcrumbLink>
+                            <BreadcrumbLink onClick={() => router.push('/')}>{t('nav.home')}</BreadcrumbLink>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>
-                            <BreadcrumbPage>Privacy Policy</BreadcrumbPage>
+                            <BreadcrumbPage>{t('privacy.title')}</BreadcrumbPage>
                         </BreadcrumbItem>
                     </BreadcrumbList>
                 </Breadcrumb>
@@ -35,39 +36,34 @@ export default function PrivacyPage() {
                     <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Shield className="w-10 h-10 text-gold" />
                     </div>
-                    <h1 className="heading-lg mb-4">Privacy <span className="text-gradient-gold">Policy</span></h1>
-                    <p className="text-xl text-white/70">
-                        Your privacy is important to us. Learn how we protect your information.
+                    <h1 className="heading-lg mb-4">{t('privacy.title')}</h1>
+                    <p className="text-xl text-white/70 max-w-3xl mx-auto">
+                        {t('privacy.subtitle')}
                     </p>
                 </motion.div>
 
                 <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-8 text-center">
                     <p className="text-white/60">
-                        <span className="text-gold font-semibold">Last Updated:</span> January 2025
+                        <span className="text-gold font-semibold">{t('privacy.last_updated')}</span>
                     </p>
                 </div>
 
-                <div className="space-y-8">
+                <div className="max-w-4xl mx-auto space-y-8">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
                     >
-                        <Card className="bg-white/5 border-white/10 hover:border-gold/30 hover:bg-white/[0.07] transition-all duration-300">
+                        <Card className="bg-white/5 border-white/10 hover:border-gold/30 transition-all duration-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3 text-white">
-                                    <Eye className="w-6 h-6 text-gold" />
-                                    Information We Collect
+                                    <Globe className="w-6 h-6 text-gold" />
+                                    {t('privacy.title')}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-white/70">
-                                <p>We collect information you provide directly to us:</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>Personal Information:</strong> Name, email, phone, company details</li>
-                                    <li><strong>Transaction Data:</strong> Purchase history, orders, payment information</li>
-                                    <li><strong>Communication Data:</strong> Messages through contact forms and email</li>
-                                </ul>
+                            <CardContent className="space-y-4 text-white/70 leading-relaxed">
+                                <p>{t('privacy.intro')}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -78,21 +74,15 @@ export default function PrivacyPage() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.1 }}
                     >
-                        <Card className="bg-gray-800 border-gray-700">
+                        <Card className="bg-white/5 border-white/10 hover:border-gold/30 transition-all duration-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3 text-white">
-                                    <Lock className="w-6 h-6 text-gold" />
-                                    How We Use Your Information
+                                    <Eye className="w-6 h-6 text-gold" />
+                                    {t('privacy.section1_title')}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-gray-300">
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Processing and fulfilling your orders</li>
-                                    <li>Providing customer support</li>
-                                    <li>Sending order confirmations and updates</li>
-                                    <li>Improving our products and services</li>
-                                    <li>Complying with legal obligations</li>
-                                </ul>
+                            <CardContent className="space-y-4 text-white/70 leading-relaxed">
+                                <p>{t('privacy.section1_content')}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -103,20 +93,15 @@ export default function PrivacyPage() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.2 }}
                     >
-                        <Card className="bg-gray-800 border-gray-700">
+                        <Card className="bg-white/5 border-white/10 hover:border-gold/30 transition-all duration-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3 text-white">
-                                    <UserCheck className="w-6 h-6 text-gold" />
-                                    Your Rights
+                                    <Lock className="w-6 h-6 text-gold" />
+                                    {t('privacy.section2_title')}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-gray-300">
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>Access:</strong> Request a copy of your personal data</li>
-                                    <li><strong>Correction:</strong> Request correction of inaccurate data</li>
-                                    <li><strong>Deletion:</strong> Request deletion of your personal data</li>
-                                    <li><strong>Opt-Out:</strong> Opt-out of marketing communications</li>
-                                </ul>
+                            <CardContent className="space-y-4 text-white/70 leading-relaxed">
+                                <p>{t('privacy.section2_content')}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -127,48 +112,49 @@ export default function PrivacyPage() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.3 }}
                     >
-                        <Card className="bg-gray-800 border-gray-700">
+                        <Card className="bg-white/5 border-white/10 hover:border-gold/30 transition-all duration-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-3 text-white">
-                                    <Globe className="w-6 h-6 text-gold" />
-                                    Data Sharing
+                                    <Shield className="w-6 h-6 text-gold" />
+                                    {t('privacy.section3_title')}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-gray-300">
-                                <p>We do not sell your personal information. We may share data with:</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li><strong>Service Providers:</strong> Shipping, payment processors</li>
-                                    <li><strong>Business Partners:</strong> Manufacturers for warranty claims</li>
-                                    <li><strong>Legal Requirements:</strong> When required by law</li>
-                                </ul>
+                            <CardContent className="space-y-4 text-white/70 leading-relaxed">
+                                <p>{t('privacy.section3_content')}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
                 </div>
 
                 <motion.div
-                    className="mt-12 bg-gradient-to-r from-gray-800 to-gray-900 border border-yellow-500/30 rounded-lg p-8"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    className="mt-16 max-w-4xl mx-auto glass-premium rounded-2xl p-8 border border-gold/20"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                 >
-                    <h2 className="text-2xl font-bold mb-6 text-white text-center">Privacy Officer Contact</h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <div className="text-center">
-                            <Mail className="w-8 h-8 text-yellow-500 mx-auto mb-3" />
-                            <p className="font-semibold text-white">Email</p>
-                            <p className="text-gray-300">privacy@saudihorizon.online</p>
+                    <h2 className="text-2xl font-bold mb-10 text-white text-center">Contact Information</h2>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="text-center group">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-gold/20 transition-colors">
+                                <Mail className="w-6 h-6 text-gold" />
+                            </div>
+                            <p className="font-semibold text-white mb-1">Email</p>
+                            <p className="text-white/50 text-sm">privacy@saudihorizon.online</p>
                         </div>
-                        <div className="text-center">
-                            <Phone className="w-8 h-8 text-yellow-500 mx-auto mb-3" />
-                            <p className="font-semibold text-white">Phone</p>
-                            <p className="text-gray-300">+966 57 019 6677</p>
+                        <div className="text-center group">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-gold/20 transition-colors">
+                                <Phone className="w-6 h-6 text-gold" />
+                            </div>
+                            <p className="font-semibold text-white mb-1">Phone</p>
+                            <p className="text-white/50 text-sm">+966 57 019 6677</p>
                         </div>
-                        <div className="text-center">
-                            <MapPin className="w-8 h-8 text-yellow-500 mx-auto mb-3" />
-                            <p className="font-semibold text-white">Address</p>
-                            <p className="text-gray-300">Al-Noor District, Saudi Arabia</p>
+                        <div className="text-center group">
+                            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-gold/20 transition-colors">
+                                <MapPin className="w-6 h-6 text-gold" />
+                            </div>
+                            <p className="font-semibold text-white mb-1">Address</p>
+                            <p className="text-white/50 text-sm">Riyadh, Saudi Arabia</p>
                         </div>
                     </div>
                 </motion.div>

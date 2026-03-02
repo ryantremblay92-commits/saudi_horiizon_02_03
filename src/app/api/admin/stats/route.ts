@@ -4,7 +4,7 @@ import User from '@/lib/db/models/User';
 import Product from '@/lib/db/models/Product';
 import Order from '@/lib/db/models/Order';
 import { verifyAdminToken } from '@/lib/auth/adminAuth';
-import { stripe } from '@/lib/stripe';
+
 
 // GET /api/admin/stats - Get dashboard statistics
 export async function GET(request: NextRequest) {
@@ -84,19 +84,8 @@ export async function GET(request: NextRequest) {
             .select('_id user totalAmount status createdAt')
             .lean();
 
-        // Get Stripe Balance if available
-        let stripeBalance = { available: 0, pending: 0 };
-        try {
-            if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_SECRET_KEY.includes('your_key_here')) {
-                const balance = await stripe.balance.retrieve();
-                stripeBalance = {
-                    available: balance.available.reduce((acc, curr) => acc + curr.amount, 0) / 100,
-                    pending: balance.pending.reduce((acc, curr) => acc + curr.amount, 0) / 100
-                };
-            }
-        } catch (e) {
-            console.warn('[Admin Stats] Stripe balance fetch skipped:', e);
-        }
+        // Payment balance (Stripe removed — HyperPay is now the payment provider)
+        const stripeBalance = { available: 0, pending: 0 };
 
         return NextResponse.json({
             totalUsers,

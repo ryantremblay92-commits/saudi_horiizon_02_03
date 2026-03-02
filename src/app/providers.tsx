@@ -32,14 +32,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         // Dynamic import of i18n to avoid SSR issues
         import("@/lib/i18n").then((i18nModule) => {
             const i18n = i18nModule.default || i18nModule;
-            // Wait for the translation to be ready
             if (i18n && i18n.dir) {
                 setDir(i18n.dir());
                 setLang(i18n.language || "en");
+
+                // Listen for later language changes
+                const handleLangChange = (lng: string) => {
+                    setLang(lng);
+                    setDir(i18n.dir(lng));
+                };
+                i18n.on('languageChanged', handleLangChange);
             }
             setIsI18nReady(true);
         }).catch(() => {
-            // i18n failed to load, continue anyway
             setIsI18nReady(true);
         });
     }, []);
@@ -48,6 +53,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         if (isI18nReady) {
             document.dir = dir;
             document.documentElement.lang = lang;
+            document.documentElement.className = lang === 'ar' ? 'font-arabic' : '';
         }
     }, [isI18nReady, dir, lang]);
 
