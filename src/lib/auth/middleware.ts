@@ -9,13 +9,19 @@ export interface AuthenticatedRequest extends NextRequest {
  * Extract token from Authorization header
  */
 export function extractToken(request: NextRequest): string | null {
+    // 1. Check Authorization header
     const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader.substring(7);
     }
 
-    return authHeader.substring(7); // Remove 'Bearer ' prefix
+    // 2. Check cookies
+    const tokenCookie = request.cookies.get('accessToken') || request.cookies.get('token');
+    if (tokenCookie) {
+        return tokenCookie.value;
+    }
+
+    return null;
 }
 
 /**

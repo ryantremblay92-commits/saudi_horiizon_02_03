@@ -136,7 +136,9 @@ export default function OrderDetailsPage() {
                             <div className="flex items-center gap-3">
                                 <h1 className="text-3xl font-bold font-display text-white">Order Details</h1>
                                 <Badge className={`${currentStatus.bg} border-none px-3 py-1 flex items-center gap-1.5`}>
-                                    {React.cloneElement(currentStatus.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+                                    <div className="w-3.5 h-3.5">
+                                        {currentStatus.icon}
+                                    </div>
                                     <span className="capitalize text-[10px] font-bold tracking-widest">{currentStatus.text}</span>
                                 </Badge>
                             </div>

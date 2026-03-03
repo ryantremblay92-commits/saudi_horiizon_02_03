@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongodb';
 import Order from '@/lib/db/models/Order';
+import User from '@/lib/db/models/User';
 import { notifyNewOrder } from '@/lib/notifications/adminNotifications';
+import { sendOrderConfirmationEmail } from '@/lib/notifications/userNotifications';
 
 export async function POST(request: NextRequest) {
     try {
@@ -27,12 +29,27 @@ export async function POST(request: NextRequest) {
             status: 'pending'
         });
 
-        // Create admin notification for new order
-        await notifyNewOrder(
+        // ─── NOTIFICATIONS ───────────────────────────────────────────────
+
+        // Fetch expanded data for the email
+        const populatedOrder = await Order.findById(order._id).populate('items.product');
+        const user = await User.findById(userId);
+
+        if (populatedOrder && (shippingAddress?.email || user?.email)) {
+            const customerEmail = shippingAddress?.email || user?.email;
+            const customerName = shippingAddress?.name || user?.profile?.name || 'Customer';
+
+            // Send Confirmation Email to User (Non-blocking)
+            sendOrderConfirmationEmail(customerEmail, customerName, populatedOrder)
+                .catch(err => console.error('Order confirmation email failed:', err));
+        }
+
+        // Create admin notification for new order (Non-blocking)
+        notifyNewOrder(
             order._id.toString(),
             totalAmount,
-            shippingAddress?.email || undefined
-        );
+            shippingAddress?.email || user?.email
+        ).catch(err => console.error('Admin order notification failed:', err));
 
         return NextResponse.json(order, { status: 201 });
     } catch (error: unknown) {

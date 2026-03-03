@@ -200,10 +200,12 @@ export default function OrdersPage() {
                                                         </div>
                                                         <div className="flex flex-col sm:items-end gap-2">
                                                             <Badge className={`${statusColors[order.status]} border-none px-3 py-1 flex items-center gap-1.5`}>
-                                                                {React.cloneElement(statusIcons[order.status] as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+                                                                <div className="w-3.5 h-3.5 flex items-center justify-center">
+                                                                    {statusIcons[order.status]}
+                                                                </div>
                                                                 <span className="capitalize">{order.status}</span>
                                                             </Badge>
-                                                            <p className="font-bold text-xl text-gold">KWD {order.totalAmount.toFixed(2)}</p>
+                                                            <p className="font-bold text-xl text-gold">SAR {order.totalAmount.toFixed(2)}</p>
                                                         </div>
                                                     </div>
 

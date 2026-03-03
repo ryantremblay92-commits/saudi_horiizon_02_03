@@ -24,11 +24,23 @@ export async function GET(request: NextRequest) {
         const data = await response.json();
 
         // HyperPay success result codes pattern
-        // 000.000.xxx = Transaction succeeded
-        // 000.100.1xx = Transaction succeeded (review required but ok)
-        // 000.3xx / 000.6xx = Transaction pending but likely ok
         const successPattern = /^(000\.000\.|000\.100\.1|000\.[36])/;
         const isSuccess = successPattern.test(data.result?.code || '');
+
+        // If successful, check if it's an invoice payment and update status
+        if (isSuccess && data.merchantTransactionId?.startsWith('INV-')) {
+            const invoiceId = data.merchantTransactionId.replace('INV-', '');
+            const { default: Invoice } = await import('@/lib/db/models/Invoice');
+            const { default: connectDB } = await import('@/lib/db/mongodb');
+
+            await connectDB();
+            await Invoice.findByIdAndUpdate(invoiceId, {
+                status: 'paid',
+                paidAt: new Date(),
+                notes: `Paid via HyperPay. Payment ID: ${data.id}`
+            });
+            console.log(`Invoice ${invoiceId} marked as paid.`);
+        }
 
         return NextResponse.json({
             success: isSuccess,
@@ -38,6 +50,7 @@ export async function GET(request: NextRequest) {
             brand: data.paymentBrand,
             resultCode: data.result?.code,
             resultDescription: data.result?.description,
+            merchantTransactionId: data.merchantTransactionId,
             error: isSuccess ? null : (data.result?.description || 'Payment was not successful'),
         });
     } catch (error: any) {

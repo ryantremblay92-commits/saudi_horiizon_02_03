@@ -505,6 +505,40 @@ export default function AdminOrdersPage() {
                                                 Cancel Order
                                             </Button>
                                         )}
+
+                                        {/* Generate Invoice */}
+                                        <Button
+                                            variant="outline"
+                                            className="h-10 px-5 bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 font-bold rounded-xl text-xs uppercase tracking-widest gap-2"
+                                            onClick={async () => {
+                                                try {
+                                                    const token = localStorage.getItem('accessToken');
+                                                    const res = await fetch('/api/admin/invoices', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                        body: JSON.stringify({
+                                                            sourceType: 'order',
+                                                            sourceId: viewOrder._id,
+                                                        }),
+                                                    });
+                                                    if (!res.ok) throw new Error('Failed to create invoice');
+                                                    const data = await res.json();
+                                                    toast.success(`Invoice ${data.invoice.invoiceNumber} created!`);
+
+                                                    // Download the PDF (Database-driven professional layout)
+                                                    try {
+                                                        window.open(`/api/admin/invoices/${data.invoice._id}/pdf?token=${token}`, '_blank');
+                                                    } catch (pdfErr) {
+                                                        console.error('Initial PDF Gen Error:', pdfErr);
+                                                    }
+                                                } catch (err) {
+                                                    toast.error('Failed to generate invoice');
+                                                }
+                                            }}
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Generate Invoice
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

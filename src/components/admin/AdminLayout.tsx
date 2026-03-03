@@ -58,6 +58,7 @@ const navigation = [
     { name: 'Inventory', href: '/admin/inventory', icon: Box },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Quote Requests', href: '/admin/quotes', icon: FileText },
+    { name: 'Invoices', href: '/admin/invoices', icon: FileText },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Shipping', href: '/admin/shipping', icon: Truck },

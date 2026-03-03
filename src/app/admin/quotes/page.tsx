@@ -378,8 +378,8 @@ export default function AdminQuotesPage() {
                                                     </span>
                                                 </div>
                                                 <div className={`max-w-[90%] p-4 rounded-3xl text-xs leading-relaxed ${msg.sender === 'admin'
-                                                        ? 'bg-gold/10 border border-gold/20 text-white rounded-tr-none'
-                                                        : 'bg-white/[0.03] border border-white/10 text-slate-300 rounded-tl-none'
+                                                    ? 'bg-gold/10 border border-gold/20 text-white rounded-tr-none'
+                                                    : 'bg-white/[0.03] border border-white/10 text-slate-300 rounded-tl-none'
                                                     }`}>
                                                     <p>{msg.text}</p>
                                                     <span className="text-[8px] opacity-30 mt-2 block font-medium">
@@ -445,6 +445,66 @@ export default function AdminQuotesPage() {
                                 >
                                     Mark Reviewed
                                 </Button>
+                                <Button
+                                    onClick={async () => {
+                                        if (!selectedQuote || !quotedPrice) {
+                                            toast.error('Set a quoted price first');
+                                            return;
+                                        }
+                                        try {
+                                            const token = localStorage.getItem('accessToken');
+                                            const res = await fetch('/api/admin/invoices', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                body: JSON.stringify({
+                                                    sourceType: 'quote',
+                                                    sourceId: selectedQuote._id,
+                                                    items: [{
+                                                        description: selectedQuote.items || 'Quoted Items',
+                                                        quantity: 1,
+                                                        unitPrice: parseFloat(quotedPrice),
+                                                        total: parseFloat(quotedPrice),
+                                                    }],
+                                                    notes: responseMessage || undefined,
+                                                }),
+                                            });
+                                            if (!res.ok) throw new Error('Failed to create invoice');
+                                            const data = await res.json();
+                                            toast.success(`Invoice ${data.invoice.invoiceNumber} created!`);
+
+                                            // Copy link to clipboard
+                                            const link = `${window.location.origin}/invoice/${data.invoice._id}`;
+                                            navigator.clipboard.writeText(link);
+                                            toast.info('Payment link copied to clipboard');
+
+                                            // Download the PDF (Database-driven professional layout)
+                                            try {
+                                                window.open(`/api/admin/invoices/${data.invoice._id}/pdf?token=${token}`, '_blank');
+                                            } catch (pdfErr) {
+                                                console.error('Initial PDF Gen Error:', pdfErr);
+                                            }
+                                        } catch (err) {
+                                            toast.error('Failed to generate invoice');
+                                        }
+                                    }}
+                                    disabled={!quotedPrice}
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-14 font-bold text-xs uppercase tracking-widest disabled:opacity-50"
+                                >
+                                    Generate Invoice
+                                </Button>
+                                {selectedQuote?.invoiceId && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            const link = `${window.location.origin}/invoice/${selectedQuote.invoiceId}`;
+                                            navigator.clipboard.writeText(link);
+                                            toast.success('Payment link copied to clipboard');
+                                        }}
+                                        className="bg-white/5 border-white/10 text-white h-14 px-6 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-gold hover:text-navy transition-all"
+                                    >
+                                        Copy Link
+                                    </Button>
+                                )}
                                 <Button
                                     onClick={() => updateStatus(selectedQuote?._id, 'responded', responseMessage, quotedPrice, validUntil)}
                                     disabled={!responseMessage && !quotedPrice}

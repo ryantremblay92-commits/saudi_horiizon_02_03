@@ -18,9 +18,14 @@ interface SendEmailParams {
     subject: string;
     text?: string;
     html?: string;
+    attachments?: Array<{
+        filename: string;
+        content: Buffer;
+        contentType?: string;
+    }>;
 }
 
-export async function sendEmail({ to, subject, text, html }: SendEmailParams) {
+export async function sendEmail({ to, subject, text, html, attachments }: SendEmailParams) {
     console.log(`[MAIL] Starting send to ${to} with subject: ${subject}`);
     try {
         const info = await transporter.sendMail({
@@ -29,6 +34,11 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams) {
             subject,
             text,
             html,
+            attachments: attachments?.map(a => ({
+                filename: a.filename,
+                content: a.content,
+                contentType: a.contentType,
+            })),
         });
         console.log('[MAIL] Email sent successfully: %s', info.messageId);
         return { success: true, messageId: info.messageId };
